@@ -1,0 +1,29 @@
+{
+  "layout": "auto",
+  "bindings": {
+    "primary": "Space",
+    "move": {
+      "left": "ArrowLeft",
+      "right": "ArrowRight"
+    }
+  },
+  "action_meta": {
+    "primary": {
+      "behavior": "discrete",
+      "interaction": "tap",
+      "simultaneous": true,
+      "kind": "button"
+    },
+    "move": {
+      "behavior": "continuous",
+      "interaction": "hold",
+      "simultaneous": false,
+      "control_space": "vector",
+      "activation": "hold",
+      "direction_mode": "cardinal",
+      "granularity": "fine",
+      "kind": "axis"
+    }
+  },
+  "source_output": "test_cases/outputs/top_voted/space-invaders-with-powerups__0504eaffda94_touch_embedded.html"
+}

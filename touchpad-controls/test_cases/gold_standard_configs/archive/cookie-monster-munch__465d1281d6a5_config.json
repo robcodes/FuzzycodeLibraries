@@ -1,0 +1,24 @@
+{
+  "layout": "auto",
+  "bindings": {
+    "move": {
+      "left": "ArrowLeft",
+      "right": "ArrowRight",
+      "up": "ArrowUp",
+      "down": "ArrowDown"
+    }
+  },
+  "action_meta": {
+    "move": {
+      "behavior": "continuous",
+      "interaction": "tap",
+      "simultaneous": true,
+      "control_space": "vector",
+      "activation": "latch",
+      "direction_mode": "cardinal",
+      "granularity": "fine",
+      "kind": "axis"
+    }
+  },
+  "source_output": "test_cases/outputs/top_voted/cookie-monster-munch__465d1281d6a5_touch_embedded.html"
+}

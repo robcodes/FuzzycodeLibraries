@@ -1,0 +1,45 @@
+{
+  "layout": "auto",
+  "bindings": {
+    "primary": "Space",
+    "restart": "KeyR",
+    "pause": "Escape",
+    "move": {
+      "left": "ArrowLeft",
+      "right": "ArrowRight",
+      "up": null,
+      "down": null
+    }
+  },
+  "action_meta": {
+    "primary": {
+      "behavior": "continuous",
+      "interaction": "hold",
+      "simultaneous": true,
+      "kind": "button"
+    },
+    "restart": {
+      "behavior": "discrete",
+      "interaction": "tap",
+      "simultaneous": false,
+      "kind": "button"
+    },
+    "pause": {
+      "behavior": "discrete",
+      "interaction": "tap",
+      "simultaneous": false,
+      "kind": "button"
+    },
+    "move": {
+      "behavior": "continuous",
+      "interaction": "hold",
+      "simultaneous": false,
+      "control_space": "vector",
+      "activation": "hold",
+      "direction_mode": "cardinal",
+      "granularity": "fine",
+      "kind": "axis"
+    }
+  },
+  "source_output": "test_cases/outputs/top_voted/fluffy-rope-swinger-fullscreen-pendulum__8f092763260d_touch_embedded.html"
+}

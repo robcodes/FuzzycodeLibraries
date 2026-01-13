@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="844" height="390" viewBox="0 0 844 390">
+<defs>
+<style>
+text { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+.label { fill: #E2E8F0; font-size: 12px; }
+.title { fill: #E2E8F0; font-size: 14px; font-weight: 600; }
+.safe { fill: none; stroke: #475569; stroke-width: 2; stroke-dasharray: 6 4; }
+.button { stroke: #0F172A; stroke-width: 2; }
+</style>
+</defs>
+<rect width="844" height="390" fill="#0B1020" />
+<rect class="safe" x="47" y="0" width="750" height="369" />
+<text class="title" x="12" y="22">bounce-quest-to-the-top__363f80e33d70 - phone-landscape (safe-platformer)</text>
+<g class="button-group"><title>move left:ArrowLeft right:ArrowRight</title><circle class="button" cx="99.7" cy="308.6" r="33.15" fill="#1F6F8B" /><text class="label" x="99.7" y="313.2666666666667" text-anchor="middle" font-size="14">move</text></g>
+</svg>

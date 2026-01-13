@@ -1,0 +1,36 @@
+{
+  "layout": "auto",
+  "bindings": {
+    "shoot": "Space",
+    "restart": "KeyR",
+    "move": {
+      "left": "ArrowLeft",
+      "right": "ArrowRight"
+    }
+  },
+  "action_meta": {
+    "shoot": {
+      "behavior": "continuous",
+      "interaction": "hold",
+      "simultaneous": true,
+      "kind": "button"
+    },
+    "restart": {
+      "behavior": "discrete",
+      "interaction": "tap",
+      "simultaneous": false,
+      "kind": "button"
+    },
+    "move": {
+      "behavior": "continuous",
+      "interaction": "hold",
+      "simultaneous": true,
+      "control_space": "vector",
+      "activation": "hold",
+      "direction_mode": "cardinal",
+      "granularity": "fine",
+      "kind": "axis"
+    }
+  },
+  "source_output": "test_cases/outputs/top_voted/superhero-kid-vs-ninja-animals__34cc59f54c99_touch_embedded.html"
+}

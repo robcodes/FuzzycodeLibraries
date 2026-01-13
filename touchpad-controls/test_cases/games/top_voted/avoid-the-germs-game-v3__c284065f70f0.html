@@ -1,0 +1,375 @@
+<html>
+<head>
+    <title>Germs Game</title>
+    <style>
+        body { margin: 0; padding: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: black; }
+        #game-container { position: relative; }
+        #game-canvas { border: 1px solid white; }
+        .game-text { position: absolute; font-family: sans-serif; color: white; text-align: center;  pointer-events: none;}
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+        <div id="score-text" class="game-text" style="top: 32px; left: 16px; font-size: 30px;">Score: 0</div>
+         <div id="intro-text" class="game-text" style="top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 40px;">Click to Play</div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        const scoreText = document.getElementById('score-text');
+        const introText = document.getElementById('intro-text');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let score = 0;
+        let highscore = 0;
+        let gameStarted = false;
+        let player = { x: window.innerWidth / 2, y: window.innerHeight / 2, radius: 64, image: new Image(), rotation: 0 };
+        let germs = [];
+        let pickups = [];
+        let lastMouse = {x: player.x, y: player.y};
+        let pickupImage = new Image();
+        let yumSounds = Array(3).fill().map(() => {
+    let sound = new Audio('https://fuzzycode.dev/@aws/generated_sound_effects/eating-food.wav');
+    sound.volume = 0.5;
+    return sound;
+});
+let currentYumSound = 0;
+        let backgroundMusic = new Audio('https://fuzzycode.dev/@aws/manual_examples/sounds/meta-musicgen-escape-the-germs.mp3');
+backgroundMusic.loop = true;
+let squishSound = new Audio('https://aws.fuzzycode.dev/generated_sound_effects/berries-squishing-in-a-basket.wav');
+
+
+        player.image.src = 'https://fuzzycode.dev/@aws/image_buddy_365day_cache/uploads/1c159ab3-db18-4cfe-847d-0342d6f3038c/Player Image!resize_128x128.png';
+        pickupImage.src = 'https://fuzzycode.dev/@aws/image_buddy_365day_cache/uploads/1c159ab3-db18-4cfe-847d-0342d6f3038c/Pickup Image!resize_128x128_d1aa408f6b.png'
+
+       class Germ {
+          constructor(x, y, speed, size) {
+                this.x = x;
+                this.y = y;
+                this.speed = speed;
+                this.radius = size
+                this.target = {x: player.x, y: player.y}
+                this.alpha = 0;
+                this.lifespan = 0;
+                this.isChasing = false;
+                this.rotation = 0;
+                this.image = new Image();
+                // Different colored germs based on speed
+                if (this.speed <= 40) {
+                    this.image.src = 'https://fuzzycode.dev/@aws/image_buddy_365day_cache/uploads/1c159ab3-db18-4cfe-847d-0342d6f3038c/Blue Germ Monster!resize_128x128.png';
+                } else if (this.speed <= 60) {
+                    this.image.src = 'https://fuzzycode.dev/@aws/image_buddy_365day_cache/uploads/1c159ab3-db18-4cfe-847d-0342d6f3038c/Green Germ Monster!resize_128x128.png';
+                } else if (this.speed <= 80) {
+                    this.image.src = 'https://fuzzycode.dev/@aws/image_buddy_365day_cache/uploads/1c159ab3-db18-4cfe-847d-0342d6f3038c/Yellow Germ Monster!resize_128x128.png';
+                } else {
+                    this.image.src = 'https://fuzzycode.dev/@aws/image_buddy_365day_cache/uploads/1c159ab3-db18-4cfe-847d-0342d6f3038c/Red Germ Monster!resize_128x128_2381cf0d66.png';
+                }
+            }
+            start(chaseDelay) {
+               if (!chaseDelay)
+                {
+                    chaseDelay = Math.floor(Math.random() * (8000 - 3000 + 1)) + 3000;
+
+                }
+
+                let _this = this;
+                  _this.alpha = 0;
+                let fadein = () => {
+                    _this.alpha += 0.05;
+                    if(_this.alpha >=1){
+                      _this.alpha = 1
+                       setTimeout(()=>{
+                        if (gameStarted)
+                        {
+                            _this.lifespan = Math.floor(Math.random() * (12000 - 6000 + 1)) + 6000;
+                            _this.isChasing = true;
+                        }
+                     }, chaseDelay);
+                        return
+                    }
+                    setTimeout(fadein, 20);
+                }
+                  fadein();
+
+
+                return this;
+            }
+           restart(x, y) {
+                this.x = x
+                this.y = y;
+                this.alpha = 0;
+
+                return this.start();
+            }
+            stop() {
+                this.isChasing = false;
+             }
+            update(delta){
+                  if (this.isChasing)
+                {
+                    this.lifespan -= delta;
+
+                    if (this.lifespan <= 0)
+                    {
+                        this.isChasing = false;
+                       let _this = this;
+                         let fadeOut = () => {
+                            _this.alpha -= 0.05;
+                            if(_this.alpha <=0){
+                                _this.alpha = 0
+                                _this.active = false;
+                              return;
+                            }
+                            setTimeout(fadeOut, 20);
+                         }
+
+                      fadeOut();
+
+                    }
+                    else
+                    {
+                        this.target.x = player.x;
+                        this.target.y = player.y;
+
+
+                        const dx = this.target.x - this.x;
+                        const dy = this.target.y - this.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+
+                        if (distance > 0) {
+                            this.x += (dx / distance) * this.speed * delta/1000;
+                            this.y += (dy / distance) * this.speed* delta/1000;
+                            this.rotation = Math.atan2(dy, dx) + Math.PI/2;
+                         }
+
+
+                    }
+                }
+            }
+           draw(){
+               if(this.alpha > 0){
+                 ctx.globalAlpha = this.alpha;
+                 ctx.save();
+                 ctx.translate(this.x, this.y);
+                 ctx.rotate(this.rotation);
+                 ctx.drawImage(this.image, -this.radius, -this.radius);
+                 ctx.restore();
+                 ctx.globalAlpha = 1;
+                }
+            }
+
+        }
+
+
+        function resetPickup(pickup) {
+           const outer = {x: 128, y: 128, width:canvas.width - 256, height:canvas.height-256};
+           const target = {x: Math.floor(Math.random() * outer.width) + outer.x, y: Math.floor(Math.random() * outer.height) + outer.y}
+           pickup.x = target.x;
+            pickup.y = target.y;
+        }
+        function createPickups() {
+             const outer = {x: 128, y: 128, width:canvas.width - 256, height:canvas.height-256};
+                pickups = [
+                  {x: outer.x + outer.width * 0.25, y: outer.y + outer.height * 0.25, radius: 64, image: pickupImage},
+                  {x: outer.x + outer.width * 0.75, y: outer.y + outer.height * 0.25, radius: 64, image: pickupImage},
+                  {x: outer.x + outer.width * 0.25, y: outer.y + outer.height * 0.75, radius: 64, image: pickupImage},
+                  {x: outer.x + outer.width * 0.75, y: outer.y + outer.height * 0.75, radius: 64, image: pickupImage},
+                   {x: outer.x + outer.width * 0.5, y: outer.y + outer.height * 0.5, radius: 64, image: pickupImage}
+                ];
+
+        }
+
+        function createGerms() {
+           germs = [];
+           germs.push(new Germ(100, 100, 60, 64));
+           germs.push(new Germ(700, 600, 60, 64));
+           germs.push(new Germ(200, 400, 60, 64));
+        }
+
+        function startGerms() {
+             germs.forEach((germ, i)=>{
+                 germ.start(i* 1000);
+             });
+           setInterval(releaseGerm, 3000);
+        }
+         function releaseGerm() {
+                // Only spawn new germs if there are less than 6 active germs
+                let activeGerms = germs.filter(g => g.isChasing || g.alpha > 0).length;
+                if (activeGerms >= 6) return;
+
+                const x = Math.floor(Math.random() * 800);
+                const y = Math.floor(Math.random() * 600);
+
+                let config = [
+                { speed: 40, size: 64 },  // Reduced speeds
+                { speed: 60, size: 64 },
+                { speed: 80, size: 64 },
+                { speed: 100, size: 64 }
+                ];
+
+                let germConfig = config[Math.floor(Math.random() * config.length)];
+                germConfig.size = 64;
+
+                let found = false;
+                for (let child of germs){
+                    if (!child.isChasing && child.alpha === 0){
+                        child.restart(x,y);
+                        found = true;
+                        break;
+                    }
+                }
+                if(!found) {
+                    let germ = new Germ(x, y, germConfig.speed, germConfig.size);
+                    germs.push(germ);
+                    germ.start();
+                }
+          }
+
+       function drawPickups() {
+           pickups.forEach(pickup=>{
+             ctx.drawImage(pickup.image, pickup.x - pickup.radius, pickup.y-pickup.radius);
+           })
+       }
+
+
+        function drawPlayer() {
+           ctx.save();
+           ctx.translate(player.x, player.y);
+           let dx = lastMouse.x - player.x;
+           let dy = lastMouse.y - player.y;
+           let targetRotation = Math.atan2(dy, dx) + Math.PI/2;
+
+           // Smooth rotation
+           let rotationDiff = targetRotation - player.rotation;
+           while (rotationDiff > Math.PI) rotationDiff -= Math.PI * 2;
+           while (rotationDiff < -Math.PI) rotationDiff += Math.PI * 2;
+           player.rotation += rotationDiff * 0.1;
+
+           ctx.rotate(player.rotation);
+           ctx.drawImage(player.image, -player.radius*1, -player.radius *1, player.radius * 2, player.radius * 2);
+           ctx.restore();
+        }
+
+      function gameOver() {
+            gameStarted = false;
+            backgroundMusic.pause();
+            backgroundMusic.currentTime = 0;
+           introText.textContent = 'Game Over!';
+          introText.style.opacity = 1;
+           stopGerms();
+        }
+        function stopGerms(){
+             clearInterval(releaseGerm);
+             germs.forEach(germ=>{
+                 germ.stop()
+             })
+        }
+        function checkCollisions() {
+         pickups.forEach(pickup=>{
+                const dx = player.x - pickup.x;
+                const dy = player.y - pickup.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+               if(distance < player.radius + pickup.radius){
+                yumSounds[currentYumSound].currentTime = 0;
+                yumSounds[currentYumSound].play();
+                currentYumSound = (currentYumSound + 1) % yumSounds.length;
+                score++;
+                scoreText.textContent = 'Score: ' + score;
+                if (score > highscore) {
+                  highscore = score;
+                 }
+                    resetPickup(pickup);
+               }
+
+            })
+
+             germs.forEach(germ=>{
+              if(germ.alpha === 1 && germ.isChasing){
+                 const dx = player.x - germ.x;
+                 const dy = player.y - germ.y;
+                 const distance = Math.sqrt(dx * dx + dy * dy);
+                  if (distance < player.radius + germ.radius){
+                     squishSound.currentTime = 0;
+                     squishSound.play();
+                     gameOver();
+                  }
+               }
+            })
+
+        }
+
+
+               let backgroundImage = new Image();
+        backgroundImage.src = 'https://fuzzycode.dev/@aws/image_buddy_365day_cache/uploads/1c159ab3-db18-4cfe-847d-0342d6f3038c/Background Image!resize_1920x1080_89d4032418.png';
+
+        function clearCanvas() {
+          ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+      }
+
+
+        function update(time) {
+            if (!gameStarted) return
+             clearCanvas();
+           let delta = time - lastUpdate;
+            lastUpdate = time;
+              germs.forEach(germ=>germ.update(delta));
+
+            let dx = lastMouse.x - player.x
+            let dy = lastMouse.y - player.y
+           let distance = Math.sqrt(dx * dx + dy * dy);
+
+            if(distance> 6){
+               player.x += (dx / distance) * 480 * delta/1000;
+               player.y += (dy / distance) * 480* delta/1000;
+            }
+
+           drawPickups();
+           drawPlayer();
+           germs.forEach(germ=>germ.draw());
+           checkCollisions();
+
+
+            requestAnimationFrame(update);
+        }
+          function startGame() {
+           gameStarted = true;
+            backgroundMusic.play();
+            score = 0;
+            scoreText.textContent = 'Score: 0';
+            introText.style.opacity = 0;
+            createPickups();
+            createGerms();
+            startGerms();
+           requestAnimationFrame(update);
+          }
+        canvas.addEventListener('click', (e)=>{
+          if(!gameStarted) startGame();
+         });
+
+       function updateMousePosition(e) {
+            if(!gameStarted) return;
+            if (e.touches) { // Touch event
+                let rect = canvas.getBoundingClientRect();
+                lastMouse.x = e.touches[0].clientX - rect.left;
+                lastMouse.y = e.touches[0].clientY - rect.top;
+            } else { // Mouse event
+                lastMouse.x = e.offsetX;
+                lastMouse.y = e.offsetY;
+            }
+       }
+
+       canvas.addEventListener('mousemove', updateMousePosition);
+       canvas.addEventListener('touchstart', updateMousePosition);
+       canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault(); // Prevent scrolling
+            updateMousePosition(e);
+       });
+     let lastUpdate = 0;
+    </script>
+</body>
+</html>

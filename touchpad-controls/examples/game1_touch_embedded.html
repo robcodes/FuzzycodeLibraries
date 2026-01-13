@@ -1,0 +1,1795 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEON SHIFT: THE WEAVER</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #050505;
+            font-family: 'Orbitron', sans-serif;
+            color: #fff;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle at center, #1a1a2e 0%, #050505 100%);
+        }
+
+        canvas {
+            display: block;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+            background-color: #000;
+            image-rendering: pixelated;
+        }
+
+        #ui-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            pointer-events: none;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid #00f2ff;
+            padding: 10px 20px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.3);
+        }
+
+        .stat-label { font-size: 12px; color: #00f2ff; text-transform: uppercase; }
+        .stat-value { font-size: 24px; font-weight: bold; }
+
+        #screen-msg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 40px;
+            border: 3px solid #ff00ff;
+            border-radius: 15px;
+            display: none;
+            z-index: 100;
+            box-shadow: 0 0 30px rgba(255, 0, 255, 0.5);
+        }
+
+        #screen-msg h2 { margin-top: 0; font-size: 48px; color: #ff00ff; text-shadow: 0 0 10px #ff00ff; }
+        #screen-msg p { font-size: 18px; margin-bottom: 20px; }
+        
+        .btn {
+            background: transparent;
+            border: 2px solid #00f2ff;
+            color: #00f2ff;
+            padding: 10px 30px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+        }
+
+        .btn:hover {
+            background: #00f2ff;
+            color: #000;
+            box-shadow: 0 0 20px #00f2ff;
+        }
+
+        #instructions {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+            pointer-events: none;
+        }
+
+        .keyboard-key {
+            display: inline-block;
+            border: 1px solid #fff;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin: 0 4px;
+            background: rgba(255,255,255,0.1);
+        }
+
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .loader {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #00f2ff;
+            border-top: 5px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<multi-asset-sheet id="game_sprites" assets="hero_idle,hero_run,portal,spike_blue,spike_pink,orb_collectible,tile_cyan,tile_magenta" style="vibrant neon cyberpunk glowing pixel art, high contrast black background, 2D platformer style" server_sheet_key="31a5fa40b29f22727ccb264bee030b68b8da427e5789139a71e166daab7f88b0" server_sheet_hash="4190f009e404ef2563347fe8042c59428d16846553c4691ca06a3889ea0ac38e" server_sheet_dt="2026-01-12T17:38:10.739526+00:00"></multi-asset-sheet>
+
+<div id="loading-screen">
+    <div class="loader"></div>
+    <p style="margin-top: 20px;">INITIALIZING REALITY...</p>
+</div>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="ui-overlay">
+        <div class="stat-box">
+            <div class="stat-label">Reality Phase</div>
+            <div id="phase-display" class="stat-value" style="color: #00f2ff;">CYAN</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">Orbs</div>
+            <div id="score-display" class="stat-value">0 / 0</div>
+        </div>
+    </div>
+
+    <div id="screen-msg">
+        <h2 id="msg-title">PHASE SYNCED</h2>
+        <p id="msg-body">Level Complete! Ready for the next shift?</p>
+        <button class="btn" id="msg-btn">CONTINUE</button>
+    </div>
+
+    <div id="instructions">
+        <span class="keyboard-key">W A S D</span> or <span class="keyboard-key">ARROWS</span> to Move & Jump 
+        | <span class="keyboard-key">SPACE</span> or <span class="keyboard-key">SHIFT</span> to SHIFT REALITY
+    </div>
+</div>
+
+<script>
+    /**
+     * NEON SHIFT: THE WEAVER
+     * A high-fidelity 2D platformer with a reality-shifting mechanic.
+     */
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const phaseDisplay = document.getElementById('phase-display');
+    const scoreDisplay = document.getElementById('score-display');
+    const screenMsg = document.getElementById('screen-msg');
+    const msgTitle = document.getElementById('msg-title');
+    const msgBody = document.getElementById('msg-body');
+    const msgBtn = document.getElementById('msg-btn');
+    const loadingScreen = document.getElementById('loading-screen');
+
+    // Constants
+    const CANVAS_WIDTH = 1000;
+    const CANVAS_HEIGHT = 600;
+    const GRAVITY = 0.5;
+    const FRICTION = 0.8;
+    const JUMP_FORCE = -12;
+    const SPEED = 0.8;
+    const MAX_SPEED = 6;
+    const TILE_SIZE = 40;
+
+    // Assets
+    const IMAGES = {
+        hero: 'https://images.fuzzycode.dev/multi_ai?grab=hero_idle&resize=40x40&sheet_key=31a5fa40b29f22727ccb264bee030b68b8da427e5789139a71e166daab7f88b0',
+        portal: 'https://images.fuzzycode.dev/multi_ai?grab=portal&resize=60x60&sheet_key=31a5fa40b29f22727ccb264bee030b68b8da427e5789139a71e166daab7f88b0',
+        spikeCyan: 'https://images.fuzzycode.dev/multi_ai?grab=spike_blue&resize=40x40&sheet_key=31a5fa40b29f22727ccb264bee030b68b8da427e5789139a71e166daab7f88b0',
+        spikeMagenta: 'https://images.fuzzycode.dev/multi_ai?grab=spike_pink&resize=40x40&sheet_key=31a5fa40b29f22727ccb264bee030b68b8da427e5789139a71e166daab7f88b0',
+        orb: 'https://images.fuzzycode.dev/multi_ai?grab=orb_collectible&resize=30x30&sheet_key=31a5fa40b29f22727ccb264bee030b68b8da427e5789139a71e166daab7f88b0',
+        tileCyan: 'https://images.fuzzycode.dev/multi_ai?grab=tile_cyan&resize=40x40&sheet_key=31a5fa40b29f22727ccb264bee030b68b8da427e5789139a71e166daab7f88b0',
+        tileMagenta: 'https://images.fuzzycode.dev/multi_ai?grab=tile_magenta&resize=40x40&sheet_key=31a5fa40b29f22727ccb264bee030b68b8da427e5789139a71e166daab7f88b0',
+        bg: 'https://images.fuzzycode.dev/fast_ai?search=cyberpunk%20city%20silhouette%20background%20abstract%20dark&resize=1000x600'
+    };
+
+    const SOUNDS = {
+        jump: new Audio('https://sounds.fuzzycode.dev/sound_effect?prompt=retro_video_game_jump_synth&duration=0.5&ext=.mp3'),
+        shift: new Audio('https://sounds.fuzzycode.dev/sound_effect?prompt=cyberpunk_glitch_switch_sound&duration=0.8&ext=.mp3'),
+        death: new Audio('https://sounds.fuzzycode.dev/sound_effect?prompt=electronic_disintegration_sound&duration=1&ext=.mp3'),
+        collect: new Audio('https://sounds.fuzzycode.dev/sound_effect?prompt=digital_sparkle_collect&duration=0.5&ext=.mp3'),
+        win: new Audio('https://sounds.fuzzycode.dev/sound_effect?prompt=level_complete_victory_tune&duration=2&ext=.mp3'),
+        music: new Audio('https://sounds.fuzzycode.dev/music?prompt=synthwave_ambient_cyberpunk_adventure_loop&duration=45&ext=.mp3')
+    };
+    SOUNDS.music.loop = true;
+    SOUNDS.music.volume = 0.4;
+
+    // Game State
+    let gameState = 'playing';
+    let currentLevel = 0;
+    let currentPhase = 'CYAN'; // 'CYAN' or 'MAGENTA'
+    let score = 0;
+    let particles = [];
+    let keys = {};
+    let camera = { x: 0, y: 0 };
+
+    const player = {
+        x: 100,
+        y: 100,
+        width: 32,
+        height: 38,
+        velX: 0,
+        velY: 0,
+        grounded: false,
+        lastDir: 1,
+        color: '#00f2ff'
+    };
+
+    // Levels
+    // 0: Empty, 1: Cyan Block, 2: Magenta Block, 3: Spike Cyan, 4: Spike Magenta, 5: Orb, 6: Portal, P: Player Start
+    const levelData = [
+        [
+            "                        ",
+            "                        ",
+            "      5      5      6   ",
+            "     111    222    111  ",
+            "                        ",
+            "   P                    ",
+            "111111111111111111111111",
+            "                        "
+        ],
+        [
+            "                                     ",
+            "                                     ",
+            "               5                     ",
+            "               1    5                ",
+            "              111   22      6        ",
+            "      5      22222  11     111       ",
+            "     11     222222  22    11111      ",
+            "    1111   2222222  11               ",
+            "   P      11111111  22               ",
+            "1111111111111111111111111111111111111",
+            "                                     "
+        ],
+        [
+            "                                            ",
+            "                                            ",
+            "                   333                      ",
+            "                   111          5      6    ",
+            "          2222                  111   111   ",
+            "         222222        11111                ",
+            "        22222222      1111111               ",
+            "       2222222222    111111111              ",
+            "   P  111111111111  22222222222             ",
+            "11111111111111111111111111111111111111111111",
+            "                                            "
+        ],
+        [
+            "                                            ",
+            "             5                              ",
+            "            222          444           6    ",
+            "           22222        22222         111   ",
+            "          2222222                             ",
+            "         222222222                            ",
+            "   P    11111111111   11111111   22222222   ",
+            "1111111111111111111   11111111   22222222   ",
+            "                                            "
+        ]
+    ];
+
+    let currentMap = [];
+    let mapObjects = [];
+    let totalOrbs = 0;
+
+    // Initialization
+    function initLevel(index) {
+        if (index >= levelData.length) {
+            winGame();
+            return;
+        }
+
+        currentLevel = index;
+        currentMap = levelData[index];
+        mapObjects = [];
+        score = 0;
+        totalOrbs = 0;
+        currentPhase = 'CYAN';
+        updateUI();
+
+        for (let y = 0; y < currentMap.length; y++) {
+            for (let x = 0; x < currentMap[y].length; x++) {
+                const char = currentMap[y][x];
+                const objX = x * TILE_SIZE;
+                const objY = y * TILE_SIZE;
+
+                if (char === '1') mapObjects.push({ x: objX, y: objY, type: 'block', phase: 'CYAN' });
+                else if (char === '2') mapObjects.push({ x: objX, y: objY, type: 'block', phase: 'MAGENTA' });
+                else if (char === '3') mapObjects.push({ x: objX, y: objY, type: 'spike', phase: 'CYAN' });
+                else if (char === '4') mapObjects.push({ x: objX, y: objY, type: 'spike', phase: 'MAGENTA' });
+                else if (char === '5') {
+                    mapObjects.push({ x: objX + 5, y: objY + 5, type: 'orb', collected: false });
+                    totalOrbs++;
+                }
+                else if (char === '6') mapObjects.push({ x: objX, y: objY, type: 'portal' });
+                else if (char === 'P') {
+                    player.x = objX;
+                    player.y = objY;
+                    player.velX = 0;
+                    player.velY = 0;
+                }
+            }
+        }
+        updateUI();
+        gameState = 'playing';
+        screenMsg.style.display = 'none';
+        
+        // Start music on first interaction
+        if (index === 0) {
+            document.addEventListener('keydown', () => SOUNDS.music.play(), { once: true });
+        }
+    }
+
+    function updateUI() {
+        phaseDisplay.textContent = currentPhase;
+        phaseDisplay.style.color = currentPhase === 'CYAN' ? '#00f2ff' : '#ff00ff';
+        scoreDisplay.textContent = `${score} / ${totalOrbs}`;
+    }
+
+    // Input Handling
+    window.addEventListener('keydown', e => {
+        keys[e.code] = true;
+        if (e.code === 'Space' || e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+            shiftReality();
+        }
+    });
+    window.addEventListener('keyup', e => keys[e.code] = false);
+
+    function shiftReality() {
+        if (gameState !== 'playing') return;
+        currentPhase = currentPhase === 'CYAN' ? 'MAGENTA' : 'CYAN';
+        SOUNDS.shift.currentTime = 0;
+        SOUNDS.shift.play();
+        updateUI();
+        spawnParticles(player.x + player.width/2, player.y + player.height/2, currentPhase === 'CYAN' ? '#00f2ff' : '#ff00ff', 20);
+    }
+
+    // Particle System
+    function spawnParticles(x, y, color, count) {
+        for (let i = 0; i < count; i++) {
+            particles.push({
+                x, y,
+                vx: (Math.random() - 0.5) * 10,
+                vy: (Math.random() - 0.5) * 10,
+                life: 1.0,
+                color
+            });
+        }
+    }
+
+    function updateParticles() {
+        for (let i = particles.length - 1; i >= 0; i--) {
+            const p = particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.life -= 0.02;
+            if (p.life <= 0) particles.splice(i, 1);
+        }
+    }
+
+    // Physics & Logic
+    function update() {
+        if (gameState !== 'playing') return;
+
+        // Player Movement
+        if (keys['ArrowLeft'] || keys['KeyA']) {
+            if (player.velX > -MAX_SPEED) player.velX -= SPEED;
+            player.lastDir = -1;
+        } else if (keys['ArrowRight'] || keys['KeyD']) {
+            if (player.velX < MAX_SPEED) player.velX += SPEED;
+            player.lastDir = 1;
+        } else {
+            player.velX *= FRICTION;
+        }
+
+        if ((keys['ArrowUp'] || keys['KeyW']) && player.grounded) {
+            player.velY = JUMP_FORCE;
+            player.grounded = false;
+            SOUNDS.jump.currentTime = 0;
+            SOUNDS.jump.play();
+        }
+
+        player.velY += GRAVITY;
+        player.x += player.velX;
+        player.y += player.velY;
+
+        // Collisions
+        player.grounded = false;
+        
+        for (const obj of mapObjects) {
+            if (obj.type === 'block') {
+                // Only collide with blocks of the current phase
+                if (obj.phase !== currentPhase) continue;
+
+                const col = checkCollision(player, obj);
+                if (col) {
+                    if (col === 'b') {
+                        player.grounded = true;
+                        player.velY = 0;
+                        player.y = obj.y - player.height;
+                    } else if (col === 't') {
+                        player.velY = 0;
+                        player.y = obj.y + TILE_SIZE;
+                    } else if (col === 'l') {
+                        player.velX = 0;
+                        player.x = obj.x + TILE_SIZE;
+                    } else if (col === 'r') {
+                        player.velX = 0;
+                        player.x = obj.x - player.width;
+                    }
+                }
+            } else if (obj.type === 'spike') {
+                if (obj.phase === currentPhase && checkSimpleCollision(player, obj)) {
+                    die();
+                }
+            } else if (obj.type === 'orb' && !obj.collected) {
+                if (checkSimpleCollision(player, obj)) {
+                    obj.collected = true;
+                    score++;
+                    updateUI();
+                    SOUNDS.collect.currentTime = 0;
+                    SOUNDS.collect.play();
+                    spawnParticles(obj.x, obj.y, '#fff', 10);
+                }
+            } else if (obj.type === 'portal') {
+                if (checkSimpleCollision(player, obj)) {
+                    if (score >= totalOrbs) {
+                        levelComplete();
+                    }
+                }
+            }
+        }
+
+        // World Bounds
+        if (player.y > CANVAS_HEIGHT + 200) die();
+
+        // Camera
+        camera.x += (player.x - camera.x - CANVAS_WIDTH / 2) * 0.1;
+        
+        updateParticles();
+    }
+
+    function checkCollision(p, b) {
+        const vX = (p.x + (p.width / 2)) - (b.x + (TILE_SIZE / 2));
+        const vY = (p.y + (p.height / 2)) - (b.y + (TILE_SIZE / 2));
+        const hWidths = (p.width / 2) + (TILE_SIZE / 2);
+        const hHeights = (p.height / 2) + (TILE_SIZE / 2);
+        let colDir = null;
+
+        if (Math.abs(vX) < hWidths && Math.abs(vY) < hHeights) {
+            const oX = hWidths - Math.abs(vX);
+            const oY = hHeights - Math.abs(vY);
+            if (oX >= oY) {
+                if (vY > 0) {
+                    colDir = 't';
+                } else {
+                    colDir = 'b';
+                }
+            } else {
+                if (vX > 0) {
+                    colDir = 'l';
+                } else {
+                    colDir = 'r';
+                }
+            }
+        }
+        return colDir;
+    }
+
+    function checkSimpleCollision(p, b) {
+        const padding = 5;
+        return p.x < b.x + TILE_SIZE - padding &&
+               p.x + p.width > b.x + padding &&
+               p.y < b.y + TILE_SIZE - padding &&
+               p.y + p.height > b.y + padding;
+    }
+
+    function die() {
+        SOUNDS.death.play();
+        spawnParticles(player.x, player.y, '#ff0000', 30);
+        gameState = 'dead';
+        setTimeout(() => initLevel(currentLevel), 1000);
+    }
+
+    function levelComplete() {
+        gameState = 'complete';
+        SOUNDS.win.play();
+        msgTitle.textContent = "PHASE SYNCED";
+        msgBody.textContent = `Level ${currentLevel + 1} Stabilized. All orbs acquired.`;
+        msgBtn.textContent = "NEXT LEVEL";
+        screenMsg.style.display = 'block';
+    }
+
+    function winGame() {
+        gameState = 'won';
+        msgTitle.textContent = "SYSTEM RESTORED";
+        msgBody.textContent = "You have woven reality back together. The city is safe.";
+        msgBtn.textContent = "RESTART";
+        screenMsg.style.display = 'block';
+    }
+
+    msgBtn.onclick = () => {
+        if (gameState === 'won') initLevel(0);
+        else initLevel(currentLevel + 1);
+    };
+
+    // Rendering
+    const assetCache = {};
+    function getImg(url) {
+        if (!assetCache[url]) {
+            const img = new Image();
+            img.src = url;
+            assetCache[url] = img;
+        }
+        return assetCache[url];
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+        // Background (Parallax-ish)
+        const bgImg = getImg(IMAGES.bg);
+        ctx.globalAlpha = 0.3;
+        ctx.drawImage(bgImg, -camera.x * 0.2, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        ctx.drawImage(bgImg, -camera.x * 0.2 + CANVAS_WIDTH, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        ctx.globalAlpha = 1.0;
+
+        ctx.save();
+        ctx.translate(-camera.x, -camera.y);
+
+        // Draw Map Objects
+        for (const obj of mapObjects) {
+            if (obj.type === 'block') {
+                const img = obj.phase === 'CYAN' ? getImg(IMAGES.tileCyan) : getImg(IMAGES.tileMagenta);
+                ctx.globalAlpha = (obj.phase === currentPhase) ? 1.0 : 0.15;
+                ctx.shadowBlur = (obj.phase === currentPhase) ? 10 : 0;
+                ctx.shadowColor = obj.phase === 'CYAN' ? '#00f2ff' : '#ff00ff';
+                ctx.drawImage(img, obj.x, obj.y, TILE_SIZE, TILE_SIZE);
+            } else if (obj.type === 'spike') {
+                const img = obj.phase === 'CYAN' ? getImg(IMAGES.spikeCyan) : getImg(IMAGES.spikeMagenta);
+                ctx.globalAlpha = (obj.phase === currentPhase) ? 1.0 : 0.1;
+                ctx.drawImage(img, obj.x, obj.y, TILE_SIZE, TILE_SIZE);
+            } else if (obj.type === 'orb' && !obj.collected) {
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#fff';
+                ctx.drawImage(getImg(IMAGES.orb), obj.x, obj.y + Math.sin(Date.now() / 200) * 5, 30, 30);
+            } else if (obj.type === 'portal') {
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = score >= totalOrbs ? '#00ff00' : '#444';
+                ctx.globalAlpha = score >= totalOrbs ? 1.0 : 0.5;
+                ctx.drawImage(getImg(IMAGES.portal), obj.x - 10, obj.y - 20, 60, 60);
+            }
+            ctx.globalAlpha = 1.0;
+            ctx.shadowBlur = 0;
+        }
+
+        // Draw Player
+        if (gameState !== 'dead') {
+            ctx.save();
+            if (player.lastDir === -1) {
+                // Flip horizontally around the player's center
+                ctx.translate(player.x + player.width / 2, 0);
+                ctx.scale(-1, 1);
+                ctx.translate(-(player.x + player.width / 2), 0);
+            }
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = currentPhase === 'CYAN' ? '#00f2ff' : '#ff00ff';
+            ctx.drawImage(getImg(IMAGES.hero), player.x, player.y, player.width, player.height);
+            ctx.restore();
+        }
+
+        // Particles
+        for (const p of particles) {
+            ctx.globalAlpha = p.life;
+            ctx.fillStyle = p.color;
+            ctx.fillRect(p.x, p.y, 4, 4);
+        }
+        ctx.globalAlpha = 1.0;
+
+        ctx.restore();
+
+        // Scanline effect
+        ctx.fillStyle = 'rgba(18, 16, 16, 0.1)';
+        for (let i = 0; i < CANVAS_HEIGHT; i += 4) {
+            ctx.fillRect(0, i, CANVAS_WIDTH, 1);
+        }
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    function gameLoop() {
+        update();
+        draw();
+    }
+
+    // Resize handling
+    function resize() {
+        const ratio = CANVAS_WIDTH / CANVAS_HEIGHT;
+        let w = window.innerWidth;
+        let h = window.innerHeight;
+        if (w / h > ratio) w = h * ratio;
+        else h = w / ratio;
+        canvas.style.width = w + 'px';
+        canvas.style.height = h + 'px';
+    }
+
+    window.onresize = resize;
+    canvas.width = CANVAS_WIDTH;
+    canvas.height = CANVAS_HEIGHT;
+    resize();
+
+    // Start
+    window.onload = () => {
+        // Give a moment for sprites to "load" (though the server handles replacement)
+        setTimeout(() => {
+            loadingScreen.style.display = 'none';
+            initLevel(0);
+            gameLoop(); // Start the game logic and rendering loop
+        }, 1500);
+    };
+
+</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/nipplejs@0.10.2/dist/nipplejs.js" crossorigin="anonymous"></script>
+    <script>
+(function (root, factory) {
+    if (typeof module === "object" && module.exports) {
+        module.exports = factory();
+    } else {
+        root.TouchpadControls = factory();
+        root.touchpadControls = root.TouchpadControls;
+    }
+}(typeof self !== "undefined" ? self : this, function () {
+    "use strict";
+
+    const sections = {
+        CENTER_LEFT: { top: "50%", left: "130px", transform: "translate(-50%, -50%)" },
+        CENTER_TOP: { top: "130px", left: "50%", transform: "translate(-50%, -50%)" },
+        CENTER_RIGHT: { top: "50%", left: "calc(100% - 130px)", transform: "translate(-50%, -50%)" },
+        CENTER_BOTTOM: { top: "calc(100% - 130px)", left: "50%", transform: "translate(-50%, -50%)" }
+    };
+
+    const buttonPositions = {
+        CENTER_LEFT: { top: "0", left: "-50px" },
+        CENTER_TOP: { top: "-50px", left: "0" },
+        CENTER_RIGHT: { top: "0", left: "50px" },
+        CENTER_BOTTOM: { top: "50px", left: "0" }
+    };
+
+    const STYLE_ID = "touchpad-controls-style";
+    const MIN_TOUCH_TARGET = 48;
+
+    const injectTouchpadStyles = () => {
+        if (typeof document === "undefined") return;
+        if (document.getElementById(STYLE_ID)) return;
+
+        const style = document.createElement("style");
+        style.id = STYLE_ID;
+        style.textContent = `
+            :root {
+                --touchpad-size: 72px;
+                --touchpad-radius: 50%;
+                --touchpad-bg: radial-gradient(135% 135% at 25% 20%, rgba(255,255,255,0.15), rgba(0,0,0,0.6));
+                --touchpad-border: 1px solid rgba(255,255,255,0.12);
+                --touchpad-shadow: 0 12px 40px rgba(0,0,0,0.7), inset 0 1px 1px rgba(255,255,255,0.1);
+                --touchpad-shadow-active: 0 4px 15px rgba(0,0,0,0.9), inset 0 1px 0 rgba(0,0,0,0.3);
+            }
+
+            .touchpad {
+                position: absolute;
+                width: var(--touchpad-size);
+                height: var(--touchpad-size);
+                padding: 0;
+                box-sizing: border-box;
+                border-radius: var(--touchpad-radius);
+                background: var(--touchpad-bg);
+                border: var(--touchpad-border);
+                box-shadow: var(--touchpad-shadow);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                touch-action: none;
+                user-select: none;
+                -webkit-user-select: none;
+                -ms-user-select: none;
+                font-size: 0;
+                color: transparent;
+                z-index: 9999;
+                overflow: visible;
+                backdrop-filter: blur(12px) saturate(180%);
+                -webkit-backdrop-filter: blur(12px) saturate(180%);
+                transition:
+                    transform 120ms cubic-bezier(0.2, 0, 0, 1),
+                    box-shadow 150ms ease,
+                    background 200ms ease,
+                    filter 150ms linear;
+                background-position: center;
+                background-repeat: no-repeat;
+                background-size: 45%;
+            }
+
+            .touchpad.is-active {
+                transform: scale(0.94) translate3d(0, 1px, 0);
+                box-shadow: var(--touchpad-shadow-active);
+            }
+
+            .touchpad:hover {
+                box-shadow: 0 12px 32px rgba(0,0,0,0.95);
+            }
+
+            .touchpad--button {
+                font-size: 18px;
+            }
+
+            .touchpad--joystick {
+                font-size: 14px;
+            }
+
+            .touchpad .nipple,
+            .touchpad .nipple * {
+                overflow: visible;
+            }
+
+            .touchpad .nipple .back {
+                box-shadow:
+                    0 0 0 1px rgba(15,23,42,0.85),
+                    0 0 0 6px rgba(148,163,184,0.12),
+                    0 10px 30px rgba(15,23,42,0.85);
+            }
+
+            .touchpad .nipple .front {
+                box-shadow:
+                    0 0 0 1px rgba(148,163,184,0.9),
+                    0 8px 18px rgba(15,23,42,0.9);
+            }
+        `;
+        document.head.appendChild(style);
+    };
+
+    const safeEntries = (obj) => {
+        if (!obj || typeof obj !== "object") return [];
+        return Object.entries(obj);
+    };
+
+    const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+
+    const formatCssValue = (value) => {
+        if (typeof value === "number" && Number.isFinite(value)) {
+            return `${value}px`;
+        }
+        return value;
+    };
+
+    const resolveKeyDescriptor = (rawKey) => {
+        const key = String(rawKey);
+        let keyCode;
+        let code;
+        let keyValue = key;
+
+        switch (key) {
+            case "ArrowLeft":
+            case "Left":
+                keyCode = 37;
+                code = "ArrowLeft";
+                keyValue = "ArrowLeft";
+                break;
+            case "ArrowRight":
+            case "Right":
+                keyCode = 39;
+                code = "ArrowRight";
+                keyValue = "ArrowRight";
+                break;
+            case "ArrowUp":
+            case "Up":
+                keyCode = 38;
+                code = "ArrowUp";
+                keyValue = "ArrowUp";
+                break;
+            case "ArrowDown":
+            case "Down":
+                keyCode = 40;
+                code = "ArrowDown";
+                keyValue = "ArrowDown";
+                break;
+            case " ":
+            case "Space":
+            case "space":
+                keyCode = 32;
+                code = "Space";
+                keyValue = " ";
+                break;
+            case "Enter":
+            case "Return":
+                keyCode = 13;
+                code = "Enter";
+                keyValue = "Enter";
+                break;
+            case "Tab":
+                keyCode = 9;
+                code = "Tab";
+                keyValue = "Tab";
+                break;
+            case "Shift":
+            case "ShiftLeft":
+            case "ShiftRight":
+                keyCode = 16;
+                code = key === "Shift" ? "ShiftLeft" : key;
+                keyValue = "Shift";
+                break;
+            case "Control":
+            case "ControlLeft":
+            case "ControlRight":
+                keyCode = 17;
+                code = key === "Control" ? "ControlLeft" : key;
+                keyValue = "Control";
+                break;
+            case "Alt":
+            case "AltLeft":
+            case "AltRight":
+                keyCode = 18;
+                code = key === "Alt" ? "AltLeft" : key;
+                keyValue = "Alt";
+                break;
+            case "Meta":
+            case "MetaLeft":
+            case "MetaRight":
+                keyCode = 91;
+                code = key === "Meta" ? "MetaLeft" : key;
+                keyValue = "Meta";
+                break;
+            case "Escape":
+            case "Esc":
+                keyCode = 27;
+                code = "Escape";
+                keyValue = "Escape";
+                break;
+            default:
+                break;
+        }
+
+        if (keyCode == null) {
+            if (/^Key[a-zA-Z]$/.test(key)) {
+                const letter = key.charAt(3).toUpperCase();
+                keyCode = letter.charCodeAt(0);
+                code = key;
+                keyValue = letter.toLowerCase();
+            } else if (/^Digit[0-9]$/.test(key)) {
+                const digit = key.charAt(5);
+                keyCode = 48 + parseInt(digit, 10);
+                code = key;
+                keyValue = digit;
+            } else if (key.length === 1) {
+                const upper = key.toUpperCase();
+                keyCode = upper.charCodeAt(0);
+                code = upper;
+                keyValue = key;
+            } else {
+                const upper = key.toUpperCase();
+                keyCode = upper.charCodeAt(0);
+                code = upper;
+                keyValue = key;
+            }
+        }
+
+        return { key: keyValue, code, keyCode };
+    };
+
+    const simulateKeyEvent = (key, type) => {
+        const { key: keyValue, code, keyCode } = resolveKeyDescriptor(key);
+
+        if (typeof KeyboardEvent === "undefined") return;
+
+        const event = new KeyboardEvent(type, {
+            key: keyValue,
+            code: code,
+            keyCode: keyCode,
+            which: keyCode,
+            bubbles: true,
+            cancelable: true
+        });
+
+        const canvas = typeof document !== "undefined" ? document.querySelector("canvas") : null;
+        if (canvas && typeof canvas.focus === "function") {
+            canvas.focus();
+            canvas.dispatchEvent(event);
+        } else if (typeof document !== "undefined") {
+            document.dispatchEvent(event);
+        }
+    };
+
+    const parseKeys = (keys) => {
+        let keyMap = { left: null, right: null, up: null, down: null, key: null };
+
+        if (Array.isArray(keys)) {
+            if (keys.length === 2) {
+                keyMap.left = keys[0] || null;
+                keyMap.right = keys[1] || null;
+            } else if (keys.length === 1) {
+                keyMap.key = keys[0];
+            } else {
+                keyMap.left = keys[0] || null;
+                keyMap.right = keys[1] || null;
+                keyMap.up = keys[2] || null;
+                keyMap.down = keys[3] || null;
+            }
+        } else if (keys && typeof keys === "object") {
+            keyMap.left = keys.left || null;
+            keyMap.right = keys.right || null;
+            keyMap.up = keys.up || null;
+            keyMap.down = keys.down || null;
+            if (keys.key) keyMap.key = keys.key;
+        } else if (typeof keys === "string") {
+            keyMap.key = keys;
+        }
+
+        return keyMap;
+    };
+
+    const createNipple = (element, keys) => {
+        if (typeof nipplejs === "undefined") {
+            throw new Error(
+                "[touchpad_controls] nipplejs is required to create joystick controls. " +
+                "Include nipplejs before touchpad-controls.js."
+            );
+        }
+
+        const options = {
+            zone: element,
+            mode: "static",
+            position: { top: "50%", left: "50%" },
+            color: "gray",
+            size: 120,
+            threshold: 0.25
+        };
+
+        const keyMap = parseKeys(keys);
+
+        const hasLeft = keyMap.left != null;
+        const hasRight = keyMap.right != null;
+        const hasUp = keyMap.up != null;
+        const hasDown = keyMap.down != null;
+        const hasSingleKey = keyMap.key != null;
+
+        if ((hasLeft || hasRight) && !(hasUp || hasDown)) {
+            options.lockX = true;
+        } else if ((hasUp || hasDown) && !(hasLeft || hasRight)) {
+            options.lockY = true;
+        } else if (hasSingleKey) {
+            options.lockX = true;
+            options.lockY = true;
+        } else {
+            options.lockX = false;
+            options.lockY = false;
+        }
+
+        const manager = nipplejs.create(options);
+
+        const activeKeys = {};
+        const activeDirections = new Set();
+
+        const getDirections = (direction) => {
+            if (!direction) return [];
+            const directions = [];
+            if (direction.x === "left" || direction.x === "right") {
+                directions.push(direction.x);
+            }
+            if (direction.y === "up" || direction.y === "down") {
+                directions.push(direction.y);
+            }
+            return directions;
+        };
+
+        manager.on("start", () => {
+            element.classList.add("is-active");
+        });
+
+        manager.on("dir", (evt, data) => {
+            const directions = getDirections(data && data.direction);
+            if (!directions.length) return;
+
+            directions.forEach((direction) => {
+                const key = keyMap[direction];
+                if (!key) return;
+
+                if (!activeKeys[key]) {
+                    simulateKeyEvent(key, "keydown");
+                    activeKeys[key] = true;
+                    activeDirections.add(direction);
+                }
+            });
+        });
+
+        const releaseAllKeys = () => {
+            Object.keys(activeKeys).forEach((key) => {
+                if (activeKeys[key]) {
+                    simulateKeyEvent(key, "keyup");
+                    activeKeys[key] = false;
+                }
+            });
+            activeDirections.clear();
+        };
+
+        manager.on("move", (evt, data) => {
+            if (!data || !data.direction) {
+                releaseAllKeys();
+                return;
+            }
+
+            const currentDirections = new Set();
+            if (data.direction.x) currentDirections.add(data.direction.x);
+            if (data.direction.y) currentDirections.add(data.direction.y);
+
+            const toRelease = [];
+            activeDirections.forEach((direction) => {
+                if (!currentDirections.has(direction)) {
+                    toRelease.push(direction);
+                }
+            });
+
+            toRelease.forEach((direction) => {
+                const key = keyMap[direction];
+                if (key && activeKeys[key]) {
+                    simulateKeyEvent(key, "keyup");
+                    activeKeys[key] = false;
+                    activeDirections.delete(direction);
+                }
+            });
+        });
+
+        manager.on("end", () => {
+            releaseAllKeys();
+            element.classList.remove("is-active");
+        });
+
+        return manager;
+    };
+
+    const createButton = (element, key) => {
+        const keys = Array.isArray(key) ? key.filter((k) => k != null) : [key];
+        if (!keys.length) return;
+
+        let isActive = false;
+
+        const press = (event) => {
+            if (event && typeof event.preventDefault === "function") {
+                event.preventDefault();
+            }
+            if (isActive) return;
+            isActive = true;
+            element.classList.add("is-active");
+            keys.forEach((k) => simulateKeyEvent(k, "keydown"));
+        };
+
+        const release = (event) => {
+            if (event && typeof event.preventDefault === "function") {
+                event.preventDefault();
+            }
+            if (!isActive) return;
+            isActive = false;
+            element.classList.remove("is-active");
+            keys.forEach((k) => simulateKeyEvent(k, "keyup"));
+        };
+
+        const handleMouseDown = (event) => {
+            press(event);
+            const handleMouseUp = (e) => {
+                release(e);
+                window.removeEventListener("mouseup", handleMouseUp);
+            };
+            window.addEventListener("mouseup", handleMouseUp);
+        };
+
+        const handleTouchStart = (event) => {
+            press(event);
+            const handleTouchEndOrCancel = (e) => {
+                release(e);
+                window.removeEventListener("touchend", handleTouchEndOrCancel);
+                window.removeEventListener("touchcancel", handleTouchEndOrCancel);
+            };
+            window.addEventListener("touchend", handleTouchEndOrCancel);
+            window.addEventListener("touchcancel", handleTouchEndOrCancel);
+        };
+
+        element.addEventListener("mousedown", handleMouseDown);
+        element.addEventListener("touchstart", handleTouchStart, {
+            passive: false
+        });
+
+        element.addEventListener("mouseup", release);
+        element.addEventListener("mouseleave", release);
+        element.addEventListener("touchend", release);
+        element.addEventListener("touchcancel", release);
+    };
+
+    const createTouchpadControls = (config = {}) => {
+        if (typeof document === "undefined") {
+            throw new Error("[touchpad_controls] document is required to render controls.");
+        }
+
+        injectTouchpadStyles();
+
+        const root = config.root || document.body || document.documentElement;
+        const buttons = Array.isArray(config.buttons) ? config.buttons : [];
+
+        const touchpads = [];
+        const nippleManagers = [];
+
+        buttons.forEach((btn) => {
+            if (!btn) return;
+
+            const touchpad = document.createElement("div");
+            touchpad.id = btn.id || "";
+            touchpad.className = "touchpad";
+
+            if (btn.className) {
+                touchpad.className += " " + btn.className;
+            }
+            if (Array.isArray(btn.classList)) {
+                btn.classList.forEach((cls) => {
+                    if (cls) touchpad.classList.add(cls);
+                });
+            }
+
+            touchpad.textContent = btn.label != null ? String(btn.label) : "";
+            if (btn.label != null) {
+                touchpad.setAttribute("aria-label", String(btn.label));
+            }
+
+            const sectionName = btn.section;
+            const section = sectionName && sections[sectionName] ? sections[sectionName] : null;
+
+            safeEntries(section).forEach(([key, value]) => {
+                touchpad.style[key] = value;
+            });
+
+            const posName = btn.position;
+            const buttonPosition =
+                posName && buttonPositions[posName]
+                    ? buttonPositions[posName]
+                    : null;
+
+            if (section && buttonPosition) {
+                safeEntries(buttonPosition).forEach(([key, value]) => {
+                    const base = section[key] || "0px";
+                    touchpad.style[key] = `calc(${base} + ${value})`;
+                });
+            }
+
+            if (btn.top != null) {
+                touchpad.style.top = formatCssValue(btn.top);
+            }
+            if (btn.left != null) {
+                touchpad.style.left = formatCssValue(btn.left);
+            }
+            if (btn.x != null) {
+                touchpad.style.left = formatCssValue(btn.x);
+            }
+            if (btn.y != null) {
+                touchpad.style.top = formatCssValue(btn.y);
+            }
+
+            safeEntries(btn.style).forEach(([key, value]) => {
+                if (value != null) {
+                    touchpad.style[key] = formatCssValue(value);
+                }
+            });
+
+            root.appendChild(touchpad);
+
+            let type = btn.type;
+            if (!type) {
+                if (
+                    (Array.isArray(btn.keys) && btn.keys.length > 1) ||
+                    (btn.keys && typeof btn.keys === "object" && !Array.isArray(btn.keys))
+                ) {
+                    type = "joystick";
+                } else {
+                    type = "button";
+                }
+            }
+
+            touchpad.dataset.touchpadType = type;
+            if (type === "joystick") {
+                touchpad.classList.add("touchpad--joystick");
+            } else {
+                touchpad.classList.add("touchpad--button");
+            }
+
+            const tp = { element: touchpad, keys: btn.keys, type: type };
+            touchpads.push(tp);
+        });
+
+        touchpads.forEach((tp) => {
+            if (tp.type === "joystick") {
+                const manager = createNipple(tp.element, tp.keys);
+                if (manager) nippleManagers.push(manager);
+            } else {
+                createButton(tp.element, tp.keys);
+            }
+        });
+
+        const destroy = () => {
+            nippleManagers.forEach((manager) => {
+                if (manager && typeof manager.destroy === "function") {
+                    manager.destroy();
+                }
+            });
+
+            touchpads.forEach((tp) => {
+                const el = tp.element;
+                if (el && el.parentNode) {
+                    el.parentNode.removeChild(el);
+                }
+            });
+        };
+
+        return { touchpads, destroy };
+    };
+
+    const getSafeAreaInsets = (viewport) => {
+        if (viewport && viewport.safeArea) {
+            return {
+                top: viewport.safeArea.top || 0,
+                right: viewport.safeArea.right || 0,
+                bottom: viewport.safeArea.bottom || 0,
+                left: viewport.safeArea.left || 0
+            };
+        }
+
+        if (typeof document === "undefined") {
+            return { top: 0, right: 0, bottom: 0, left: 0 };
+        }
+
+        const measure = document.createElement("div");
+        measure.style.cssText = [
+            "position: fixed",
+            "top: 0",
+            "left: 0",
+            "right: 0",
+            "bottom: 0",
+            "padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)",
+            "pointer-events: none",
+            "visibility: hidden"
+        ].join(";");
+
+        const root = document.body || document.documentElement;
+        root.appendChild(measure);
+        const style = window.getComputedStyle(measure);
+        const insets = {
+            top: parseFloat(style.paddingTop) || 0,
+            right: parseFloat(style.paddingRight) || 0,
+            bottom: parseFloat(style.paddingBottom) || 0,
+            left: parseFloat(style.paddingLeft) || 0
+        };
+        root.removeChild(measure);
+        return insets;
+    };
+
+    const normalizeBindings = (bindings = {}) => {
+        const move = parseKeys(bindings.move || bindings.movement || null);
+        const aim = parseKeys(bindings.aim || bindings.look || null);
+
+        const jump = bindings.jump || null;
+        const primary = bindings.primary || bindings.shoot || bindings.fire || null;
+        const secondary = bindings.secondary || bindings.attack || null;
+        const tertiary = bindings.tertiary || (bindings.shoot && bindings.shoot !== primary ? bindings.shoot : null) || null;
+        const modifier = bindings.modifier || bindings.run || null;
+
+        return { move, aim, jump, primary, secondary, tertiary, modifier };
+    };
+
+    const normalizeActionMeta = (actionMeta = {}) => {
+        if (!actionMeta || typeof actionMeta !== "object") return {};
+        return actionMeta;
+    };
+
+    const hasDirectionalKeys = (keyMap) => !!(keyMap && (keyMap.left || keyMap.right || keyMap.up || keyMap.down));
+
+    const chooseLayout = (bindings, preferredLayout) => {
+        if (preferredLayout && preferredLayout !== "auto") return preferredLayout;
+
+        const hasMove = hasDirectionalKeys(bindings.move);
+        const hasAim = hasDirectionalKeys(bindings.aim);
+
+        if (hasAim) return "dual-stick";
+        if (hasMove) {
+            if (bindings.move.up || bindings.move.down) return "fast-platformer";
+            return "safe-platformer";
+        }
+        return "runner";
+    };
+
+    const getLayoutMetrics = (viewport, options = {}) => {
+        const width = viewport && Number.isFinite(viewport.width)
+            ? viewport.width
+            : (typeof window !== "undefined" ? window.innerWidth : 0);
+        const height = viewport && Number.isFinite(viewport.height)
+            ? viewport.height
+            : (typeof window !== "undefined" ? window.innerHeight : 0);
+
+        const safeArea = getSafeAreaInsets(viewport);
+        const minDim = Math.max(1, Math.min(width, height));
+        const orientation = width >= height ? "landscape" : "portrait";
+
+        const baseSize = clamp(minDim * 0.17, 64, 112);
+        const actionSize = clamp(minDim * 0.14, 56, 96);
+        const smallActionSize = clamp(minDim * 0.12, MIN_TOUCH_TARGET, 80);
+        const miniActionSize = clamp(minDim * 0.1, MIN_TOUCH_TARGET, 72);
+        const spacing = clamp(minDim * 0.03, 10, 20);
+        const edgePadding = clamp(minDim * 0.05, 16, 32);
+        const verticalOffset = orientation === "portrait"
+            ? clamp(minDim * 0.04, 8, 16)
+            : clamp(minDim * 0.02, 6, 12);
+
+        const bottomY = height - safeArea.bottom - edgePadding;
+
+        return {
+            width,
+            height,
+            orientation,
+            safeArea,
+            minDim,
+            baseSize,
+            actionSize,
+            smallActionSize,
+            miniActionSize,
+            spacing,
+            edgePadding,
+            verticalOffset,
+            bottomY
+        };
+    };
+
+    const clampPosition = (pos, size, metrics) => {
+        const minX = metrics.safeArea.left + metrics.edgePadding + size / 2;
+        const maxX = metrics.width - metrics.safeArea.right - metrics.edgePadding - size / 2;
+        const minY = metrics.safeArea.top + metrics.edgePadding + size / 2;
+        const maxY = metrics.height - metrics.safeArea.bottom - metrics.edgePadding - size / 2;
+        return {
+            x: clamp(pos.x, minX, maxX),
+            y: clamp(pos.y, minY, maxY)
+        };
+    };
+
+    const makeButton = (spec) => {
+        const baseStyle = {
+            width: spec.size,
+            height: spec.size,
+            transform: "translate(-50%, -50%)"
+        };
+
+        return {
+            id: spec.id,
+            label: spec.label || "",
+            keys: spec.keys,
+            x: spec.x,
+            y: spec.y,
+            size: spec.size,
+            role: spec.role,
+            type: spec.type,
+            classList: spec.classList || [],
+            style: Object.assign(baseStyle, spec.style || {})
+        };
+    };
+
+    const buildActionCluster = (anchor, actions, sizes, metrics) => {
+        const buttons = [];
+        if (!actions.length) return buttons;
+
+        const primary = actions[0];
+        const primarySize = sizes.primary;
+        const primaryPos = clampPosition(anchor, primarySize, metrics);
+        buttons.push(makeButton({
+            id: primary.role,
+            keys: primary.keys,
+            role: primary.role,
+            x: primaryPos.x,
+            y: primaryPos.y,
+            size: primarySize,
+            classList: ["touchpad-role-" + primary.role]
+        }));
+
+        if (actions[1]) {
+            const secondary = actions[1];
+            const secondarySize = sizes.secondary;
+            const secondaryPos = clampPosition({
+                x: anchor.x,
+                y: anchor.y - (primarySize / 2 + metrics.spacing + secondarySize / 2)
+            }, secondarySize, metrics);
+            buttons.push(makeButton({
+                id: secondary.role,
+                keys: secondary.keys,
+                role: secondary.role,
+                x: secondaryPos.x,
+                y: secondaryPos.y,
+                size: secondarySize,
+                classList: ["touchpad-role-" + secondary.role]
+            }));
+        }
+
+        if (actions[2]) {
+            const tertiary = actions[2];
+            const tertiarySize = sizes.tertiary;
+            const tertiaryPos = clampPosition({
+                x: anchor.x - (primarySize / 2 + metrics.spacing + tertiarySize / 2),
+                y: anchor.y - primarySize * 0.2
+            }, tertiarySize, metrics);
+            buttons.push(makeButton({
+                id: tertiary.role,
+                keys: tertiary.keys,
+                role: tertiary.role,
+                x: tertiaryPos.x,
+                y: tertiaryPos.y,
+                size: tertiarySize,
+                classList: ["touchpad-role-" + tertiary.role]
+            }));
+        }
+
+        if (actions[3]) {
+            const modifier = actions[3];
+            const modifierSize = sizes.modifier;
+            const modifierPos = clampPosition({
+                x: anchor.x - (primarySize / 2 + metrics.spacing + modifierSize / 2),
+                y: anchor.y - (primarySize / 2 + metrics.spacing + modifierSize / 2)
+            }, modifierSize, metrics);
+            buttons.push(makeButton({
+                id: modifier.role,
+                keys: modifier.keys,
+                role: modifier.role,
+                x: modifierPos.x,
+                y: modifierPos.y,
+                size: modifierSize,
+                classList: ["touchpad-role-" + modifier.role]
+            }));
+        }
+
+        return buttons;
+    };
+
+    const buildButtonsForLayout = (layout, bindings, metrics, actionMeta) => {
+        const buttons = [];
+        const actions = [];
+        const roleOrder = ["jump", "primary", "secondary", "tertiary", "modifier"];
+        const roleBaseScore = {
+            jump: 4,
+            primary: 3,
+            secondary: 2,
+            tertiary: 1,
+            modifier: 1
+        };
+
+        const usedKeys = new Set();
+        const addAction = (role, keys) => {
+            if (!keys) return;
+            const signature = JSON.stringify(keys);
+            if (usedKeys.has(signature)) return;
+            usedKeys.add(signature);
+            actions.push({
+                role,
+                keys,
+                meta: actionMeta && actionMeta[role] ? actionMeta[role] : null
+            });
+        };
+
+        roleOrder.forEach((role) => addAction(role, bindings[role]));
+
+        actions.forEach((action, index) => {
+            const meta = action.meta || {};
+            let score = roleBaseScore[action.role] || 0;
+            if (meta.behavior === "discrete") score += 1;
+            if (meta.interaction === "tap") score += 1;
+            if (meta.simultaneous === true) score += 1;
+            if (meta.behavior === "continuous" && meta.interaction === "hold" && meta.simultaneous === false) {
+                score -= 1;
+            }
+            action._score = score;
+            action._index = index;
+        });
+
+        actions.sort((a, b) => {
+            if (b._score !== a._score) return b._score - a._score;
+            return a._index - b._index;
+        });
+
+        const leftAnchor = {
+            x: metrics.safeArea.left + metrics.edgePadding + metrics.baseSize / 2,
+            y: metrics.bottomY - metrics.baseSize / 2 - metrics.verticalOffset
+        };
+        const rightAnchor = {
+            x: metrics.width - metrics.safeArea.right - metrics.edgePadding - metrics.baseSize / 2,
+            y: metrics.bottomY - metrics.baseSize / 2 - metrics.verticalOffset
+        };
+
+        if (!actions.length && !hasDirectionalKeys(bindings.move) && !hasDirectionalKeys(bindings.aim)) {
+            return buttons;
+        }
+
+        if (layout === "safe-platformer" || layout === "fast-platformer") {
+            if (hasDirectionalKeys(bindings.move)) {
+                const moveSize = metrics.baseSize;
+                const movePos = clampPosition(leftAnchor, moveSize, metrics);
+                buttons.push(makeButton({
+                    id: "move",
+                    keys: bindings.move,
+                    role: "move",
+                    x: movePos.x,
+                    y: movePos.y,
+                    size: moveSize,
+                    classList: ["touchpad-role-move"]
+                }));
+            }
+
+            const clusterButtons = buildActionCluster(
+                rightAnchor,
+                actions,
+                {
+                    primary: metrics.actionSize,
+                    secondary: metrics.smallActionSize,
+                    tertiary: metrics.smallActionSize,
+                    modifier: metrics.miniActionSize
+                },
+                metrics
+            );
+            buttons.push(...clusterButtons);
+        } else if (layout === "dual-stick") {
+            const moveSize = clamp(metrics.baseSize * 1.05, 64, 120);
+            const aimSize = clamp(metrics.baseSize * 0.95, 60, 112);
+
+            if (hasDirectionalKeys(bindings.move)) {
+                const leftPos = clampPosition({
+                    x: metrics.safeArea.left + metrics.edgePadding + moveSize / 2,
+                    y: metrics.bottomY - moveSize / 2 - metrics.verticalOffset
+                }, moveSize, metrics);
+                buttons.push(makeButton({
+                    id: "move",
+                    keys: bindings.move,
+                    role: "move",
+                    x: leftPos.x,
+                    y: leftPos.y,
+                    size: moveSize,
+                    classList: ["touchpad-role-move"]
+                }));
+            }
+
+            if (hasDirectionalKeys(bindings.aim)) {
+                const rightPos = clampPosition({
+                    x: metrics.width - metrics.safeArea.right - metrics.edgePadding - aimSize / 2,
+                    y: metrics.bottomY - aimSize / 2 - metrics.verticalOffset
+                }, aimSize, metrics);
+                buttons.push(makeButton({
+                    id: "aim",
+                    keys: bindings.aim,
+                    role: "aim",
+                    x: rightPos.x,
+                    y: rightPos.y,
+                    size: aimSize,
+                    classList: ["touchpad-role-aim"]
+                }));
+
+                if (actions[0]) {
+                    const fireSize = metrics.actionSize;
+                    const firePos = clampPosition({
+                        x: rightPos.x,
+                        y: rightPos.y - (aimSize / 2 + metrics.spacing + fireSize / 2)
+                    }, fireSize, metrics);
+                    buttons.push(makeButton({
+                        id: actions[0].role,
+                        keys: actions[0].keys,
+                        role: actions[0].role,
+                        x: firePos.x,
+                        y: firePos.y,
+                        size: fireSize,
+                        classList: ["touchpad-role-" + actions[0].role]
+                    }));
+                }
+            }
+        } else if (layout === "runner") {
+            const actionCount = Math.min(actions.length || 1, 4);
+            const slots = actionCount === 1
+                ? [0.5]
+                : actionCount === 2
+                    ? [0.35, 0.65]
+                    : actionCount === 3
+                        ? [0.2, 0.5, 0.8]
+                        : [0.15, 0.4, 0.6, 0.85];
+
+            const size = metrics.actionSize;
+            const availableWidth = metrics.width - metrics.safeArea.left - metrics.safeArea.right - metrics.edgePadding * 2;
+            const bandY = metrics.bottomY - size / 2 - metrics.verticalOffset;
+
+            for (let i = 0; i < actionCount; i += 1) {
+                const action = actions[i] || actions[0] || { role: "primary", keys: bindings.primary };
+                const x = metrics.safeArea.left + metrics.edgePadding + availableWidth * slots[i];
+                const pos = clampPosition({ x, y: bandY }, size, metrics);
+                buttons.push(makeButton({
+                    id: action.role,
+                    keys: action.keys,
+                    role: action.role,
+                    x: pos.x,
+                    y: pos.y,
+                    size: size,
+                    classList: ["touchpad-role-" + action.role]
+                }));
+            }
+        }
+
+        return buttons;
+    };
+
+    const buildLayout = (config = {}) => {
+        const normalized = normalizeBindings(config.bindings || {});
+        const layout = chooseLayout(normalized, config.layout);
+        const metrics = getLayoutMetrics(config.viewport, config);
+        const actionMeta = normalizeActionMeta(config.actionMeta || config.action_meta || {});
+        const buttons = buildButtonsForLayout(layout, normalized, metrics, actionMeta);
+        return { layout, buttons, metrics, bindings: normalized, actionMeta };
+    };
+
+    const createGesturePrevention = (options = {}) => {
+        if (typeof document === "undefined") return () => {};
+
+        const extraExclusions = Array.isArray(options.excludeSelectors) ? options.excludeSelectors : [];
+        const handler = (event) => {
+            if (!event || typeof event.preventDefault !== "function") return;
+            const target = event.target;
+            if (!target) {
+                event.preventDefault();
+                return;
+            }
+
+            const tagName = target.tagName;
+            const blockedTags = ["SELECT", "OPTION", "BUTTON", "INPUT", "TEXTAREA", "A"];
+            if (tagName && blockedTags.includes(tagName)) return;
+
+            if (extraExclusions.some((selector) => target.closest && target.closest(selector))) return;
+
+            event.preventDefault();
+        };
+
+        document.addEventListener("touchmove", handler, { passive: false });
+        document.addEventListener("touchstart", handler, { passive: false });
+        document.addEventListener("gesturestart", handler);
+        document.addEventListener("gesturechange", handler);
+        document.addEventListener("gestureend", handler);
+
+        return () => {
+            document.removeEventListener("touchmove", handler);
+            document.removeEventListener("touchstart", handler);
+            document.removeEventListener("gesturestart", handler);
+            document.removeEventListener("gesturechange", handler);
+            document.removeEventListener("gestureend", handler);
+        };
+    };
+
+    const create = (config = {}) => {
+        const layoutConfig = buildLayout(config);
+        const hasCustomButtons = Array.isArray(config.buttons) && config.buttons.length > 0;
+        const buttons = hasCustomButtons ? config.buttons : layoutConfig.buttons;
+        const root = config.root;
+
+        if (config.preventGestures !== false) {
+            const excludeSelectors = config.excludeSelectors || [];
+            var removeGesturePrevention = createGesturePrevention({ excludeSelectors });
+        }
+
+        let instance = createTouchpadControls({ root, buttons });
+        let resizeTimer = null;
+
+        const rebuild = () => {
+            if (instance && typeof instance.destroy === "function") {
+                instance.destroy();
+            }
+            const nextLayout = buildLayout(config);
+            const nextButtons = hasCustomButtons ? config.buttons : nextLayout.buttons;
+            instance = createTouchpadControls({ root, buttons: nextButtons });
+        };
+
+        const handleResize = () => {
+            if (resizeTimer) window.clearTimeout(resizeTimer);
+            resizeTimer = window.setTimeout(rebuild, 120);
+        };
+
+        if (config.responsive !== false && typeof window !== "undefined") {
+            window.addEventListener("resize", handleResize);
+        }
+
+        return {
+            layout: layoutConfig.layout,
+            buttons,
+            destroy: () => {
+                if (resizeTimer && typeof window !== "undefined") {
+                    window.clearTimeout(resizeTimer);
+                }
+                if (config.responsive !== false && typeof window !== "undefined") {
+                    window.removeEventListener("resize", handleResize);
+                }
+                if (instance && typeof instance.destroy === "function") {
+                    instance.destroy();
+                }
+                if (typeof removeGesturePrevention === "function") {
+                    removeGesturePrevention();
+                }
+            },
+            rebuild
+        };
+    };
+
+    return {
+        createTouchpadControls,
+        create,
+        buildLayout,
+        chooseLayout,
+        getLayoutMetrics,
+        parseKeys,
+        simulateKeyEvent,
+        resolveKeyDescriptor,
+        _internal: {
+            buildButtonsForLayout,
+            normalizeBindings,
+            clampPosition
+        }
+    };
+}));
+
+</script>
+    <script>
+    const touchBindings = {
+        "move": {
+            "left": "KeyA",
+            "right": "KeyD"
+        },
+        "jump": "KeyW",
+        "modifier": "ShiftLeft"
+    };
+    const touchActionMeta = {
+        "move": {
+            "kind": "axis",
+            "behavior": "continuous",
+            "interaction": "hold",
+            "simultaneous": true
+        },
+        "jump": {
+            "kind": "button",
+            "behavior": "discrete",
+            "interaction": "tap",
+            "simultaneous": true
+        },
+        "modifier": {
+            "kind": "button",
+            "behavior": "discrete",
+            "interaction": "tap",
+            "simultaneous": true
+        }
+    };
+
+    TouchpadControls.create({
+        layout: "auto",
+        bindings: touchBindings,
+        actionMeta: touchActionMeta
+    });
+</script>
+</body>
+</html>

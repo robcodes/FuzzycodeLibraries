@@ -1,0 +1,3412 @@
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Fluffy Rope Swinger - Adventure Edition</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #1a1a1a;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+    font-family: sans-serif;
+  }
+
+  #gameCanvas {
+    display: block;
+    background: #333;
+  }
+
+  .instructions {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: #fff;
+    background: rgba(0,0,0,0.7);
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 14px;
+    z-index: 9999;
+    max-width: 400px;
+  }
+
+  /* Game UI is handled within Phaser */
+
+  .level-select {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+  }
+
+  .level-button {
+    background: #4a5568;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 15px 25px;
+    margin: 10px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .level-button:hover {
+    background: #2d3748;
+    transform: scale(1.05);
+  }
+
+  .level-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-top: 20px;
+  }
+
+  .title {
+    font-size: 36px;
+    color: white;
+    margin-bottom: 30px;
+    text-shadow: 0 0 10px #00aaff;
+  }
+
+  .locked {
+    background: #718096;
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  .locked:hover {
+    transform: none;
+    background: #718096;
+  }
+
+  .stars {
+    display: flex;
+    justify-content: center;
+    margin-top: 5px;
+  }
+
+  .star {
+    color: #ffd700;
+    margin: 0 2px;
+  }
+
+  .empty-star {
+    color: #718096;
+  }
+</style>
+</head>
+<body>
+
+<!-- Game UI is handled within Phaser -->
+
+<script src="https://cdn.fuzzycode.dev/resolve?url=https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.js"></script>
+<script>
+const levels = [
+  {
+    level_data: [
+      "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+      "B...............K......K.........K.....B",
+      "B.......................................B",
+      "B...............G.......................B",
+      "B.P.....................................B",
+      "B.....G.....................G...........B",
+      "B###.###......#####...................F.B",
+      "B.......................................B",
+      "B.........K.................K...........B",
+      "B.......................................B",
+      "B.......................................B",
+      "B...G.......................G...........B",
+      "B.......................................B",
+      "B.......................................B",
+      "B.......................................B",
+      "B.......................................B",
+      "........................................."
+    ],
+    name: "Training Grounds",
+    par_time: 30,
+    gem_count: 4
+  },
+  {
+    level_data: [
+      "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+      "B.....K.........K.........K.........K.........K...........B",
+      "B.........................................................B",
+      "B.........................................................B",
+      "B.P......................................................FB",
+      "B#####....#####....#####....#####....#####................B",
+      "B.........................................................B",
+      "B.........................................................B",
+      "B.....G.......S.......G.......S.......G...................B",
+      "B.........................................................B",
+      "B.........................................................B",
+      "B.................H.......................................B",
+      "B.........................................................B",
+      "..........................................................."
+    ],
+    name: "Pendulum Valley",
+    par_time: 40,
+    gem_count: 3
+  },
+  {
+    level_data: [
+      "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+      "B.....K.........K.........K.........K.........K.........K.........K.............B",
+      "B...............................................................................B",
+      "B.P.............................................................................B",
+      "B###............................................................................B",
+      "B...............................................................................B",
+      "B...............................................................................B",
+      "B......G.......H.......G.......S.......G.......H.......G.......S.......G.....F..B",
+      "B...............................................................................B",
+      "B...............................................................................B",
+      "B...............................................................................B",
+      "B...............................................................................B",
+      "B...............................................................................B",
+      "................................................................................."
+    ],
+    name: "Danger Swing",
+    par_time: 60,
+    gem_count: 6
+  },
+  {
+    level_data: [
+      "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+      "B...............................................................................B",
+      "B...............................................................................B",
+      "B...............................................................................B",
+      "B.P.............................................................................B",
+      "B###............................................................................B",
+      "B.........K.....K.....K.....K.....K.....K.....K.....K.....K.....K...............B",
+      "B...............................................................................B",
+      "B...............................................................................B",
+      "B...............................................................................B",
+      "B...............................................................................B",
+      "B.......G.......H.......S.......G.......H.......S.......G.......................B",
+      "B...............................................................................B",
+      "B.................................................................####..........B",
+      "B.................................................................#.............B",
+      "B.................................................................#.............B",
+      "B.................................................................#.............B",
+      "B.................................................................#.....F.......B",
+      "B...............................................................................B",
+      "................................................................................."
+    ],
+    name: "Swing Master",
+    par_time: 80,
+    gem_count: 5
+  },
+  {
+    level_data: [
+      "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+      "B...............................................................................B",
+      "B...............................................................................B",
+      "B...............................................................................B",
+      "B.P.............................................................................B",
+      "B###............................................................................B",
+      "B...............................................................................B",
+      "B...............................................................................B",
+      "B...............................................................................B",
+      "B...............................................................................B",
+      "B.......K.......................................................................B",
+      "B...............................................................................B",
+      "B.........K.....................................................................B",
+      "B...............................................................................B",
+      "B...........K...................................................................B",
+      "B...............................................................................B",
+      "B.............K.................................................................B",
+      "B...............................................................................B",
+      "B...............K...............................................................B",
+      "B...............................................................................B",
+      "B.................K.............................................................B",
+      "B...............................................................................B",
+      "B...................K...........................................................B",
+      "B...............................................................................B",
+      "B.....................K.........................................................B",
+      "B...............................................................................B",
+      "B.......................K.......................................................B",
+      "B...............................................................................B",
+      "B.........................K.....................................................B",
+      "B...............................................................................B",
+      "B...........................K...................................................B",
+      "B...............................................................................B",
+      "B.............................K.................................................B",
+      "B...............................................................................B",
+      "B...............................K...............................................B",
+      "B...............................................................................B",
+      "B.................................K.............................................B",
+      "B...............................................................................B",
+      "B...................................K...........................................B",
+      "B...............................................................................B",
+      "B.....................................K.........................................B",
+      "B...............................................................................B",
+      "B.......................................K.......................................B",
+      "B...............................................................................B",
+      "B.........................................K.....................................B",
+      "B...............................................................................B",
+      "B...........................................K...................................B",
+      "B...............................................................................B",
+      "B.............................................K.................................B",
+      "B...............................................................................B",
+      "B...............................................K...............................B",
+      "B...............................................................................B",
+      "B.................................................K.............................B",
+      "B...............................................................................B",
+      "B...................................................K...........................B",
+      "B...............................................................................B",
+      "B.....................................................K.........................B",
+      "B...............................................................................B",
+      "B.......................................................K.......................B",
+      "B...............................................................................B",
+      "B.........................................................K.....................B",
+      "B...............................................................................B",
+      "B...........................................................K...................B",
+      "B...............................................................................B",
+      "B.............................................................K.................B",
+      "B...............................................................................B",
+      "B...............................................................K...............B",
+      "B...............................................................................B",
+      "B.................................................................K.............B",
+      "B...............................................................................B",
+      "B...................................................................K...........B",
+      "B...............................................................................B",
+      "B.....................................................................K.........B",
+      "B...............................................................................B",
+      "B.......................................................................K.......B",
+      "B...............................................................................B",
+      "B.........................................................................K.....B",
+      "B...............................................................................B",
+      "B...........................................................................K...B",
+      "B...............................................................................B",
+      "B.............................................................................K.B",
+      "B...............................................................................B",
+      "B...............................................................................B",
+      "B...............................................................................F",
+      "B...............................................................................B",
+      "................................................................................."
+    ],
+    name: "The Long Haul",
+    par_time: 120,
+    gem_count: 0
+  }
+];
+
+// Load saved game data or initialize new data
+const savedData = localStorage.getItem('fluffyRopeSwinger');
+let gameData = savedData ? JSON.parse(savedData) : {
+  levelsUnlocked: 1,
+  levelStars: Array(levels.length).fill(0),
+  bestTimes: Array(levels.length).fill(null),
+  gemCollected: Array(levels.length).fill(0)
+};
+
+// Sound effects
+const SOUNDS = {
+  SWING: "https://sounds.fuzzycode.dev/sound_effect?prompt=rope swing swoosh&duration=0.5&ext=.mp3",
+  JUMP: "https://sounds.fuzzycode.dev/sound_effect?prompt=spring jump boing&duration=0.5&ext=.mp3",
+  GEM: "https://sounds.fuzzycode.dev/sound_effect?prompt=gem collection sparkle&duration=0.5&ext=.mp3",
+  SPLASH: "https://sounds.fuzzycode.dev/sound_effect?prompt=water splash&duration=0.5&ext=.mp3",
+  WIN: "https://sounds.fuzzycode.dev/sound_effect?prompt=victory fanfare&duration=1.5&ext=.mp3",
+  HURT: "https://sounds.fuzzycode.dev/sound_effect?prompt=character hurt oof&duration=0.5&ext=.mp3",
+  BACKGROUND: "https://sounds.fuzzycode.dev/music?prompt=upbeat adventure game background music&duration=30&ext=.mp3"
+};
+
+// Preload audio
+const audioCache = {};
+Object.entries(SOUNDS).forEach(([key, url]) => {
+  audioCache[key] = new Audio(url);
+  if (key === 'BACKGROUND') {
+    audioCache[key].loop = true;
+    audioCache[key].volume = 0.4;
+  }
+});
+
+function  playSound(sound) {
+  if (audioCache[sound]) {
+    // Make sure to pause first to prevent any overlapping sounds
+    audioCache[sound].pause();
+    audioCache[sound].currentTime = 0;
+    audioCache[sound].play().catch(e => console.log("Audio play error:", e));
+  }
+}
+
+class TitleScene extends Phaser.Scene {
+  constructor() {
+    super({ key: 'TitleScene' });
+  }
+
+  preload() {
+    this.load.image('titleBg', 'https://images.fuzzycode.dev/fast_ai?search=fluffy cute animal in magical forest with rope swing adventure&resize=800x600');
+    this.load.image('logo', 'https://images.fuzzycode.dev/fast_ai?search=cute game logo fluffy rope swinger adventure&resize=400x200&transparency=true');
+  }
+
+  create() {
+    // Start the physics world for the game
+    this.matter.world.resume();
+
+    // Background
+    this.add.image(window.innerWidth/2, window.innerHeight/2, 'titleBg')
+      .setDisplaySize(window.innerWidth, window.innerHeight);
+
+    // Logo
+    const logo = this.add.image(window.innerWidth/2, 150, 'logo')
+      .setOrigin(0.5);
+
+    // Start button
+    const startButton = this.add.rectangle(window.innerWidth/2, window.innerHeight - 150, 200, 60, 0x3498db)
+      .setStrokeStyle(4, 0x2980b9)
+      .setInteractive({ useHandCursor: true });
+
+    const startText = this.add.text(window.innerWidth/2, window.innerHeight - 150, 'START GAME', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '24px',
+      color: '#ffffff',
+      fontStyle: 'bold'
+    }).setOrigin(0.5);
+
+    startButton.on('pointerover', () => {
+      startButton.fillColor = 0x2980b9;
+    });
+
+    startButton.on('pointerout', () => {
+      startButton.fillColor = 0x3498db;
+    });
+
+    startButton.on('pointerdown', () => {
+      this.scene.start('LevelSelectScene');
+    });
+
+    // Instructions panel - positioned higher on the screen to avoid overlapping the start button
+    const instructionsPanel = this.add.rectangle(window.innerWidth/2, window.innerHeight/2 - 50, 500, 350, 0x000000, 0.7)
+      .setStrokeStyle(2, 0xffffff);
+
+    const instructionsTitle = this.add.text(window.innerWidth/2, window.innerHeight/2 - 200, 'HOW TO PLAY', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '28px',
+      color: '#ffffff',
+      fontStyle: 'bold'
+    }).setOrigin(0.5);
+
+    const controlsText = this.add.text(window.innerWidth/2 - 230, window.innerHeight/2 - 150, 
+      'CONTROLS:\n\n• Press and hold SPACE to hook onto the nearest anchor\n• Release SPACE to let go and jump\n• Use A/D or LEFT/RIGHT ARROW keys to control mid-air\n• Press R to restart level', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '16px',
+      color: '#ffffff',
+      align: 'left'
+    });
+
+    const goalsText = this.add.text(window.innerWidth/2 - 230, window.innerHeight/2 - 30, 
+      'GOALS:\n\n• Collect gems for bonus points\n• Reach your cozy bed home as fast as possible\n• Avoid hazards and water\n• Complete special challenges for stars', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '16px',
+      color: '#ffffff',
+      align: 'left'
+    });
+  }
+}
+
+class LevelSelectScene extends Phaser.Scene {
+  constructor() {
+    super({ key: 'LevelSelectScene' });
+  }
+
+  preload() {
+    this.load.image('bgTile', 'https://aws.fuzzycode.dev/image_buddy_365day_cache/uploads/1c159ab3-db18-4cfe-847d-0342d6f3038c/deep blue space with stars background!resize_128x128.png');
+  }
+
+  create() {
+    // Background
+    const bgWidth = this.textures.get('bgTile').getSourceImage().width;
+    const bgHeight = this.textures.get('bgTile').getSourceImage().height;
+
+    const cols = Math.ceil(window.innerWidth / bgWidth);
+    const rows = Math.ceil(window.innerHeight / bgHeight);
+
+    for (let x = 0; x < cols; x++) {
+      for (let y = 0; y < rows; y++) {
+        this.add.image(x * bgWidth + bgWidth/2, y * bgHeight + bgHeight/2, 'bgTile');
+      }
+    }
+
+    // Title
+    const title = this.add.text(window.innerWidth / 2, 100, 'FLUFFY ROPE SWINGER', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '48px',
+      color: '#ffffff',
+      fontStyle: 'bold',
+      stroke: '#000000',
+      strokeThickness: 6,
+      shadow: { offsetX: 2, offsetY: 2, color: '#000', blur: 5, stroke: true, fill: true }
+    }).setOrigin(0.5);
+
+    // Create level selection grid
+    const container = this.add.container(window.innerWidth / 2, window.innerHeight / 2);
+
+    let gridX = -250;
+    let gridY = -100;
+    const buttonWidth = 150;
+    const buttonHeight = 100;
+    const buttonsPerRow = 3;
+
+    for (let i = 0; i < levels.length; i++) {
+      const row = Math.floor(i / buttonsPerRow);
+      const col = i % buttonsPerRow;
+
+      const x = gridX + col * (buttonWidth + 20);
+      const y = gridY + row * (buttonHeight + 40);
+
+      const isLocked = i >= gameData.levelsUnlocked;
+
+      // Button background
+      const button = this.add.rectangle(x, y, buttonWidth, buttonHeight, isLocked ? 0x555555 : 0x3498db, isLocked ? 0.7 : 1)
+        .setStrokeStyle(4, isLocked ? 0x444444 : 0x2980b9)
+        .setInteractive({ useHandCursor: true });
+
+      if (!isLocked) {
+        button.on('pointerover', () => {
+          button.fillColor = 0x2980b9;
+        });
+
+        button.on('pointerout', () => {
+          button.fillColor = 0x3498db;
+        });
+
+        button.on('pointerdown', () => {
+          this.scene.start('MainScene', { currentLevel: i });
+        });
+      }
+
+      // Level number
+      const levelText = this.add.text(x, y - 15, `Level ${i + 1}`, {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '24px',
+        color: '#ffffff',
+        fontStyle: 'bold'
+      }).setOrigin(0.5);
+
+      // Level name
+      const nameText = this.add.text(x, y + 15, isLocked ? "Locked" : levels[i].name, {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '16px',
+        color: '#ffffff'
+      }).setOrigin(0.5);
+
+      // Stars
+      if (!isLocked) {
+        const starsEarned = gameData.levelStars[i];
+        const starY = y + 40;
+        const starSpacing = 20;
+
+        for (let s = 0; s < 3; s++) {
+          const starX = x + (s - 1) * starSpacing;
+          const starColor = s < starsEarned ? 0xffcc00 : 0x555555;
+
+          const star = this.add.star(starX, starY, 5, 8, 15, starColor);
+          star.setStrokeStyle(1, 0x000000);
+        }
+      }
+
+      container.add([button, levelText, nameText]);
+    }
+
+    // Reset progress button
+    const resetButton = this.add.rectangle(window.innerWidth / 2, window.innerHeight - 50, 200, 40, 0xe74c3c)
+      .setStrokeStyle(2, 0xc0392b)
+      .setInteractive({ useHandCursor: true });
+
+    resetButton.on('pointerover', () => {
+      resetButton.fillColor = 0xc0392b;
+    });
+
+    resetButton.on('pointerout', () => {
+      resetButton.fillColor = 0xe74c3c;
+    });
+
+    resetButton.on('pointerdown', () => {
+      if (confirm("Are you sure you want to reset all progress?")) {
+        gameData = {
+          levelsUnlocked: 1,
+          levelStars: Array(levels.length).fill(0),
+          bestTimes: Array(levels.length).fill(null),
+          gemCollected: Array(levels.length).fill(0)
+        };
+        localStorage.setItem('fluffyRopeSwinger', JSON.stringify(gameData));
+        this.scene.restart();
+      }
+    });
+
+    const resetText = this.add.text(window.innerWidth / 2, window.innerHeight - 50, "Reset Progress", {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '16px',
+      color: '#ffffff',
+      fontStyle: 'bold'
+    }).setOrigin(0.5);
+  }
+}
+
+class MainScene extends Phaser.Scene {
+  constructor() {
+    super({ key: 'MainScene' });
+  }
+
+  preload() {
+    this.load.image('bgTile', 'https://images.fuzzycode.dev/fast_ai?search=blue sky with clouds background&resize=128x128');
+    this.load.image('player', 'https://images.fuzzycode.dev/fast_ai?search=fluffy cartoon creature with big eyes&resize=64x64&transparency=true');
+    this.load.image('playerHurt', 'https://images.fuzzycode.dev/fast_ai?search=fluffy cartoon creature with big eyes looking hurt&resize=64x64&transparency=true');
+    this.load.image('knob', 'https://images.fuzzycode.dev/fast_ai?search=metal hook attachment point&resize=32x32&transparency=true');
+    this.load.image('finishLine', 'https://images.fuzzycode.dev/fast_ai?search=cute fluffy animal bed with pillows&resize=64x64&transparency=true');
+    this.load.image('water', 'https://images.fuzzycode.dev/fast_ai?search=blue water animated pixel art&resize=64x32');
+    this.load.image('gem', 'https://images.fuzzycode.dev/fast_ai?search=sparkling blue diamond gem&resize=32x32&transparency=true');
+    this.load.image('spikes', 'https://images.fuzzycode.dev/fast_ai?search=metal spikes trap&resize=64x32&transparency=true');
+    this.load.image('platform', 'https://images.fuzzycode.dev/fast_ai?search=stone platform tile&resize=32x32');
+    this.load.image('block', 'https://aws.fuzzycode.dev/image_buddy_365day_cache/uploads/1c159ab3-db18-4cfe-847d-0342d6f3038c/stone wall block!resize_32x32.png');
+
+    // We're using direct Audio objects instead of Phaser's audio system
+    // to avoid doubled music playback, so we don't need to load audio in Phaser
+  }
+
+  create() {
+    // Important: create() gets called for each level restart, so we need to check
+    // if this is the final win state before resetting everything
+    const isGameComplete = this.scene.settings.data?.gameComplete || false;
+
+    this.matter.world.resume(); // Resume the world immediately instead of pausing
+    this.gameStarted = true; // Start immediately since we have title screen instructions now
+    this.gameOver = false;
+    this.levelComplete = false;
+
+    // Setup background music - using only the direct Audio object
+    // to avoid doubled music playback
+    if (!audioCache['BACKGROUND'].isPlaying) {
+      audioCache['BACKGROUND'].play().catch(e => console.log("Audio play error:", e));
+    }
+
+    if (isGameComplete) {
+      this.winText = this.add.text(400, 200, '🎉 CONGRATULATIONS! 🎉\n\nYou\'ve completed all levels!\n\nPress SPACE to return to level select', {
+        fontSize: '32px',
+        fill: '#fff',
+        align: 'center',
+        backgroundColor: '#000000aa',
+        padding: { x: 20, y: 10 }
+      });
+      this.winText.setOrigin(0.5);
+      this.winText.setScrollFactor(0);
+      this.winText.setDepth(10);
+      this.winText.setVisible(true);
+
+      const returnToMenu = () => {
+        this.scene.start('LevelSelectScene');
+      };
+      this.input.keyboard.once('keydown-SPACE', returnToMenu);
+      this.input.once('pointerdown', returnToMenu);
+      return;
+    }
+
+    this.currentLevel = this.scene.settings.data?.currentLevel || 0;
+    const levelMap = levels[this.currentLevel].level_data;
+    this.levelParTime = levels[this.currentLevel].par_time;
+    this.totalGems = levels[this.currentLevel].gem_count;
+    this.collectedGems = 0;
+
+    this.elapsedTime = 0;
+    this.timerEvent = null;
+
+    // Initialize physics groups and collections
+    this.tileSize = 32;
+    this.anchors = [];
+    this.platforms = [];
+    this.gems = [];
+    this.hazards = [];
+    this.blocks = [];
+
+    // Create background
+    const bgWidth = this.textures.get('bgTile').getSourceImage().width;
+    const bgHeight = this.textures.get('bgTile').getSourceImage().height;
+    this.resizeBackground(bgWidth, bgHeight);
+
+    // Parse the level map
+    for (let y = 0; y < levelMap.length; y++) {
+      for (let x = 0; x < levelMap[y].length; x++) {
+        const tile = levelMap[y][x];
+        const posX = x * this.tileSize + this.tileSize/2;
+        const posY = y * this.tileSize + this.tileSize/2;
+
+        switch(tile) {
+          case 'K': // Anchor points
+            let anchorBody = this.matter.add.circle(posX, posY, 16, {
+              isStatic: true,
+              isSensor: true,
+              collisionFilter: {
+                group: -1,
+                category: 0x0002,
+                mask: 0x0000
+              }
+            });
+            let anchorGraphics = this.add.image(posX, posY, 'knob').setScale(1);
+            anchorGraphics.setDepth(1);
+            this.anchors.push({ body: anchorBody, x: posX, y: posY, sprite: anchorGraphics });
+            break;
+
+          case 'P': // Player start position
+            this.player = this.matter.add.image(posX, posY, 'player', null, {
+              shape: { type: 'circle', radius: 16 },
+              frictionAir: 0.01,
+              restitution: 0.3,
+              friction: 0.05
+            }).setScale(0.8);
+            this.player.setFixedRotation();
+            this.player.setMass(2);
+            this.player.setDepth(5);
+            this.playerStartPosition = { x: posX, y: posY };
+            break;
+
+          case 'F': // Finish line
+            this.finishLine = this.add.image(posX, posY, 'finishLine');
+            this.finishLine.setDepth(2);
+            // Add a sensor for the finish line
+            this.finishSensor = this.matter.add.rectangle(posX, posY, 32, 64, {
+              isStatic: true,
+              isSensor: true
+            });
+            break;
+
+          case '#': // Platforms
+            let platform = this.matter.add.image(posX, posY, 'platform', null, {
+              isStatic: true,
+              friction: 0.5
+            });
+            platform.setDepth(1);
+            this.platforms.push(platform);
+            break;
+
+          case 'G': // Gems
+            let gem = this.matter.add.image(posX, posY, 'gem', null, {
+              isStatic: true,
+              isSensor: true
+            }).setScale(0.8);
+            gem.setDepth(3);
+            gem.collected = false;
+            this.gems.push(gem);
+            break;
+
+          case 'S': // Spikes (hazards)
+            let spikes = this.matter.add.image(posX, posY, 'spikes', null, {
+              isStatic: true,
+              isSensor: true
+            });
+            spikes.setDepth(3);
+            this.hazards.push(spikes);
+            break;
+
+          case 'B': // Boundary blocks
+            let block = this.matter.add.image(posX, posY, 'block', null, {
+              isStatic: true
+            });
+            block.setDepth(1);
+            this.blocks.push(block);
+            break;
+
+          case 'H': // Moving hazards (pendulums)
+            // Create a pendulum with a spike at the end
+            const pendulumLength = 120;
+            const anchorX = posX;
+            const anchorY = posY - pendulumLength;
+
+            // Create static anchor point
+            const pendulumAnchor = this.matter.add.circle(anchorX, anchorY, 8, {
+              isStatic: true
+            });
+
+            // Create the pendulum body
+            const pendulumSpike = this.matter.add.image(posX, posY, 'spikes', null, {
+              shape: { type: 'circle', radius: 16 },
+              isSensor: true
+            }).setScale(1.2);
+            pendulumSpike.setDepth(4);
+
+            // Create a constraint between anchor and spike
+            this.matter.add.constraint(pendulumAnchor, pendulumSpike.body, pendulumLength, 0, {
+              pointA: { x: 0, y: 0 },
+              pointB: { x: 0, y: -16 }
+            });
+
+            // Add to hazards
+            this.hazards.push(pendulumSpike);
+
+            // Draw the chain
+            const pendulumGraphics = this.add.graphics();
+            pendulumGraphics.setDepth(2);
+            this.pendulumGraphics = pendulumGraphics;
+
+            // Give initial swing
+            this.matter.body.setVelocity(pendulumSpike.body, { x: 2, y: 0 });
+            break;
+        }
+      }
+    }
+
+    // Setup game mechanics
+    this.hookConstraint = null;
+    this.currentAnchor = null;
+    this.isHurt = false;
+
+    // Graphics for rope and highlights
+    this.hookGraphics = this.add.graphics();
+    this.hookGraphics.setDepth(3);
+
+    this.highlightGraphics = this.add.graphics();
+    this.highlightGraphics.setDepth(3);
+
+    // Trail effect for player
+    this.playerTrail = this.add.graphics();
+    this.playerTrail.setDepth(2);
+    this.trailPoints = [];
+    this.trailMaxPoints = 10;
+
+    // Input handlers
+    this.setupInputHandlers();
+
+    // Camera follow
+    this.setupCamera();
+
+    // Water/lava at the bottom
+    this.setupWater();
+
+    // UI elements
+    this.setupUI();
+
+    // Collision handlers
+    this.setupCollisions();
+
+    // Resize handler
+    window.addEventListener('resize', () => this.scale.resize(window.innerWidth, window.innerHeight));
+    this.scale.resize(window.innerWidth, window.innerHeight);
+
+    // Update gem counter
+    this.updateGemCounter();
+
+    // Add restart key
+    this.input.keyboard.on('keydown-R', () => {
+      if (this.gameStarted && !this.gameOver && !this.levelComplete) {
+        this.restartLevel();
+      }
+    });
+
+    // Add mid-air control keys
+    this.leftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT);
+    this.rightKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.RIGHT);
+    this.aKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+    this.dKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
+  }
+
+  resizeBackground(bgWidth, bgHeight) {
+    const levelWidth = Math.max(...levels[this.currentLevel].level_data.map(row => row.length)) * this.tileSize;
+    const levelHeight = levels[this.currentLevel].level_data.length * this.tileSize;
+
+    const cols = Math.ceil(levelWidth / bgWidth);
+    const rows = Math.ceil(levelHeight / bgHeight);
+
+    for (let x = 0; x < cols; x++) {
+      for (let y = 0; y < rows; y++) {
+        this.add.image(x * bgWidth + bgWidth/2, y * bgHeight + bgHeight/2, 'bgTile').setDepth(-1);
+      }
+    }
+  }
+
+  setupInputHandlers() {
+    const startHook = () => {
+      if (!this.gameStarted) {
+        this.gameStarted = true;
+        this.startTimer();
+      }
+
+      if (this.hookConstraint || this.gameOver || this.levelComplete) return;
+
+      let candidate = this.findNearestAnchorAbove();
+      if (candidate) {
+        let dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, candidate.x, candidate.y);
+        if (dist < 300) { // Maximum hook distance
+          this.hookConstraint = this.matter.add.constraint(this.player.body, candidate.body, dist, 0.2);
+          this.currentAnchor = candidate;
+          playSound('SWING');
+
+          // Add a little swing boost
+          const angle = Phaser.Math.Angle.Between(this.player.x, this.player.y, candidate.x, candidate.y);
+          const perpAngle = angle + Math.PI/2;
+          this.matter.body.applyForce(this.player.body, 
+            {x: this.player.x, y: this.player.y}, 
+            {x: Math.cos(perpAngle) * 0.05, y: Math.sin(perpAngle) * 0.05});
+        }
+      }
+    };
+
+    const releaseHook = () => {
+      if (this.hookConstraint) {
+        this.matter.world.removeConstraint(this.hookConstraint);
+        this.hookConstraint = null;
+        this.currentAnchor = null;
+
+        // Apply jump boost on release
+        const currentVelocity = this.player.body.velocity;
+        const jumpForce = 0.08;
+
+        this.matter.body.applyForce(
+          this.player.body,
+          {x: this.player.x, y: this.player.y},
+          {x: 0, y: -jumpForce}
+        );
+
+        playSound('JUMP');
+
+        // Temporarily reduce gravity for more floaty jumps
+        let originalGravity = this.matter.world.engine.world.gravity.y;
+        this.matter.world.engine.world.gravity.y = 0.5;
+
+        this.time.delayedCall(500, () => {
+          if (!this.gameOver && !this.levelComplete) {
+            this.matter.world.engine.world.gravity.y = originalGravity;
+          }
+        });
+      }
+    };
+
+    this.input.keyboard.on('keydown-SPACE', startHook);
+    this.input.keyboard.on('keyup-SPACE', releaseHook);
+
+    this.input.on('pointerdown', startHook);
+    this.input.on('pointerup', releaseHook);
+  }
+
+  setupCamera() {
+    const levelWidth = Math.max(...levels[this.currentLevel].level_data.map(row => row.length)) * this.tileSize;
+    const levelHeight = levels[this.currentLevel].level_data.length * this.tileSize;
+
+    this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+    this.cameras.main.setFollowOffset(-100, 0);
+    this.cameras.main.setBounds(0, 0, levelWidth, levelHeight);
+  }
+
+  setupWater() {
+    const levelWidth = Math.max(...levels[this.currentLevel].level_data.map(row => row.length)) * this.tileSize;
+    const levelHeight = levels[this.currentLevel].level_data.length * this.tileSize;
+
+    // Add water tiles at the bottom
+    const waterY = levelHeight - 16;
+    this.waterTiles = [];
+    for (let x = 0; x < levelWidth; x += 64) {
+      const waterTile = this.add.image(x + 32, waterY, 'water');
+      waterTile.setDepth(1);
+      this.waterTiles.push(waterTile);
+    }
+
+    // Add water collision sensor
+    this.waterSensor = this.matter.add.rectangle(
+      levelWidth / 2,
+      waterY,
+      levelWidth,
+      32,
+      { isSensor: true, isStatic: true }
+    );
+  }
+
+  setupUI() {
+    // Timer text
+    this.timerText = this.add.text(window.innerWidth - 20, 20, 'Time: 0:00', {
+      fontSize: '20px',
+      fill: '#fff',
+      fontStyle: 'bold',
+      backgroundColor: '#000000aa',
+      padding: { x: 10, y: 5 }
+    });
+    this.timerText.setOrigin(1, 0);
+    this.timerText.setScrollFactor(0);
+    this.timerText.setDepth(10);
+
+    // Gem counter
+    this.gemText = this.add.text(window.innerWidth - 20, 60, `Gems: 0/${this.totalGems}`, {
+      fontSize: '20px',
+      fill: '#fff',
+      fontStyle: 'bold',
+      backgroundColor: '#000000aa',
+      padding: { x: 10, y: 5 }
+    });
+    this.gemText.setOrigin(1, 0);
+    this.gemText.setScrollFactor(0);
+    this.gemText.setDepth(10);
+
+    // Level text
+    this.levelText = this.add.text(20, 20, `Level ${this.currentLevel + 1}: ${levels[this.currentLevel].name}`, {
+      fontSize: '20px',
+      fill: '#fff',
+      fontStyle: 'bold',
+      backgroundColor: '#000000aa',
+      padding: { x: 10, y: 5 }
+    });
+    this.levelText.setScrollFactor(0);
+    this.levelText.setDepth(10);
+
+    // Win text (initially hidden)
+    this.winText = this.add.text(window.innerWidth/2, window.innerHeight/2 - 100, '', {
+      fontSize: '32px',
+      fill: '#fff',
+      align: 'center',
+      backgroundColor: '#000000aa',
+      padding: { x: 20, y: 10 }
+    });
+    this.winText.setOrigin(0.5);
+    this.winText.setScrollFactor(0);
+    this.winText.setDepth(10);
+    this.winText.setVisible(false);
+
+    // Stars display for level completion
+    this.starsGroup = this.add.container(window.innerWidth/2, window.innerHeight/2);
+    this.starsGroup.setScrollFactor(0);
+    this.starsGroup.setDepth(10);
+    this.starsGroup.setVisible(false);
+
+    // Create star outlines
+    for (let i = 0; i < 3; i++) {
+      const x = (i - 1) * 80;
+      const starOutline = this.add.star(x, 0, 5, 30, 60, 0x333333);
+      starOutline.setStrokeStyle(2, 0x000000);
+      this.starsGroup.add(starOutline);
+    }
+
+    // Stars will be filled in when earned
+    this.starsFilled = [];
+  }
+
+  setupCollisions() {
+    // Collision with finish line
+    this.matter.world.on('collisionstart', (event) => {
+      const pairs = event.pairs;
+
+      for (let i = 0; i < pairs.length; i++) {
+        const bodyA = pairs[i].bodyA;
+        const bodyB = pairs[i].bodyB;
+
+        // Check for water collision
+        if ((bodyA === this.player.body && bodyB === this.waterSensor) ||
+            (bodyB === this.player.body && bodyA === this.waterSensor)) {
+          if (!this.gameOver && !this.levelComplete) {
+            this.playerDeath('water');
+          }
+          return;
+        }
+
+        // Check for finish line
+        if ((bodyA === this.player.body && bodyB === this.finishSensor) ||
+            (bodyB === this.player.body && bodyA === this.finishSensor)) {
+          if (!this.gameOver && !this.levelComplete) {
+            this.completeLevel();
+          }
+          return;
+        }
+
+        // Check for gem collection
+        for (let j = 0; j < this.gems.length; j++) {
+          if (!this.gems[j].collected && 
+              ((bodyA === this.player.body && bodyB === this.gems[j].body) ||
+               (bodyB === this.player.body && bodyA === this.gems[j].body))) {
+            this.collectGem(this.gems[j]);
+            break;
+          }
+        }
+
+        // Check for hazard collision
+        for (let j = 0; j < this.hazards.length; j++) {
+          if ((bodyA === this.player.body && bodyB === this.hazards[j].body) ||
+              (bodyB === this.player.body && bodyA === this.hazards[j].body)) {
+            if (!this.isHurt && !this.gameOver && !this.levelComplete) {
+              this.hurtPlayer();
+            }
+            break;
+          }
+        }
+      }
+    });
+  }
+
+  startTimer() {
+    this.timerEvent = this.time.addEvent({
+      delay: 1000,
+      callback: this.updateTimer,
+      callbackScope: this,
+      loop: true
+    });
+  }
+
+  updateTimer() {
+    this.elapsedTime++;
+    const minutes = Math.floor(this.elapsedTime / 60);
+    const seconds = this.elapsedTime % 60;
+    this.timerText.setText(`Time: ${minutes}:${seconds.toString().padStart(2, '0')}`);
+  }
+
+  updateGemCounter() {
+    this.gemText.setText(`Gems: ${this.collectedGems}/${this.totalGems}`);
+  }
+
+  findNearestAnchorAbove() {
+    let playerX = this.player.x;
+    let playerY = this.player.y;
+    let minDist = Infinity;
+    let candidate = null;
+
+    for (let a of this.anchors) {
+      let dist = Phaser.Math.Distance.Between(playerX, playerY, a.x, a.y);
+      // Only consider anchors within a reasonable distance
+      if (dist < 300 && dist < minDist) {
+        minDist = dist;
+        candidate = a;
+      }
+    }
+    return candidate;
+  }
+
+  collectGem(gem) {
+    if (gem.collected) return;
+
+    gem.collected = true;
+    this.collectedGems++;
+    this.updateGemCounter();
+
+    // Play sound
+    playSound('GEM');
+
+    // Visual feedback
+    this.tweens.add({
+      targets: gem,
+      y: gem.y - 50,
+      alpha: 0,
+      scale: 1.5,
+      duration: 500,
+      ease: 'Power2',
+      onComplete: () => {
+        gem.setVisible(false);
+        gem.body.destroy();
+      }
+    });
+
+    // Particle effect - updated for Phaser 3.60.0
+    const particleConfig = {
+      x: gem.x,
+      y: gem.y,
+      speed: { min: 50, max: 100 },
+      scale: { start: 0.4, end: 0 },
+      alpha: { start: 1, end: 0 },
+      lifespan: 800,
+      blendMode: 'ADD'
+    };
+
+    // Create particle manager with emitter configuration
+    const particles = this.add.particles(gem.x, gem.y, 'gem', {
+      emitting: true,
+      lifespan: 800,
+      speed: { min: 50, max: 100 },
+      scale: { start: 0.4, end: 0 },
+      alpha: { start: 1, end: 0 },
+      blendMode: 'ADD',
+      quantity: 20
+    });
+
+    // Stop emitting after a short time
+    this.time.delayedCall(300, () => {
+      particles.stop();
+      this.time.delayedCall(800, () => {
+        particles.destroy();
+      });
+    });
+  }
+
+  hurtPlayer() {
+    if (this.isHurt) return;
+
+    this.isHurt = true;
+    playSound('HURT');
+
+    // Visual feedback
+    this.player.setTexture('playerHurt');
+
+    // Apply knockback
+    const knockbackForce = 0.1;
+    const knockbackDirection = { x: Math.random() - 0.5, y: -1 };
+    this.matter.body.applyForce(
+      this.player.body,
+      { x: this.player.x, y: this.player.y },
+      { x: knockbackDirection.x * knockbackForce, y: knockbackDirection.y * knockbackForce }
+    );
+
+    // Release hook if attached
+    if (this.hookConstraint) {
+      this.matter.world.removeConstraint(this.hookConstraint);
+      this.hookConstraint = null;
+      this.currentAnchor = null;
+    }
+
+    // Camera shake
+    this.cameras.main.shake(300, 0.01);
+
+    // Reset after a delay
+    this.time.delayedCall(1000, () => {
+      if (!this.gameOver && !this.levelComplete) {
+        this.player.setTexture('player');
+        this.isHurt = false;
+      }
+    });
+  }
+
+  playerDeath(cause) {
+    this.gameOver = true;
+
+    // Stop any active constraints
+    if (this.hookConstraint) {
+      this.matter.world.removeConstraint(this.hookConstraint);
+      this.hookConstraint = null;
+      this.currentAnchor = null;
+    }
+
+    // Play appropriate sound
+    if (cause === 'water') {
+      playSound('SPLASH');
+    } else {
+      playSound('HURT');
+    }
+
+    // Visual feedback
+    this.player.setTexture('playerHurt');
+    this.player.setTint(0xff0000);
+
+    // Camera effects
+    this.cameras.main.shake(500, 0.02);
+    this.cameras.main.flash(500, 255, 0, 0);
+
+    // Restart the level after a delay
+    this.time.delayedCall(1500, () => {
+      this.restartLevel();
+    });
+  }
+
+  restartLevel() {
+    if (this.timerEvent) {
+      this.timerEvent.remove();
+    }
+    this.scene.restart({ currentLevel: this.currentLevel });
+  }
+
+  completeLevel() {
+    if (this.levelComplete) return;
+
+    this.levelComplete = true;
+
+    // Stop timer
+    if (this.timerEvent) {
+      this.timerEvent.remove();
+    }
+
+    // Play win sound
+    playSound('WIN');
+
+    // Calculate stars earned
+    let starsEarned = 0;
+
+    // Star 1: Level completed
+    starsEarned++;
+
+    // Star 2: All gems collected
+    if (this.collectedGems === this.totalGems && this.totalGems > 0) {
+      starsEarned++;
+    }
+
+    // Star 3: Completed within par time
+    if (this.elapsedTime <= this.levelParTime) {
+      starsEarned++;
+    }
+
+    // Save progress
+    if (starsEarned > gameData.levelStars[this.currentLevel]) {
+      gameData.levelStars[this.currentLevel] = starsEarned;
+    }
+
+    if (gameData.bestTimes[this.currentLevel] === null || this.elapsedTime < gameData.bestTimes[this.currentLevel]) {
+      gameData.bestTimes[this.currentLevel] = this.elapsedTime;
+    }
+
+    if (this.collectedGems > gameData.gemCollected[this.currentLevel]) {
+      gameData.gemCollected[this.currentLevel] = this.collectedGems;
+    }
+
+    // Unlock next level
+    if (this.currentLevel + 1 >= gameData.levelsUnlocked && this.currentLevel + 1 < levels.length) {
+      gameData.levelsUnlocked = this.currentLevel + 2;
+    }
+
+    // Save to localStorage
+    localStorage.setItem('fluffyRopeSwinger', JSON.stringify(gameData));
+
+    // Show completion UI
+    this.showLevelComplete(starsEarned);
+  }
+
+  showLevelComplete(starsEarned) {
+    // Update win text
+    const minutes = Math.floor(this.elapsedTime / 60);
+    const seconds = this.elapsedTime % 60;
+    const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+    let message = `Made it Home!\n\nTime: ${timeString}\nGems: ${this.collectedGems}/${this.totalGems}\n\n`;
+
+    if (this.currentLevel + 1 < levels.length) {
+      message += 'Press SPACE for next level\nPress ESC for level select';
+    } else {
+      message += 'CONGRATULATIONS!\nYou completed all levels!\n\nPress SPACE to return to level select';
+    }
+
+    this.winText.setText(message);
+    this.winText.setVisible(true);
+
+    // Show stars
+    this.starsGroup.setVisible(true);
+
+    // Animate stars filling in
+    for (let i = 0; i < starsEarned; i++) {
+      this.time.delayedCall(i * 500, () => {
+        const x = (i - 1) * 80;
+        const star = this.add.star(x, 0, 5, 30, 60, 0xffcc00);
+        star.setStrokeStyle(2, 0x000000);
+        star.setScale(0);
+        this.starsGroup.add(star);
+
+        this.tweens.add({
+          targets: star,
+          scale: 1,
+          duration: 500,
+          ease: 'Back.out'
+        });
+
+        playSound('GEM');
+      });
+    }
+
+    // Setup input for next level or return to menu
+    this.input.keyboard.once('keydown-SPACE', () => {
+      if (this.currentLevel + 1 < levels.length) {
+        this.scene.restart({ currentLevel: this.currentLevel + 1 });
+      } else {
+        this.scene.restart({ currentLevel: 0, gameComplete: true });
+      }
+    });
+
+    this.input.keyboard.once('keydown-ESC', () => {
+      this.scene.start('LevelSelectScene');
+    });
+
+    this.input.once('pointerdown', () => {
+      if (this.currentLevel + 1 < levels.length) {
+        this.scene.restart({ currentLevel: this.currentLevel + 1 });
+      } else {
+        this.scene.restart({ currentLevel: 0, gameComplete: true });
+      }
+    });
+  }
+
+  update() {
+    if (!this.gameStarted || this.gameOver || this.levelComplete) return;
+
+    // Clear graphics
+    this.hookGraphics.clear();
+    this.highlightGraphics.clear();
+    this.playerTrail.clear();
+
+    // Draw pendulum chains
+    if (this.pendulumGraphics) {
+      this.pendulumGraphics.clear();
+      this.pendulumGraphics.lineStyle(2, 0x888888, 1);
+
+      for (let hazard of this.hazards) {
+        if (hazard.texture && hazard.texture.key === 'spikes' && !hazard.isStatic) {
+          // Find the constraint connected to this hazard
+          const constraints = this.matter.world.engine.world.constraints;
+          for (const constraint of constraints) {
+            if (constraint.bodyB === hazard.body) {
+              const anchorX = constraint.pointA.x + constraint.bodyA.position.x;
+              const anchorY = constraint.pointA.y + constraint.bodyA.position.y;
+
+              this.pendulumGraphics.beginPath();
+              this.pendulumGraphics.moveTo(anchorX, anchorY);
+              this.pendulumGraphics.lineTo(hazard.x, hazard.y - 16);
+              this.pendulumGraphics.strokePath();
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    // Find and highlight nearest anchor
+    let candidate = this.findNearestAnchorAbove();
+    if (candidate) {
+      this.highlightGraphics.lineStyle(2, 0xffff00, 1);
+      let radius = 20;
+      for (let angle = 0; angle < 360; angle += 20) {
+        let startAngle = Phaser.Math.DegToRad(angle);
+        let endAngle = Phaser.Math.DegToRad(angle+10);
+        this.highlightGraphics.beginPath();
+        this.highlightGraphics.arc(candidate.x, candidate.y, radius, startAngle, endAngle, false);
+        this.highlightGraphics.strokePath();
+      }
+    }
+
+    // Draw rope when hooked
+    if (this.hookConstraint && this.currentAnchor) {
+      this.hookGraphics.lineStyle(3, 0x00ff00, 1.0);
+      this.hookGraphics.beginPath();
+      this.hookGraphics.moveTo(this.player.x, this.player.y);
+      this.hookGraphics.lineTo(this.currentAnchor.x, this.currentAnchor.y);
+      this.hookGraphics.strokePath();
+    }
+
+    // Player trail effect
+    if (Math.abs(this.player.body.velocity.x) > 3 || Math.abs(this.player.body.velocity.y) > 3) {
+      this.trailPoints.push({
+        x: this.player.x,
+        y: this.player.y,
+        alpha: 1
+      });
+
+      if (this.trailPoints.length > this.trailMaxPoints) {
+        this.trailPoints.shift();
+      }
+
+      // Draw trail
+      this.playerTrail.fillStyle(0x00ffff, 0.5);
+      for (let i = 0; i < this.trailPoints.length; i++) {
+        const point = this.trailPoints[i];
+        point.alpha -= 0.1;
+
+        if (point.alpha > 0) {
+          const size = 16 * (i / this.trailPoints.length);
+          this.playerTrail.fillCircle(point.x, point.y, size);
+        }
+      }
+    }
+
+    // Mid-air control
+    if (!this.hookConstraint && !this.player.body.isSensor) {
+      const controlForce = 0.001;
+
+      if ((this.leftKey.isDown || this.aKey.isDown) && this.player.body.velocity.x > -5) {
+        this.matter.body.applyForce(
+          this.player.body,
+          { x: this.player.x, y: this.player.y },
+          { x: -controlForce, y: 0 }
+        );
+      }
+
+      if ((this.rightKey.isDown || this.dKey.isDown) && this.player.body.velocity.x < 5) {
+        this.matter.body.applyForce(
+          this.player.body,
+          { x: this.player.x, y: this.player.y },
+          { x: controlForce, y: 0 }
+        );
+      }
+    }
+
+    // Animate water
+    for (let waterTile of this.waterTiles) {
+      waterTile.y = waterTile.y + Math.sin(this.time.now / 500 + waterTile.x) * 0.5;
+    }
+  }
+}
+
+const config = {
+  type: Phaser.AUTO,
+  backgroundColor: '#1a1a1a',
+  parent: 'gameCanvas',
+  physics: {
+    default: 'matter',
+    matter: {
+      gravity: {y: 1},
+      debug: false
+    }
+  },
+  scale: {
+    mode: Phaser.Scale.RESIZE,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+    width: window.innerWidth,
+    height: window.innerHeight
+  },
+  scene: [TitleScene, LevelSelectScene, MainScene]
+};
+
+new Phaser.Game({
+    ...config,
+    preserveDrawingBuffer: true
+});
+</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/nipplejs@0.10.2/dist/nipplejs.js" crossorigin="anonymous"></script>
+    <script>
+(function (root, factory) {
+    if (typeof module === "object" && module.exports) {
+        module.exports = factory();
+    } else {
+        root.TouchpadControls = factory();
+        root.touchpadControls = root.TouchpadControls;
+    }
+}(typeof self !== "undefined" ? self : this, function () {
+    "use strict";
+
+    const sections = {
+        CENTER_LEFT: { top: "50%", left: "130px", transform: "translate(-50%, -50%)" },
+        CENTER_TOP: { top: "130px", left: "50%", transform: "translate(-50%, -50%)" },
+        CENTER_RIGHT: { top: "50%", left: "calc(100% - 130px)", transform: "translate(-50%, -50%)" },
+        CENTER_BOTTOM: { top: "calc(100% - 130px)", left: "50%", transform: "translate(-50%, -50%)" }
+    };
+
+    const buttonPositions = {
+        CENTER_LEFT: { top: "0", left: "-50px" },
+        CENTER_TOP: { top: "-50px", left: "0" },
+        CENTER_RIGHT: { top: "0", left: "50px" },
+        CENTER_BOTTOM: { top: "50px", left: "0" }
+    };
+
+    const STYLE_ID = "touchpad-controls-style";
+    const MIN_TOUCH_TARGET = 48;
+
+    const injectTouchpadStyles = () => {
+        if (typeof document === "undefined") return;
+        if (document.getElementById(STYLE_ID)) return;
+
+        const style = document.createElement("style");
+        style.id = STYLE_ID;
+        style.textContent = `
+            :root {
+                --touchpad-size: 72px;
+                --touchpad-radius: 50%;
+                --touchpad-bg: radial-gradient(135% 135% at 25% 20%, rgba(255,255,255,0.15), rgba(0,0,0,0.6));
+                --touchpad-bg-image: none;
+                --touchpad-bg-image-size: cover;
+                --touchpad-bg-image-position: center;
+                --touchpad-bg-blend: soft-light;
+                --touchpad-border: 1px solid rgba(255,255,255,0.12);
+                --touchpad-shadow: 0 12px 40px rgba(0,0,0,0.7), inset 0 1px 1px rgba(255,255,255,0.1);
+                --touchpad-shadow-active: 0 4px 15px rgba(0,0,0,0.9), inset 0 1px 0 rgba(0,0,0,0.3);
+                --touchpad-icon: none;
+                --touchpad-icon-size: 52%;
+                --touchpad-icon-opacity: 0.9;
+                --touchpad-foreground-image: none;
+                --touchpad-foreground-size: 60%;
+                --touchpad-foreground-opacity: 0.8;
+                --touchpad-foreground-blend: normal;
+                --touchpad-label-color: #E2E8F0;
+                --touchpad-label-size: 12px;
+            }
+
+            .touchpad {
+                position: absolute;
+                width: var(--touchpad-size);
+                height: var(--touchpad-size);
+                padding: 0;
+                box-sizing: border-box;
+                border-radius: var(--touchpad-radius);
+                background-image: var(--touchpad-bg-image, none), var(--touchpad-bg);
+                background-size: var(--touchpad-bg-image-size, cover), 100%;
+                background-position: var(--touchpad-bg-image-position, center), center;
+                background-repeat: no-repeat, no-repeat;
+                background-blend-mode: var(--touchpad-bg-blend, soft-light), normal;
+                border: var(--touchpad-border);
+                box-shadow: var(--touchpad-shadow);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                touch-action: none;
+                user-select: none;
+                -webkit-user-select: none;
+                -ms-user-select: none;
+                font-size: 0;
+                color: transparent;
+                z-index: 9999;
+                overflow: visible;
+                backdrop-filter: blur(12px) saturate(180%);
+                -webkit-backdrop-filter: blur(12px) saturate(180%);
+                transition:
+                    transform 120ms cubic-bezier(0.2, 0, 0, 1),
+                    box-shadow 150ms ease,
+                    background 200ms ease,
+                    filter 150ms linear;
+                background-position: center;
+                background-repeat: no-repeat;
+                background-size: 45%;
+            }
+
+            .touchpad::after {
+                content: "";
+                position: absolute;
+                width: var(--touchpad-icon-size, 52%);
+                height: var(--touchpad-icon-size, 52%);
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+                background-image: var(--touchpad-icon, none);
+                background-repeat: no-repeat;
+                background-position: center;
+                background-size: contain;
+                opacity: var(--touchpad-icon-opacity, 0.9);
+                pointer-events: none;
+                filter: drop-shadow(0 2px 6px rgba(0,0,0,0.6));
+            }
+
+            .touchpad::before {
+                content: "";
+                position: absolute;
+                width: var(--touchpad-foreground-size, 60%);
+                height: var(--touchpad-foreground-size, 60%);
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+                background-image: var(--touchpad-foreground-image, none);
+                background-repeat: no-repeat;
+                background-position: center;
+                background-size: contain;
+                opacity: var(--touchpad-foreground-opacity, 0.8);
+                mix-blend-mode: var(--touchpad-foreground-blend, normal);
+                pointer-events: none;
+            }
+
+            .touchpad--label {
+                font-size: var(--touchpad-label-size, 12px);
+                color: var(--touchpad-label-color, #E2E8F0);
+            }
+
+            .touchpad-label {
+                position: absolute;
+                left: 0;
+                right: 0;
+                bottom: 10%;
+                text-align: center;
+                font-weight: 600;
+                pointer-events: none;
+                text-shadow: 0 2px 8px rgba(0,0,0,0.7);
+            }
+
+            .touchpad.is-active {
+                transform: scale(0.94) translate3d(0, 1px, 0);
+                box-shadow: var(--touchpad-shadow-active);
+            }
+
+            .touchpad:hover {
+                box-shadow: 0 12px 32px rgba(0,0,0,0.95);
+            }
+
+            .touchpad--button {
+                font-size: 18px;
+            }
+
+            .touchpad--joystick {
+                font-size: 14px;
+            }
+
+            .touchpad .nipple,
+            .touchpad .nipple * {
+                overflow: visible;
+            }
+
+            .touchpad .nipple .back {
+                box-shadow:
+                    0 0 0 1px rgba(15,23,42,0.85),
+                    0 0 0 6px rgba(148,163,184,0.12),
+                    0 10px 30px rgba(15,23,42,0.85);
+            }
+
+            .touchpad .nipple .front {
+                box-shadow:
+                    0 0 0 1px rgba(148,163,184,0.9),
+                    0 8px 18px rgba(15,23,42,0.9);
+            }
+        `;
+        document.head.appendChild(style);
+    };
+
+    const safeEntries = (obj) => {
+        if (!obj || typeof obj !== "object") return [];
+        return Object.entries(obj);
+    };
+
+    const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+
+    const formatCssValue = (value) => {
+        if (typeof value === "number" && Number.isFinite(value)) {
+            return `${value}px`;
+        }
+        return value;
+    };
+
+    const ICON_COLOR_DEFAULT = "#E2E8F0";
+    const ICON_STROKE = 4;
+
+    const svgToDataUri = (svg) => {
+        const encoded = encodeURIComponent(svg)
+            .replace(/%0A/g, "");
+        return `url(\"data:image/svg+xml,${encoded}\")`;
+    };
+
+    const iconArrow = (direction, color) => {
+        const stroke = color || ICON_COLOR_DEFAULT;
+        if (direction === "left") {
+            return svgToDataUri(
+                `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="${ICON_STROKE}" stroke-linecap="round" stroke-linejoin="round"><path d="M40 16 L24 32 L40 48"/><path d="M26 32 H50"/></svg>`
+            );
+        }
+        if (direction === "right") {
+            return svgToDataUri(
+                `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="${ICON_STROKE}" stroke-linecap="round" stroke-linejoin="round"><path d="M24 16 L40 32 L24 48"/><path d="M14 32 H38"/></svg>`
+            );
+        }
+        if (direction === "up") {
+            return svgToDataUri(
+                `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="${ICON_STROKE}" stroke-linecap="round" stroke-linejoin="round"><path d="M16 30 L32 14 L48 30"/><path d="M32 16 V52"/></svg>`
+            );
+        }
+        return svgToDataUri(
+            `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="${ICON_STROKE}" stroke-linecap="round" stroke-linejoin="round"><path d="M16 34 L32 50 L48 34"/><path d="M32 12 V48"/></svg>`
+        );
+    };
+
+    const iconHorizontal = (color) => svgToDataUri(
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="${color || ICON_COLOR_DEFAULT}" stroke-width="${ICON_STROKE}" stroke-linecap="round" stroke-linejoin="round"><path d="M18 22 L8 32 L18 42"/><path d="M46 22 L56 32 L46 42"/><path d="M14 32 H50"/></svg>`
+    );
+
+    const iconVertical = (color) => svgToDataUri(
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="${color || ICON_COLOR_DEFAULT}" stroke-width="${ICON_STROKE}" stroke-linecap="round" stroke-linejoin="round"><path d="M22 18 L32 8 L42 18"/><path d="M22 46 L32 56 L42 46"/><path d="M32 14 V50"/></svg>`
+    );
+
+    const iconDpad = (color) => svgToDataUri(
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="${color || ICON_COLOR_DEFAULT}" stroke-width="${ICON_STROKE}" stroke-linecap="round" stroke-linejoin="round"><path d="M32 16 V48"/><path d="M16 32 H48"/><path d="M24 22 L32 14 L40 22"/><path d="M24 42 L32 50 L40 42"/><path d="M22 24 L14 32 L22 40"/><path d="M42 24 L50 32 L42 40"/></svg>`
+    );
+
+    const iconCircle = (filled, color) => {
+        const fillColor = color || ICON_COLOR_DEFAULT;
+        if (filled) {
+            return svgToDataUri(
+                `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="14" fill="${fillColor}"/></svg>`
+            );
+        }
+        return svgToDataUri(
+            `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="14" fill="none" stroke="${fillColor}" stroke-width="${ICON_STROKE}"/></svg>`
+        );
+    };
+
+    const iconSquare = (color) => svgToDataUri(
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect x="20" y="20" width="24" height="24" rx="4" fill="${color || ICON_COLOR_DEFAULT}"/></svg>`
+    );
+
+    const iconTriangle = (direction, color) => {
+        const fillColor = color || ICON_COLOR_DEFAULT;
+        if (direction === "left") {
+            return svgToDataUri(
+                `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path d="M22 32 L42 18 V46 Z" fill="${fillColor}"/></svg>`
+            );
+        }
+        if (direction === "right") {
+            return svgToDataUri(
+                `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path d="M42 32 L22 18 V46 Z" fill="${fillColor}"/></svg>`
+            );
+        }
+        return svgToDataUri(
+            `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path d="M32 18 L18 42 H46 Z" fill="${fillColor}"/></svg>`
+        );
+    };
+
+    const iconChevron = (color) => svgToDataUri(
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="${color || ICON_COLOR_DEFAULT}" stroke-width="${ICON_STROKE}" stroke-linecap="round" stroke-linejoin="round"><path d="M22 18 L34 32 L22 46"/><path d="M34 18 L46 32 L34 46"/></svg>`
+    );
+
+    const iconPause = (color) => svgToDataUri(
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect x="20" y="18" width="8" height="28" rx="2" fill="${color || ICON_COLOR_DEFAULT}"/><rect x="36" y="18" width="8" height="28" rx="2" fill="${color || ICON_COLOR_DEFAULT}"/></svg>`
+    );
+
+    const keyLabel = (key) => {
+        if (!key) return "";
+        if (key.startsWith("Key") && key.length === 4) return key.slice(3);
+        if (key.startsWith("Digit") && key.length === 6) return key.slice(5);
+        if (key === "Space") return "SP";
+        if (key === "Escape") return "ESC";
+        if (key === "Enter") return "ENT";
+        if (key === "Tab") return "TAB";
+        if (key === "Backspace") return "BK";
+        if (key === "ShiftLeft" || key === "ShiftRight") return "SH";
+        if (key === "ControlLeft" || key === "ControlRight") return "CT";
+        if (key === "AltLeft" || key === "AltRight") return "AL";
+        if (key === "MetaLeft" || key === "MetaRight") return "MD";
+        return key.slice(0, 3).toUpperCase();
+    };
+
+    const normalizeTheme = (theme) => {
+        if (!theme || typeof theme !== "object") {
+            return {
+                iconColor: ICON_COLOR_DEFAULT,
+                iconOpacity: 0.9,
+                iconScale: 0.52,
+                labelMode: "none",
+                labelColor: ICON_COLOR_DEFAULT,
+                labelSize: 12,
+                background: null,
+                backgroundImage: null,
+                backgroundBlend: "soft-light",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                foregroundImage: null,
+                foregroundOpacity: 0.8,
+                foregroundSize: "60%",
+                foregroundBlend: "normal"
+            };
+        }
+        return {
+            iconColor: theme.iconColor || ICON_COLOR_DEFAULT,
+            iconOpacity: typeof theme.iconOpacity === "number" ? theme.iconOpacity : 0.9,
+            iconScale: typeof theme.iconScale === "number" ? theme.iconScale : 0.52,
+            labelMode: theme.labelMode || "none",
+            labelColor: theme.labelColor || ICON_COLOR_DEFAULT,
+            labelSize: typeof theme.labelSize === "number" ? theme.labelSize : 12,
+            background: theme.background || null,
+            backgroundImage: theme.backgroundImage || null,
+            backgroundBlend: theme.backgroundBlend || "soft-light",
+            backgroundSize: theme.backgroundSize || "cover",
+            backgroundPosition: theme.backgroundPosition || "center",
+            foregroundImage: theme.foregroundImage || null,
+            foregroundOpacity: typeof theme.foregroundOpacity === "number" ? theme.foregroundOpacity : 0.8,
+            foregroundSize: theme.foregroundSize || "60%",
+            foregroundBlend: theme.foregroundBlend || "normal"
+        };
+    };
+
+    const mergeTheme = (base, override) => {
+        if (!override || typeof override !== "object") return base;
+        return normalizeTheme(Object.assign({}, base, override));
+    };
+
+    const normalizeImageValue = (value) => {
+        if (!value) return null;
+        if (value.includes("url(")) return value;
+        return `url(\"${value}\")`;
+    };
+
+    const applyThemeVars = (element, theme) => {
+        if (!element || !theme) return;
+        if (theme.background) {
+            element.style.setProperty("--touchpad-bg", theme.background);
+        }
+        if (theme.backgroundImage) {
+            element.style.setProperty("--touchpad-bg-image", normalizeImageValue(theme.backgroundImage));
+            element.style.setProperty("--touchpad-bg-blend", theme.backgroundBlend || "soft-light");
+            element.style.setProperty("--touchpad-bg-image-size", theme.backgroundSize || "cover");
+            element.style.setProperty("--touchpad-bg-image-position", theme.backgroundPosition || "center");
+        }
+        if (theme.foregroundImage) {
+            element.style.setProperty("--touchpad-foreground-image", normalizeImageValue(theme.foregroundImage));
+            element.style.setProperty("--touchpad-foreground-opacity", String(theme.foregroundOpacity));
+            element.style.setProperty("--touchpad-foreground-size", theme.foregroundSize || "60%");
+            element.style.setProperty("--touchpad-foreground-blend", theme.foregroundBlend || "normal");
+        }
+        if (theme.iconOpacity != null) {
+            element.style.setProperty("--touchpad-icon-opacity", String(theme.iconOpacity));
+        }
+        if (theme.iconScale != null) {
+            element.style.setProperty("--touchpad-icon-size", `${Math.round(theme.iconScale * 100)}%`);
+        }
+        if (theme.labelColor) {
+            element.style.setProperty("--touchpad-label-color", theme.labelColor);
+        }
+        if (theme.labelSize) {
+            element.style.setProperty("--touchpad-label-size", `${theme.labelSize}px`);
+        }
+    };
+
+    const resolveLabelText = (btn, labelMode) => {
+        if (!btn) return "";
+        if (labelMode === "none") return "";
+        if (labelMode === "text") {
+            if (btn.label) return String(btn.label);
+            if (typeof btn.keys === "string") return keyLabel(btn.keys);
+            return "";
+        }
+        if (labelMode === "key") {
+            if (typeof btn.keys === "string") return keyLabel(btn.keys);
+            return "";
+        }
+        if (labelMode === "both") {
+            if (btn.label) return String(btn.label);
+            if (typeof btn.keys === "string") return keyLabel(btn.keys);
+            return "";
+        }
+        return "";
+    };
+
+    const iconKeycap = (label, color) => {
+        const fillColor = color || ICON_COLOR_DEFAULT;
+        const safe = String(label || "").replace(/[^A-Z0-9]/g, "");
+        const text = safe || "";
+        return svgToDataUri(
+            `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect x="12" y="14" width="40" height="36" rx="8" fill="none" stroke="${fillColor}" stroke-width="${ICON_STROKE}"/><text x="32" y="38" font-size="16" text-anchor="middle" fill="${fillColor}" font-family="monospace">${text}</text></svg>`
+        );
+    };
+
+    const resolveDirectionForKey = (key, role) => {
+        if (key === "ArrowLeft") return "left";
+        if (key === "ArrowRight") return "right";
+        if (key === "ArrowUp") return "up";
+        if (key === "ArrowDown") return "down";
+        if (role === "move" || role === "aim") {
+            if (key === "KeyA") return "left";
+            if (key === "KeyD") return "right";
+            if (key === "KeyW") return "up";
+            if (key === "KeyS") return "down";
+        }
+        return null;
+    };
+
+    const resolveIcon = (btn, theme) => {
+        if (!btn) return null;
+        if (btn.icon) return btn.icon;
+        const iconColor = theme && theme.iconColor ? theme.iconColor : ICON_COLOR_DEFAULT;
+        const meta = btn.meta || null;
+        const keys = btn.keys;
+        const role = btn.role;
+
+        if (meta && meta.pair_position) {
+            return iconTriangle(meta.pair_position === "right" ? "right" : "left", iconColor);
+        }
+
+        if (keys && typeof keys === "object" && !Array.isArray(keys)) {
+            const hasLeft = !!keys.left;
+            const hasRight = !!keys.right;
+            const hasUp = !!keys.up;
+            const hasDown = !!keys.down;
+            if (hasLeft && hasRight && hasUp && hasDown) return iconDpad(iconColor);
+            if (hasLeft && hasRight && !hasUp && !hasDown) return iconHorizontal(iconColor);
+            if (hasUp && hasDown && !hasLeft && !hasRight) return iconVertical(iconColor);
+            if (hasLeft && !hasRight && !hasUp && !hasDown) return iconArrow("left", iconColor);
+            if (hasRight && !hasLeft && !hasUp && !hasDown) return iconArrow("right", iconColor);
+            if (hasUp && !hasLeft && !hasRight && !hasDown) return iconArrow("up", iconColor);
+            if (hasDown && !hasLeft && !hasRight && !hasUp) return iconArrow("down", iconColor);
+        }
+
+        if (typeof keys === "string") {
+            const direction = resolveDirectionForKey(keys, role);
+            if (direction) return iconArrow(direction, iconColor);
+        }
+
+        if (role === "jump") return iconArrow("up", iconColor);
+        if (role === "pause") return iconPause(iconColor);
+        if (role === "primary") return iconCircle(true, iconColor);
+        if (role === "secondary") return iconCircle(false, iconColor);
+        if (role === "tertiary") return iconSquare(iconColor);
+        if (role === "modifier") return iconChevron(iconColor);
+        if (role === "magnitude") return iconArrow("up", iconColor);
+
+        if (typeof keys === "string") {
+            return iconKeycap(keyLabel(keys), iconColor);
+        }
+
+        return null;
+    };
+
+    const KEY_ALIASES = {
+        " ": "Space",
+        "space": "Space",
+        "Spacebar": "Space",
+        "Esc": "Escape",
+        "Return": "Enter",
+        "Left": "ArrowLeft",
+        "Right": "ArrowRight",
+        "Up": "ArrowUp",
+        "Down": "ArrowDown",
+        "Del": "Delete",
+        "Shift": "ShiftLeft",
+        "Control": "ControlLeft",
+        "Alt": "AltLeft",
+        "Meta": "MetaLeft"
+    };
+
+    const KEY_DESCRIPTORS = {
+        ArrowLeft: { key: "ArrowLeft", keyCode: 37 },
+        ArrowRight: { key: "ArrowRight", keyCode: 39 },
+        ArrowUp: { key: "ArrowUp", keyCode: 38 },
+        ArrowDown: { key: "ArrowDown", keyCode: 40 },
+        Space: { key: " ", keyCode: 32 },
+        Enter: { key: "Enter", keyCode: 13 },
+        Tab: { key: "Tab", keyCode: 9 },
+        Escape: { key: "Escape", keyCode: 27 },
+        Backspace: { key: "Backspace", keyCode: 8 },
+        Delete: { key: "Delete", keyCode: 46 },
+        Insert: { key: "Insert", keyCode: 45 },
+        Home: { key: "Home", keyCode: 36 },
+        End: { key: "End", keyCode: 35 },
+        PageUp: { key: "PageUp", keyCode: 33 },
+        PageDown: { key: "PageDown", keyCode: 34 },
+        CapsLock: { key: "CapsLock", keyCode: 20 },
+        NumLock: { key: "NumLock", keyCode: 144 },
+        ScrollLock: { key: "ScrollLock", keyCode: 145 },
+        Pause: { key: "Pause", keyCode: 19 },
+        PrintScreen: { key: "PrintScreen", keyCode: 44 },
+        ContextMenu: { key: "ContextMenu", keyCode: 93 },
+        ShiftLeft: { key: "Shift", keyCode: 16, location: 1 },
+        ShiftRight: { key: "Shift", keyCode: 16, location: 2 },
+        ControlLeft: { key: "Control", keyCode: 17, location: 1 },
+        ControlRight: { key: "Control", keyCode: 17, location: 2 },
+        AltLeft: { key: "Alt", keyCode: 18, location: 1 },
+        AltRight: { key: "Alt", keyCode: 18, location: 2 },
+        MetaLeft: { key: "Meta", keyCode: 91, location: 1 },
+        MetaRight: { key: "Meta", keyCode: 91, location: 2 },
+        Minus: { key: "-", keyCode: 189 },
+        Equal: { key: "=", keyCode: 187 },
+        BracketLeft: { key: "[", keyCode: 219 },
+        BracketRight: { key: "]", keyCode: 221 },
+        Backslash: { key: "\\", keyCode: 220 },
+        Semicolon: { key: ";", keyCode: 186 },
+        Quote: { key: "'", keyCode: 222 },
+        Backquote: { key: "`", keyCode: 192 },
+        Comma: { key: ",", keyCode: 188 },
+        Period: { key: ".", keyCode: 190 },
+        Slash: { key: "/", keyCode: 191 }
+    };
+
+    const NUMPAD_DESCRIPTORS = {
+        NumpadAdd: { key: "+", keyCode: 107, location: 3 },
+        NumpadSubtract: { key: "-", keyCode: 109, location: 3 },
+        NumpadMultiply: { key: "*", keyCode: 106, location: 3 },
+        NumpadDivide: { key: "/", keyCode: 111, location: 3 },
+        NumpadDecimal: { key: ".", keyCode: 110, location: 3 },
+        NumpadEnter: { key: "Enter", keyCode: 13, location: 3 },
+        NumpadEqual: { key: "=", keyCode: 187, location: 3 }
+    };
+
+    const resolveKeyDescriptor = (rawKey) => {
+        const raw = String(rawKey);
+        const key = KEY_ALIASES[raw] || raw;
+        let keyCode;
+        let code;
+        let keyValue = key;
+        let location;
+
+        const preset = KEY_DESCRIPTORS[key];
+        if (preset) {
+            keyCode = preset.keyCode;
+            code = key;
+            keyValue = preset.key;
+            location = preset.location;
+        }
+
+        if (keyCode == null) {
+            if (/^Key[a-zA-Z]$/.test(key)) {
+                const letter = key.charAt(3).toUpperCase();
+                keyCode = letter.charCodeAt(0);
+                code = key;
+                keyValue = letter.toLowerCase();
+            } else if (/^Digit[0-9]$/.test(key)) {
+                const digit = key.charAt(5);
+                keyCode = 48 + parseInt(digit, 10);
+                code = key;
+                keyValue = digit;
+            } else if (/^F([1-9]|1[0-9]|2[0-4])$/.test(key)) {
+                const number = parseInt(key.slice(1), 10);
+                keyCode = 111 + number;
+                code = key;
+                keyValue = key;
+            } else if (/^Numpad[0-9]$/.test(key)) {
+                const digit = parseInt(key.slice(6), 10);
+                keyCode = 96 + digit;
+                code = key;
+                keyValue = String(digit);
+                location = 3;
+            } else if (NUMPAD_DESCRIPTORS[key]) {
+                const numpadPreset = NUMPAD_DESCRIPTORS[key];
+                keyCode = numpadPreset.keyCode;
+                code = key;
+                keyValue = numpadPreset.key;
+                location = numpadPreset.location;
+            } else if (key.length === 1) {
+                const upper = key.toUpperCase();
+                keyCode = upper.charCodeAt(0);
+                code = upper;
+                keyValue = key;
+            } else {
+                keyCode = key.toUpperCase().charCodeAt(0);
+                code = key;
+                keyValue = key;
+            }
+        }
+
+        return { key: keyValue, code, keyCode, location };
+    };
+
+    const simulateKeyEvent = (key, type) => {
+        const { key: keyValue, code, keyCode, location } = resolveKeyDescriptor(key);
+
+        if (typeof KeyboardEvent === "undefined") return;
+
+        const eventOptions = {
+            key: keyValue,
+            code: code,
+            keyCode: keyCode,
+            which: keyCode,
+            bubbles: true,
+            cancelable: true
+        };
+        if (location != null) {
+            eventOptions.location = location;
+        }
+        const event = new KeyboardEvent(type, eventOptions);
+
+        const canvas = typeof document !== "undefined" ? document.querySelector("canvas") : null;
+        if (canvas && typeof canvas.focus === "function") {
+            canvas.focus();
+            canvas.dispatchEvent(event);
+        } else if (typeof document !== "undefined") {
+            document.dispatchEvent(event);
+        }
+    };
+
+    const sanitizeActionMeta = (actionMeta) => {
+        if (!actionMeta || typeof actionMeta !== "object") return {};
+        const allowedBehavior = new Set(["continuous", "discrete"]);
+        const allowedInteraction = new Set(["tap", "hold", "repeat"]);
+        const allowedControlSpace = new Set(["vector", "rate", "magnitude"]);
+        const allowedActivation = new Set(["hold", "latch"]);
+        const allowedDirectionMode = new Set(["vector", "cardinal"]);
+        const allowedGranularity = new Set(["fine", "coarse"]);
+        const allowedPairPosition = new Set(["left", "right"]);
+
+        const sanitized = {};
+        Object.entries(actionMeta).forEach(([action, meta]) => {
+            if (!meta || typeof meta !== "object") return;
+            const cleaned = {};
+            Object.entries(meta).forEach(([key, value]) => {
+                if (key === "behavior" && allowedBehavior.has(value)) cleaned[key] = value;
+                else if (key === "interaction" && allowedInteraction.has(value)) cleaned[key] = value;
+                else if (key === "simultaneous" && typeof value === "boolean") cleaned[key] = value;
+                else if (key === "control_space" && allowedControlSpace.has(value)) cleaned[key] = value;
+                else if (key === "activation" && allowedActivation.has(value)) cleaned[key] = value;
+                else if (key === "direction_mode" && allowedDirectionMode.has(value)) cleaned[key] = value;
+                else if (key === "granularity" && allowedGranularity.has(value)) cleaned[key] = value;
+                else if (key === "pair_id" && typeof value === "string") cleaned[key] = value;
+                else if (key === "pair_position" && allowedPairPosition.has(value)) cleaned[key] = value;
+                else if (key === "kind" && typeof value === "string") cleaned[key] = value;
+            });
+            if (Object.keys(cleaned).length) {
+                sanitized[action] = cleaned;
+            }
+        });
+        return sanitized;
+    };
+
+    const extractMeta = (spec, kind) => {
+        const meta = {};
+        if (spec && typeof spec === "object") {
+            ["behavior", "interaction", "simultaneous", "control_space", "activation", "direction_mode", "granularity", "pair_id", "pair_position"].forEach((field) => {
+                if (field in spec) meta[field] = spec[field];
+            });
+        }
+        if (kind) meta.kind = kind;
+        return meta;
+    };
+
+    const extractActionKeys = (spec) => {
+        if (spec && typeof spec === "object") {
+            if ("keys" in spec) return spec.keys;
+            if ("key" in spec) return spec.key;
+        }
+        return spec;
+    };
+
+    const selectSingleKey = (keys) => {
+        if (!keys || typeof keys !== "object") return null;
+        const order = ["up", "right", "down", "left"];
+        for (let i = 0; i < order.length; i += 1) {
+            const key = keys[order[i]];
+            if (key) return key;
+        }
+        return null;
+    };
+
+    const axisPriority = (axis) => {
+        const priority = axis.priority;
+        const priorityScore = priority === "primary" ? 2 : priority === "secondary" ? 1 : 0;
+        const controlSpace = axis.control_space;
+        const controlScore = controlSpace === "vector" ? 2 : controlSpace === "rate" ? 1 : 0;
+        return [priorityScore, controlScore];
+    };
+
+    const extractBindingsFromAxesActions = (data) => {
+        if (!data || typeof data !== "object") return null;
+        const axes = data.axes;
+        const actions = data.actions;
+        if (!Array.isArray(axes) && (typeof actions !== "object" || actions === null)) {
+            return null;
+        }
+
+        const bindings = {};
+        let actionMeta = {};
+
+        if (actions && typeof actions === "object") {
+            Object.entries(actions).forEach(([role, spec]) => {
+                const keys = extractActionKeys(spec);
+                if (!keys) return;
+                bindings[role] = keys;
+                const meta = extractMeta(spec, "button");
+                if (Object.keys(meta).length) {
+                    actionMeta[role] = meta;
+                }
+            });
+        }
+
+        const movementAxes = [];
+        const aimAxes = [];
+
+        if (Array.isArray(axes)) {
+            axes.forEach((axis) => {
+                if (!axis || typeof axis !== "object") return;
+                const keys = axis.keys;
+                if (!keys || typeof keys !== "object") return;
+                const usage = axis.usage;
+                const controlSpace = axis.control_space;
+                if (usage !== "movement" && usage !== "aim") return;
+
+                if (controlSpace === "magnitude") {
+                    if (bindings.magnitude) return;
+                    const magKey = selectSingleKey(keys);
+                    if (!magKey) return;
+                    bindings.magnitude = magKey;
+                    const magMeta = extractMeta(axis, "button");
+                    magMeta.control_space = "magnitude";
+                    actionMeta.magnitude = magMeta;
+                    return;
+                }
+
+                if (usage === "movement") movementAxes.push(axis);
+                if (usage === "aim") aimAxes.push(axis);
+            });
+        }
+
+        const buildAxisMapping = (axis) => {
+            const keys = axis.keys;
+            const meta = extractMeta(axis, "axis");
+            if (axis.control_space) meta.control_space = axis.control_space;
+            return { keys, meta };
+        };
+
+        const compareAxis = (a, b) => {
+            const [ap, ac] = axisPriority(a);
+            const [bp, bc] = axisPriority(b);
+            if (ap !== bp) return bp - ap;
+            return bc - ac;
+        };
+
+        if (movementAxes.length) {
+            movementAxes.sort(compareAxis);
+            const move = buildAxisMapping(movementAxes[0]);
+            bindings.move = move.keys;
+            if (Object.keys(move.meta).length) actionMeta.move = move.meta;
+
+            if (aimAxes.length) {
+                aimAxes.sort(compareAxis);
+                const aim = buildAxisMapping(aimAxes[0]);
+                bindings.aim = aim.keys;
+                if (Object.keys(aim.meta).length) actionMeta.aim = aim.meta;
+            }
+        } else if (aimAxes.length) {
+            aimAxes.sort(compareAxis);
+            const move = buildAxisMapping(aimAxes[0]);
+            bindings.move = move.keys;
+            if (Object.keys(move.meta).length) actionMeta.move = move.meta;
+
+            if (aimAxes.length > 1) {
+                const aim = buildAxisMapping(aimAxes[1]);
+                bindings.aim = aim.keys;
+                if (Object.keys(aim.meta).length) actionMeta.aim = aim.meta;
+            }
+        }
+
+        actionMeta = sanitizeActionMeta(actionMeta);
+        return { bindings, actionMeta };
+    };
+
+    const resolveBindingsAndMeta = (config = {}) => {
+        let bindings = config.bindings || {};
+        let actionMeta = config.actionMeta || config.action_meta || {};
+
+        let analysis = null;
+        if (Array.isArray(config.axes) || (config.actions && typeof config.actions === "object")) {
+            analysis = { axes: config.axes || [], actions: config.actions || {} };
+        } else if (bindings && typeof bindings === "object" && (bindings.axes || bindings.actions)) {
+            analysis = { axes: bindings.axes || [], actions: bindings.actions || {} };
+        } else if (actionMeta && typeof actionMeta === "object" && (actionMeta.axes || actionMeta.actions)) {
+            analysis = { axes: actionMeta.axes || [], actions: actionMeta.actions || {} };
+        }
+
+        if (analysis) {
+            const extracted = extractBindingsFromAxesActions(analysis);
+            if (extracted) {
+                bindings = extracted.bindings || {};
+                actionMeta = extracted.actionMeta || {};
+            }
+        }
+
+        if (!bindings || typeof bindings !== "object") bindings = {};
+        if (!actionMeta || typeof actionMeta !== "object") actionMeta = {};
+
+        return { bindings, actionMeta };
+    };
+
+    const parseKeys = (keys) => {
+        let keyMap = { left: null, right: null, up: null, down: null, key: null };
+
+        if (Array.isArray(keys)) {
+            if (keys.length === 2) {
+                keyMap.left = keys[0] || null;
+                keyMap.right = keys[1] || null;
+            } else if (keys.length === 1) {
+                keyMap.key = keys[0];
+            } else {
+                keyMap.left = keys[0] || null;
+                keyMap.right = keys[1] || null;
+                keyMap.up = keys[2] || null;
+                keyMap.down = keys[3] || null;
+            }
+        } else if (keys && typeof keys === "object") {
+            keyMap.left = keys.left || null;
+            keyMap.right = keys.right || null;
+            keyMap.up = keys.up || null;
+            keyMap.down = keys.down || null;
+            if (keys.key) keyMap.key = keys.key;
+        } else if (typeof keys === "string") {
+            keyMap.key = keys;
+        }
+
+        return keyMap;
+    };
+
+    const createNipple = (element, keys) => {
+        if (typeof nipplejs === "undefined") {
+            throw new Error(
+                "[touchpad_controls] nipplejs is required to create joystick controls. " +
+                "Include nipplejs before touchpad-controls.js."
+            );
+        }
+
+        const options = {
+            zone: element,
+            mode: "static",
+            position: { top: "50%", left: "50%" },
+            color: "gray",
+            size: 120,
+            threshold: 0.25
+        };
+
+        const keyMap = parseKeys(keys);
+
+        const hasLeft = keyMap.left != null;
+        const hasRight = keyMap.right != null;
+        const hasUp = keyMap.up != null;
+        const hasDown = keyMap.down != null;
+        const hasSingleKey = keyMap.key != null;
+
+        if ((hasLeft || hasRight) && !(hasUp || hasDown)) {
+            options.lockX = true;
+        } else if ((hasUp || hasDown) && !(hasLeft || hasRight)) {
+            options.lockY = true;
+        } else if (hasSingleKey) {
+            options.lockX = true;
+            options.lockY = true;
+        } else {
+            options.lockX = false;
+            options.lockY = false;
+        }
+
+        const manager = nipplejs.create(options);
+
+        const activeKeys = {};
+        const activeDirections = new Set();
+
+        const getDirections = (direction) => {
+            if (!direction) return [];
+            const directions = [];
+            if (direction.x === "left" || direction.x === "right") {
+                directions.push(direction.x);
+            }
+            if (direction.y === "up" || direction.y === "down") {
+                directions.push(direction.y);
+            }
+            return directions;
+        };
+
+        manager.on("start", () => {
+            element.classList.add("is-active");
+        });
+
+        const syncDirections = (directionsSet) => {
+            const toRelease = [];
+            activeDirections.forEach((direction) => {
+                if (!directionsSet.has(direction)) {
+                    toRelease.push(direction);
+                }
+            });
+
+            toRelease.forEach((direction) => {
+                const key = keyMap[direction];
+                if (key && activeKeys[key]) {
+                    simulateKeyEvent(key, "keyup");
+                    activeKeys[key] = false;
+                }
+                activeDirections.delete(direction);
+            });
+
+            directionsSet.forEach((direction) => {
+                if (activeDirections.has(direction)) return;
+                const key = keyMap[direction];
+                if (!key) return;
+                if (!activeKeys[key]) {
+                    simulateKeyEvent(key, "keydown");
+                    activeKeys[key] = true;
+                }
+                activeDirections.add(direction);
+            });
+        };
+
+        manager.on("dir", (evt, data) => {
+            const directions = getDirections(data && data.direction);
+            if (!directions.length) return;
+            syncDirections(new Set(directions));
+        });
+
+        const releaseAllKeys = () => {
+            Object.keys(activeKeys).forEach((key) => {
+                if (activeKeys[key]) {
+                    simulateKeyEvent(key, "keyup");
+                    activeKeys[key] = false;
+                }
+            });
+            activeDirections.clear();
+        };
+
+        manager.on("move", (evt, data) => {
+            if (!data || !data.direction) {
+                releaseAllKeys();
+                return;
+            }
+
+            const currentDirections = new Set();
+            if (data.direction.x) currentDirections.add(data.direction.x);
+            if (data.direction.y) currentDirections.add(data.direction.y);
+
+            syncDirections(currentDirections);
+        });
+
+        manager.on("end", () => {
+            releaseAllKeys();
+            element.classList.remove("is-active");
+        });
+
+        return manager;
+    };
+
+    const createButton = (element, key) => {
+        const keys = Array.isArray(key) ? key.filter((k) => k != null) : [key];
+        if (!keys.length) return;
+
+        let isActive = false;
+
+        const press = (event) => {
+            if (event && typeof event.preventDefault === "function") {
+                event.preventDefault();
+            }
+            if (isActive) return;
+            isActive = true;
+            element.classList.add("is-active");
+            keys.forEach((k) => simulateKeyEvent(k, "keydown"));
+        };
+
+        const release = (event) => {
+            if (event && typeof event.preventDefault === "function") {
+                event.preventDefault();
+            }
+            if (!isActive) return;
+            isActive = false;
+            element.classList.remove("is-active");
+            keys.forEach((k) => simulateKeyEvent(k, "keyup"));
+        };
+
+        const handleMouseDown = (event) => {
+            press(event);
+            const handleMouseUp = (e) => {
+                release(e);
+                window.removeEventListener("mouseup", handleMouseUp);
+            };
+            window.addEventListener("mouseup", handleMouseUp);
+        };
+
+        const handleTouchStart = (event) => {
+            press(event);
+            const handleTouchEndOrCancel = (e) => {
+                release(e);
+                window.removeEventListener("touchend", handleTouchEndOrCancel);
+                window.removeEventListener("touchcancel", handleTouchEndOrCancel);
+            };
+            window.addEventListener("touchend", handleTouchEndOrCancel);
+            window.addEventListener("touchcancel", handleTouchEndOrCancel);
+        };
+
+        element.addEventListener("mousedown", handleMouseDown);
+        element.addEventListener("touchstart", handleTouchStart, {
+            passive: false
+        });
+
+        element.addEventListener("mouseup", release);
+        element.addEventListener("mouseleave", release);
+        element.addEventListener("touchend", release);
+        element.addEventListener("touchcancel", release);
+    };
+
+    const createTouchpadControls = (config = {}) => {
+        if (typeof document === "undefined") {
+            throw new Error("[touchpad_controls] document is required to render controls.");
+        }
+
+        injectTouchpadStyles();
+
+        const root = config.root || document.body || document.documentElement;
+        const baseTheme = normalizeTheme(config.theme);
+        const buttons = Array.isArray(config.buttons) ? config.buttons : [];
+
+        const touchpads = [];
+        const nippleManagers = [];
+
+        buttons.forEach((btn) => {
+            if (!btn) return;
+
+            const theme = mergeTheme(baseTheme, btn.theme);
+            const touchpad = document.createElement("div");
+            touchpad.id = btn.id || "";
+            touchpad.className = "touchpad";
+
+            if (btn.className) {
+                touchpad.className += " " + btn.className;
+            }
+            if (Array.isArray(btn.classList)) {
+                btn.classList.forEach((cls) => {
+                    if (cls) touchpad.classList.add(cls);
+                });
+            }
+
+            let type = btn.type;
+            if (!type) {
+                if (
+                    (Array.isArray(btn.keys) && btn.keys.length > 1) ||
+                    (btn.keys && typeof btn.keys === "object" && !Array.isArray(btn.keys))
+                ) {
+                    type = "joystick";
+                } else {
+                    type = "button";
+                }
+            }
+
+            const labelMode = btn.labelMode || theme.labelMode || "none";
+            const labelText = type === "button" ? resolveLabelText(btn, labelMode) : "";
+            if (labelText) {
+                const labelEl = document.createElement("span");
+                labelEl.className = "touchpad-label";
+                labelEl.textContent = labelText;
+                touchpad.classList.add("touchpad--label");
+                touchpad.appendChild(labelEl);
+            }
+
+            const ariaLabel = btn.label != null
+                ? String(btn.label)
+                : (labelText || (typeof btn.keys === "string" ? keyLabel(btn.keys) : ""));
+            if (ariaLabel) {
+                touchpad.setAttribute("aria-label", ariaLabel);
+            }
+
+            const sectionName = btn.section;
+            const section = sectionName && sections[sectionName] ? sections[sectionName] : null;
+
+            safeEntries(section).forEach(([key, value]) => {
+                touchpad.style[key] = value;
+            });
+
+            const posName = btn.position;
+            const buttonPosition =
+                posName && buttonPositions[posName]
+                    ? buttonPositions[posName]
+                    : null;
+
+            if (section && buttonPosition) {
+                safeEntries(buttonPosition).forEach(([key, value]) => {
+                    const base = section[key] || "0px";
+                    touchpad.style[key] = `calc(${base} + ${value})`;
+                });
+            }
+
+            if (btn.top != null) {
+                touchpad.style.top = formatCssValue(btn.top);
+            }
+            if (btn.left != null) {
+                touchpad.style.left = formatCssValue(btn.left);
+            }
+            if (btn.x != null) {
+                touchpad.style.left = formatCssValue(btn.x);
+            }
+            if (btn.y != null) {
+                touchpad.style.top = formatCssValue(btn.y);
+            }
+
+            safeEntries(btn.style).forEach(([key, value]) => {
+                if (value != null) {
+                    touchpad.style[key] = formatCssValue(value);
+                }
+            });
+
+            applyThemeVars(touchpad, theme);
+
+            const showIcon = labelMode !== "text" && labelMode !== "key";
+            if (showIcon) {
+                const icon = resolveIcon(btn, theme);
+                if (icon) {
+                    touchpad.style.setProperty("--touchpad-icon", icon);
+                }
+            }
+
+            root.appendChild(touchpad);
+
+            touchpad.dataset.touchpadType = type;
+            if (type === "joystick") {
+                touchpad.classList.add("touchpad--joystick");
+            } else {
+                touchpad.classList.add("touchpad--button");
+            }
+
+            const tp = { element: touchpad, keys: btn.keys, type: type };
+            touchpads.push(tp);
+        });
+
+        touchpads.forEach((tp) => {
+            if (tp.type === "joystick") {
+                const manager = createNipple(tp.element, tp.keys);
+                if (manager) nippleManagers.push(manager);
+            } else {
+                createButton(tp.element, tp.keys);
+            }
+        });
+
+        const destroy = () => {
+            nippleManagers.forEach((manager) => {
+                if (manager && typeof manager.destroy === "function") {
+                    manager.destroy();
+                }
+            });
+
+            touchpads.forEach((tp) => {
+                const el = tp.element;
+                if (el && el.parentNode) {
+                    el.parentNode.removeChild(el);
+                }
+            });
+        };
+
+        return { touchpads, destroy };
+    };
+
+    const getSafeAreaInsets = (viewport) => {
+        if (viewport && viewport.safeArea) {
+            return {
+                top: viewport.safeArea.top || 0,
+                right: viewport.safeArea.right || 0,
+                bottom: viewport.safeArea.bottom || 0,
+                left: viewport.safeArea.left || 0
+            };
+        }
+
+        if (typeof document === "undefined") {
+            return { top: 0, right: 0, bottom: 0, left: 0 };
+        }
+
+        const measure = document.createElement("div");
+        measure.style.cssText = [
+            "position: fixed",
+            "top: 0",
+            "left: 0",
+            "right: 0",
+            "bottom: 0",
+            "padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)",
+            "pointer-events: none",
+            "visibility: hidden"
+        ].join(";");
+
+        const root = document.body || document.documentElement;
+        root.appendChild(measure);
+        const style = window.getComputedStyle(measure);
+        const insets = {
+            top: parseFloat(style.paddingTop) || 0,
+            right: parseFloat(style.paddingRight) || 0,
+            bottom: parseFloat(style.paddingBottom) || 0,
+            left: parseFloat(style.paddingLeft) || 0
+        };
+        root.removeChild(measure);
+        return insets;
+    };
+
+    const normalizeBindings = (bindings = {}) => {
+        const move = parseKeys(bindings.move || bindings.movement || null);
+        const aim = parseKeys(bindings.aim || bindings.look || null);
+
+        const jump = bindings.jump || null;
+        const magnitude = bindings.magnitude || null;
+        const primary = bindings.primary || bindings.shoot || bindings.fire || null;
+        const secondary = bindings.secondary || bindings.attack || null;
+        const tertiary = bindings.tertiary || (bindings.shoot && bindings.shoot !== primary ? bindings.shoot : null) || null;
+        const modifier = bindings.modifier || bindings.run || null;
+
+        return { move, aim, jump, magnitude, primary, secondary, tertiary, modifier };
+    };
+
+    const normalizeActionMeta = (actionMeta = {}) => {
+        if (!actionMeta || typeof actionMeta !== "object") return {};
+        return actionMeta;
+    };
+
+    const hasDirectionalKeys = (keyMap) => !!(keyMap && (keyMap.left || keyMap.right || keyMap.up || keyMap.down));
+
+    const deriveAxisKeys = (keyMap, meta) => {
+        if (!keyMap || !meta || typeof meta !== "object") return keyMap;
+        const controlSpace = meta.control_space;
+        if (controlSpace === "rate") {
+            if (!keyMap.left && !keyMap.right) return keyMap;
+            return {
+                left: keyMap.left || null,
+                right: keyMap.right || null,
+                up: null,
+                down: null
+            };
+        }
+        if (controlSpace === "magnitude") {
+            if (!keyMap.up && !keyMap.down) return keyMap;
+            return {
+                left: null,
+                right: null,
+                up: keyMap.up || null,
+                down: keyMap.down || null
+            };
+        }
+        return keyMap;
+    };
+
+    const chooseLayout = (bindings, preferredLayout, actionMeta = {}) => {
+        if (preferredLayout && preferredLayout !== "auto") return preferredLayout;
+
+        const moveMeta = actionMeta && actionMeta.move ? actionMeta.move : null;
+        const moveKeys = deriveAxisKeys(bindings.move, moveMeta);
+        const hasMove = hasDirectionalKeys(moveKeys);
+        const hasAim = hasDirectionalKeys(bindings.aim);
+
+        if (hasAim) return "dual-stick";
+        if (hasMove) {
+            const isCardinal = moveMeta && moveMeta.direction_mode === "cardinal";
+            const isDiscrete = moveMeta && (
+                moveMeta.behavior === "discrete" ||
+                moveMeta.activation === "latch" ||
+                moveMeta.granularity === "coarse"
+            );
+            const requiresChord = moveMeta && moveMeta.simultaneous === true;
+            const hasVertical = !!(moveKeys.up || moveKeys.down);
+            if (!requiresChord && (isDiscrete || (isCardinal && hasVertical))) {
+                return "digital-dpad";
+            }
+            if (moveKeys.up || moveKeys.down) return "fast-platformer";
+            return "safe-platformer";
+        }
+        return "runner";
+    };
+
+    const getLayoutMetrics = (viewport, options = {}) => {
+        const width = viewport && Number.isFinite(viewport.width)
+            ? viewport.width
+            : (typeof window !== "undefined" ? window.innerWidth : 0);
+        const height = viewport && Number.isFinite(viewport.height)
+            ? viewport.height
+            : (typeof window !== "undefined" ? window.innerHeight : 0);
+
+        const safeArea = getSafeAreaInsets(viewport);
+        const minDim = Math.max(1, Math.min(width, height));
+        const orientation = width >= height ? "landscape" : "portrait";
+
+        const baseSize = clamp(minDim * 0.17, 64, 112);
+        const actionSize = clamp(minDim * 0.14, 56, 96);
+        const smallActionSize = clamp(minDim * 0.12, MIN_TOUCH_TARGET, 80);
+        const miniActionSize = clamp(minDim * 0.1, MIN_TOUCH_TARGET, 72);
+        const spacing = clamp(minDim * 0.03, 10, 20);
+        const edgePadding = clamp(minDim * 0.05, 16, 32);
+        const verticalOffset = orientation === "portrait"
+            ? clamp(minDim * 0.04, 8, 16)
+            : clamp(minDim * 0.02, 6, 12);
+
+        const bottomY = height - safeArea.bottom - edgePadding;
+
+        return {
+            width,
+            height,
+            orientation,
+            safeArea,
+            minDim,
+            baseSize,
+            actionSize,
+            smallActionSize,
+            miniActionSize,
+            spacing,
+            edgePadding,
+            verticalOffset,
+            bottomY
+        };
+    };
+
+    const clampPosition = (pos, size, metrics) => {
+        const minX = metrics.safeArea.left + metrics.edgePadding + size / 2;
+        const maxX = metrics.width - metrics.safeArea.right - metrics.edgePadding - size / 2;
+        const minY = metrics.safeArea.top + metrics.edgePadding + size / 2;
+        const maxY = metrics.height - metrics.safeArea.bottom - metrics.edgePadding - size / 2;
+        return {
+            x: clamp(pos.x, minX, maxX),
+            y: clamp(pos.y, minY, maxY)
+        };
+    };
+
+    const makeButton = (spec) => {
+        const baseStyle = {
+            width: spec.size,
+            height: spec.size,
+            transform: "translate(-50%, -50%)"
+        };
+
+        return {
+            id: spec.id,
+            label: spec.label || "",
+            keys: spec.keys,
+            x: spec.x,
+            y: spec.y,
+            size: spec.size,
+            role: spec.role,
+            type: spec.type,
+            meta: spec.meta || null,
+            icon: spec.icon || null,
+            classList: spec.classList || [],
+            style: Object.assign(baseStyle, spec.style || {})
+        };
+    };
+
+    const getActionSize = (sizes, role) => {
+        if (!sizes) return 0;
+        return sizes[role] || sizes.secondary || sizes.primary || 0;
+    };
+
+    const findPairedActions = (actions = []) => {
+        const groups = new Map();
+        actions.forEach((action) => {
+            const meta = action && action.meta ? action.meta : null;
+            const pairId = meta && meta.pair_id;
+            if (!pairId) return;
+            if (!groups.has(pairId)) groups.set(pairId, []);
+            groups.get(pairId).push(action);
+        });
+
+        for (const [pairId, group] of groups.entries()) {
+            if (group.length < 2) continue;
+            let left = group.find((action) => action.meta && action.meta.pair_position === "left");
+            let right = group.find((action) => action.meta && action.meta.pair_position === "right");
+            if (!left || !right) {
+                left = group[0];
+                right = group[1];
+            }
+            if (left === right) continue;
+            return { pairId, left, right };
+        }
+        return null;
+    };
+
+    const buildActionCluster = (anchor, actions, sizes, metrics) => {
+        const buttons = [];
+        if (!actions.length) return buttons;
+
+        const pair = findPairedActions(actions);
+        if (!pair) {
+            const primary = actions[0];
+            const primarySize = sizes.primary;
+            const primaryPos = clampPosition(anchor, primarySize, metrics);
+            buttons.push(makeButton({
+                id: primary.role,
+                keys: primary.keys,
+                role: primary.role,
+                x: primaryPos.x,
+                y: primaryPos.y,
+                size: primarySize,
+                meta: primary.meta || null,
+                classList: ["touchpad-role-" + primary.role]
+            }));
+
+            if (actions[1]) {
+                const secondary = actions[1];
+                const secondarySize = sizes.secondary;
+                const secondaryPos = clampPosition({
+                    x: anchor.x,
+                    y: anchor.y - (primarySize / 2 + metrics.spacing + secondarySize / 2)
+                }, secondarySize, metrics);
+                buttons.push(makeButton({
+                    id: secondary.role,
+                    keys: secondary.keys,
+                    role: secondary.role,
+                    x: secondaryPos.x,
+                    y: secondaryPos.y,
+                    size: secondarySize,
+                    meta: secondary.meta || null,
+                    classList: ["touchpad-role-" + secondary.role]
+                }));
+            }
+
+            if (actions[2]) {
+                const tertiary = actions[2];
+                const tertiarySize = sizes.tertiary;
+                const tertiaryPos = clampPosition({
+                    x: anchor.x - (primarySize / 2 + metrics.spacing + tertiarySize / 2),
+                    y: anchor.y - primarySize * 0.2
+                }, tertiarySize, metrics);
+                buttons.push(makeButton({
+                    id: tertiary.role,
+                    keys: tertiary.keys,
+                    role: tertiary.role,
+                    x: tertiaryPos.x,
+                    y: tertiaryPos.y,
+                    size: tertiarySize,
+                    meta: tertiary.meta || null,
+                    classList: ["touchpad-role-" + tertiary.role]
+                }));
+            }
+
+            if (actions[3]) {
+                const modifier = actions[3];
+                const modifierSize = sizes.modifier;
+                const modifierPos = clampPosition({
+                    x: anchor.x - (primarySize / 2 + metrics.spacing + modifierSize / 2),
+                    y: anchor.y - (primarySize / 2 + metrics.spacing + modifierSize / 2)
+                }, modifierSize, metrics);
+                buttons.push(makeButton({
+                    id: modifier.role,
+                    keys: modifier.keys,
+                    role: modifier.role,
+                    x: modifierPos.x,
+                    y: modifierPos.y,
+                    size: modifierSize,
+                    meta: modifier.meta || null,
+                    classList: ["touchpad-role-" + modifier.role]
+                }));
+            }
+
+            return buttons;
+        }
+
+        const used = new Set();
+        const place = (action, pos, size) => {
+            if (!action || used.has(action)) return;
+            used.add(action);
+            const clamped = clampPosition(pos, size, metrics);
+            buttons.push(makeButton({
+                id: action.role,
+                keys: action.keys,
+                role: action.role,
+                x: clamped.x,
+                y: clamped.y,
+                size,
+                meta: action.meta || null,
+                classList: ["touchpad-role-" + action.role]
+            }));
+        };
+
+        const primary = actions.find((action) => action.role === "primary" && action !== pair.left && action !== pair.right)
+            || actions.find((action) => action !== pair.left && action !== pair.right);
+        const primarySize = primary ? getActionSize(sizes, primary.role) : 0;
+
+        const leftAction = pair.left;
+        const rightAction = pair.right;
+        const leftSize = getActionSize(sizes, leftAction.role);
+        const rightSize = getActionSize(sizes, rightAction.role);
+        const rowHeight = Math.max(leftSize, rightSize);
+        const rowWidth = leftSize + rightSize + metrics.spacing;
+
+        const minCenterX = metrics.safeArea.left + metrics.edgePadding + rowWidth / 2;
+        const maxCenterX = metrics.width - metrics.safeArea.right - metrics.edgePadding - rowWidth / 2;
+        const centerX = clamp(anchor.x, minCenterX, maxCenterX);
+
+        let primaryPos = null;
+        if (primary) {
+            primaryPos = clampPosition({ x: centerX, y: anchor.y }, primarySize, metrics);
+            place(primary, primaryPos, primarySize);
+        }
+
+        const baseY = primaryPos ? primaryPos.y : anchor.y;
+        const rowY = primaryPos
+            ? baseY - (primarySize / 2 + metrics.spacing + rowHeight / 2)
+            : baseY;
+
+        const leftX = centerX - rowWidth / 2 + leftSize / 2;
+        const rightX = centerX + rowWidth / 2 - rightSize / 2;
+        place(leftAction, { x: leftX, y: rowY }, leftSize);
+        place(rightAction, { x: rightX, y: rowY }, rightSize);
+
+        let stackY = rowY - rowHeight / 2 - metrics.spacing;
+        actions.forEach((action) => {
+            if (used.has(action)) return;
+            const size = getActionSize(sizes, action.role);
+            place(action, { x: centerX, y: stackY - size / 2 }, size);
+            stackY = stackY - size - metrics.spacing;
+        });
+
+        return buttons;
+    };
+
+    const buildButtonsForLayout = (layout, bindings, metrics, actionMeta) => {
+        const buttons = [];
+        const actions = [];
+        const roleOrder = ["magnitude", "jump", "primary", "secondary", "tertiary", "modifier"];
+        const roleBaseScore = {
+            magnitude: 5,
+            jump: 4,
+            primary: 3,
+            secondary: 2,
+            tertiary: 1,
+            modifier: 1
+        };
+
+        const moveMeta = actionMeta && actionMeta.move ? actionMeta.move : null;
+        const moveKeys = deriveAxisKeys(bindings.move, moveMeta);
+
+        const usedKeys = new Set();
+        const addAction = (role, keys) => {
+            if (!keys) return;
+            const signature = JSON.stringify(keys);
+            if (usedKeys.has(signature)) return;
+            usedKeys.add(signature);
+            actions.push({
+                role,
+                keys,
+                meta: actionMeta && actionMeta[role] ? actionMeta[role] : null
+            });
+        };
+
+        roleOrder.forEach((role) => addAction(role, bindings[role]));
+
+        actions.forEach((action, index) => {
+            const meta = action.meta || {};
+            let score = roleBaseScore[action.role] || 0;
+            if (meta.behavior === "discrete") score += 1;
+            if (meta.interaction === "tap") score += 1;
+            if (meta.simultaneous === true) score += 1;
+            if (meta.control_space === "magnitude") score += 2;
+            if (meta.behavior === "continuous" && meta.interaction === "hold" && meta.simultaneous === false) {
+                score -= 1;
+            }
+            action._score = score;
+            action._index = index;
+        });
+
+        actions.sort((a, b) => {
+            if (b._score !== a._score) return b._score - a._score;
+            return a._index - b._index;
+        });
+
+        const leftAnchor = {
+            x: metrics.safeArea.left + metrics.edgePadding + metrics.baseSize / 2,
+            y: metrics.bottomY - metrics.baseSize / 2 - metrics.verticalOffset
+        };
+        const rightAnchor = {
+            x: metrics.width - metrics.safeArea.right - metrics.edgePadding - metrics.baseSize / 2,
+            y: metrics.bottomY - metrics.baseSize / 2 - metrics.verticalOffset
+        };
+
+        if (!actions.length && !hasDirectionalKeys(moveKeys) && !hasDirectionalKeys(bindings.aim)) {
+            return buttons;
+        }
+
+        if (layout === "digital-dpad") {
+            if (hasDirectionalKeys(moveKeys)) {
+                const dpadSize = clamp(metrics.baseSize * 0.5, MIN_TOUCH_TARGET, metrics.baseSize * 0.75);
+                const dpadGap = clamp(dpadSize * 0.2, 6, 14);
+                const offset = dpadSize + dpadGap;
+                const radius = offset + dpadSize / 2;
+                const minCenterX = metrics.safeArea.left + metrics.edgePadding + radius;
+                const maxCenterX = metrics.width - metrics.safeArea.right - metrics.edgePadding - radius;
+                const minCenterY = metrics.safeArea.top + metrics.edgePadding + radius;
+                const maxCenterY = metrics.height - metrics.safeArea.bottom - metrics.edgePadding - radius;
+                const center = {
+                    x: clamp(leftAnchor.x, minCenterX, maxCenterX),
+                    y: clamp(leftAnchor.y, minCenterY, maxCenterY)
+                };
+                const directions = [
+                    { name: "up", x: center.x, y: center.y - offset },
+                    { name: "down", x: center.x, y: center.y + offset },
+                    { name: "left", x: center.x - offset, y: center.y },
+                    { name: "right", x: center.x + offset, y: center.y }
+                ];
+
+                directions.forEach((dir) => {
+                    const key = moveKeys[dir.name];
+                    if (!key) return;
+                    buttons.push(makeButton({
+                        id: `move-${dir.name}`,
+                        keys: key,
+                        role: "move",
+                        x: dir.x,
+                        y: dir.y,
+                        size: dpadSize,
+                        type: "button",
+                        meta: actionMeta && actionMeta.move ? actionMeta.move : null,
+                        classList: ["touchpad-role-move", "touchpad--dpad", `touchpad-move-${dir.name}`]
+                    }));
+                });
+            }
+
+            const clusterButtons = buildActionCluster(
+                rightAnchor,
+                actions,
+                {
+                    primary: metrics.actionSize,
+                    secondary: metrics.smallActionSize,
+                    tertiary: metrics.smallActionSize,
+                    modifier: metrics.miniActionSize
+                },
+                metrics
+            );
+            buttons.push(...clusterButtons);
+        } else if (layout === "safe-platformer" || layout === "fast-platformer") {
+            if (hasDirectionalKeys(moveKeys)) {
+                const moveSize = metrics.baseSize;
+                const movePos = clampPosition(leftAnchor, moveSize, metrics);
+                buttons.push(makeButton({
+                    id: "move",
+                    keys: moveKeys,
+                    role: "move",
+                    x: movePos.x,
+                    y: movePos.y,
+                    size: moveSize,
+                    meta: actionMeta && actionMeta.move ? actionMeta.move : null,
+                    classList: ["touchpad-role-move"]
+                }));
+            }
+
+            const clusterButtons = buildActionCluster(
+                rightAnchor,
+                actions,
+                {
+                    primary: metrics.actionSize,
+                    secondary: metrics.smallActionSize,
+                    tertiary: metrics.smallActionSize,
+                    modifier: metrics.miniActionSize
+                },
+                metrics
+            );
+            buttons.push(...clusterButtons);
+        } else if (layout === "dual-stick") {
+            const moveSize = clamp(metrics.baseSize * 1.05, 64, 120);
+            const aimSize = clamp(metrics.baseSize * 0.95, 60, 112);
+
+            if (hasDirectionalKeys(moveKeys)) {
+                const leftPos = clampPosition({
+                    x: metrics.safeArea.left + metrics.edgePadding + moveSize / 2,
+                    y: metrics.bottomY - moveSize / 2 - metrics.verticalOffset
+                }, moveSize, metrics);
+                buttons.push(makeButton({
+                    id: "move",
+                    keys: moveKeys,
+                    role: "move",
+                    x: leftPos.x,
+                    y: leftPos.y,
+                    size: moveSize,
+                    meta: actionMeta && actionMeta.move ? actionMeta.move : null,
+                    classList: ["touchpad-role-move"]
+                }));
+            }
+
+            if (hasDirectionalKeys(bindings.aim)) {
+                const rightPos = clampPosition({
+                    x: metrics.width - metrics.safeArea.right - metrics.edgePadding - aimSize / 2,
+                    y: metrics.bottomY - aimSize / 2 - metrics.verticalOffset
+                }, aimSize, metrics);
+                buttons.push(makeButton({
+                    id: "aim",
+                    keys: bindings.aim,
+                    role: "aim",
+                    x: rightPos.x,
+                    y: rightPos.y,
+                    size: aimSize,
+                    meta: actionMeta && actionMeta.aim ? actionMeta.aim : null,
+                    classList: ["touchpad-role-aim"]
+                }));
+
+                if (actions[0]) {
+                    const fireSize = metrics.actionSize;
+                    const firePos = clampPosition({
+                        x: rightPos.x,
+                        y: rightPos.y - (aimSize / 2 + metrics.spacing + fireSize / 2)
+                    }, fireSize, metrics);
+                    buttons.push(makeButton({
+                        id: actions[0].role,
+                        keys: actions[0].keys,
+                        role: actions[0].role,
+                        x: firePos.x,
+                        y: firePos.y,
+                        size: fireSize,
+                        meta: actions[0].meta || null,
+                        classList: ["touchpad-role-" + actions[0].role]
+                    }));
+                }
+            }
+        } else if (layout === "runner") {
+            const actionCount = Math.min(actions.length || 1, 4);
+            const slots = actionCount === 1
+                ? [0.5]
+                : actionCount === 2
+                    ? [0.35, 0.65]
+                    : actionCount === 3
+                        ? [0.2, 0.5, 0.8]
+                        : [0.15, 0.4, 0.6, 0.85];
+
+            const size = metrics.actionSize;
+            const availableWidth = metrics.width - metrics.safeArea.left - metrics.safeArea.right - metrics.edgePadding * 2;
+            const bandY = metrics.bottomY - size / 2 - metrics.verticalOffset;
+
+            for (let i = 0; i < actionCount; i += 1) {
+                const action = actions[i] || actions[0] || { role: "primary", keys: bindings.primary };
+                const x = metrics.safeArea.left + metrics.edgePadding + availableWidth * slots[i];
+                const pos = clampPosition({ x, y: bandY }, size, metrics);
+                buttons.push(makeButton({
+                    id: action.role,
+                    keys: action.keys,
+                    role: action.role,
+                    x: pos.x,
+                    y: pos.y,
+                    size: size,
+                    meta: action.meta || null,
+                    classList: ["touchpad-role-" + action.role]
+                }));
+            }
+        }
+
+        return buttons;
+    };
+
+    const buildLayout = (config = {}) => {
+        const resolved = resolveBindingsAndMeta(config);
+        const normalized = normalizeBindings(resolved.bindings || {});
+        const actionMeta = normalizeActionMeta(resolved.actionMeta || {});
+        const layout = chooseLayout(normalized, config.layout, actionMeta);
+        const metrics = getLayoutMetrics(config.viewport, config);
+        const buttons = buildButtonsForLayout(layout, normalized, metrics, actionMeta);
+        return { layout, buttons, metrics, bindings: normalized, actionMeta };
+    };
+
+    const roundLayoutValue = (value) => {
+        if (typeof value !== "number" || !Number.isFinite(value)) return value;
+        return Math.round(value * 10) / 10;
+    };
+
+    const summarizeLayout = (layoutConfig) => {
+        if (!layoutConfig || typeof layoutConfig !== "object") return null;
+        const buttons = Array.isArray(layoutConfig.buttons) ? layoutConfig.buttons : [];
+        return {
+            layout: layoutConfig.layout || null,
+            buttons: buttons.map((btn) => ({
+                id: btn.id || null,
+                role: btn.role || null,
+                type: btn.type || (btn.keys && typeof btn.keys === "object" ? "joystick" : "button"),
+                keys: btn.keys || null,
+                x: roundLayoutValue(btn.x),
+                y: roundLayoutValue(btn.y),
+                size: roundLayoutValue(btn.size)
+            }))
+        };
+    };
+
+    const createGesturePrevention = (options = {}) => {
+        if (typeof document === "undefined") return () => {};
+
+        const extraExclusions = Array.isArray(options.excludeSelectors) ? options.excludeSelectors : [];
+        const handler = (event) => {
+            if (!event || typeof event.preventDefault !== "function") return;
+            const target = event.target;
+            if (!target) {
+                event.preventDefault();
+                return;
+            }
+
+            const tagName = target.tagName;
+            const blockedTags = ["SELECT", "OPTION", "BUTTON", "INPUT", "TEXTAREA", "A"];
+            if (tagName && blockedTags.includes(tagName)) return;
+
+            if (extraExclusions.some((selector) => target.closest && target.closest(selector))) return;
+
+            event.preventDefault();
+        };
+
+        document.addEventListener("touchmove", handler, { passive: false });
+        document.addEventListener("touchstart", handler, { passive: false });
+        document.addEventListener("gesturestart", handler);
+        document.addEventListener("gesturechange", handler);
+        document.addEventListener("gestureend", handler);
+
+        return () => {
+            document.removeEventListener("touchmove", handler);
+            document.removeEventListener("touchstart", handler);
+            document.removeEventListener("gesturestart", handler);
+            document.removeEventListener("gesturechange", handler);
+            document.removeEventListener("gestureend", handler);
+        };
+    };
+
+    const create = (config = {}) => {
+        const layoutConfig = buildLayout(config);
+        if (config.debug && typeof console !== "undefined" && typeof console.info === "function") {
+            console.info("[touchpad_controls] layout", summarizeLayout(layoutConfig));
+        }
+        const hasCustomButtons = Array.isArray(config.buttons) && config.buttons.length > 0;
+        const buttons = hasCustomButtons ? config.buttons : layoutConfig.buttons;
+        const root = config.root;
+
+        if (config.preventGestures !== false) {
+            const excludeSelectors = config.excludeSelectors || [];
+            var removeGesturePrevention = createGesturePrevention({ excludeSelectors });
+        }
+
+        let instance = createTouchpadControls({ root, buttons });
+        let resizeTimer = null;
+
+        const rebuild = () => {
+            if (instance && typeof instance.destroy === "function") {
+                instance.destroy();
+            }
+            const nextLayout = buildLayout(config);
+            if (config.debug && typeof console !== "undefined" && typeof console.info === "function") {
+                console.info("[touchpad_controls] layout", summarizeLayout(nextLayout));
+            }
+            const nextButtons = hasCustomButtons ? config.buttons : nextLayout.buttons;
+            instance = createTouchpadControls({ root, buttons: nextButtons });
+        };
+
+        const handleResize = () => {
+            if (resizeTimer) window.clearTimeout(resizeTimer);
+            resizeTimer = window.setTimeout(rebuild, 120);
+        };
+
+        if (config.responsive !== false && typeof window !== "undefined") {
+            window.addEventListener("resize", handleResize);
+        }
+
+        return {
+            layout: layoutConfig.layout,
+            buttons,
+            diagnostics: config.debug ? summarizeLayout(layoutConfig) : null,
+            destroy: () => {
+                if (resizeTimer && typeof window !== "undefined") {
+                    window.clearTimeout(resizeTimer);
+                }
+                if (config.responsive !== false && typeof window !== "undefined") {
+                    window.removeEventListener("resize", handleResize);
+                }
+                if (instance && typeof instance.destroy === "function") {
+                    instance.destroy();
+                }
+                if (typeof removeGesturePrevention === "function") {
+                    removeGesturePrevention();
+                }
+            },
+            rebuild
+        };
+    };
+
+    return {
+        createTouchpadControls,
+        create,
+        buildLayout,
+        chooseLayout,
+        getLayoutMetrics,
+        parseKeys,
+        simulateKeyEvent,
+        resolveKeyDescriptor,
+        _internal: {
+            buildButtonsForLayout,
+            normalizeBindings,
+            clampPosition,
+            summarizeLayout,
+            extractBindingsFromAxesActions,
+            resolveBindingsAndMeta
+        }
+    };
+}));
+
+</script>
+    <script>
+    const touchBindings = {
+        "primary": "Space",
+        "secondary": "KeyR",
+        "pause": "Escape",
+        "move": {
+            "left": "ArrowLeft",
+            "right": "ArrowRight"
+        }
+    };
+    const touchActionMeta = {
+        "primary": {
+            "behavior": "continuous",
+            "interaction": "hold",
+            "simultaneous": true,
+            "kind": "button"
+        },
+        "secondary": {
+            "behavior": "discrete",
+            "interaction": "tap",
+            "simultaneous": false,
+            "kind": "button"
+        },
+        "pause": {
+            "behavior": "discrete",
+            "interaction": "tap",
+            "simultaneous": false,
+            "kind": "button"
+        },
+        "move": {
+            "behavior": "continuous",
+            "interaction": "hold",
+            "simultaneous": false,
+            "control_space": "rate",
+            "activation": "hold",
+            "direction_mode": "cardinal",
+            "granularity": "fine",
+            "kind": "axis"
+        }
+    };
+
+    TouchpadControls.create({
+        layout: "auto",
+        bindings: touchBindings,
+        actionMeta: touchActionMeta,
+        debug: true,
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,686 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Cookie Monster Munch</title>
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: #FFC0CB;
+        background-image: url('https://images.fuzzycode.dev/fast_ai?search=cute%20cartoon%20candy%20land%20with%20cookie%20mountains&resize=1920x1080&transparency=false');
+        background-size: cover;
+        background-position: center;
+        overflow: hidden;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Comic Sans MS', cursive, sans-serif;
+        color: #333;
+      }
+      
+      @media (max-width: 768px) {
+        h1 {
+          font-size: 36px !important;
+        }
+        p {
+          font-size: 18px !important;
+        }
+        button {
+          font-size: 20px !important;
+          padding: 12px 24px !important;
+        }
+      }
+      
+      @media (max-height: 700px) {
+        #introScreen img {
+          max-height: 120px;
+          width: auto;
+        }
+        #introScreen h1 {
+          font-size: 32px !important;
+          margin: 5px 0 !important;
+        }
+        #introScreen p {
+          margin-bottom: 15px !important;
+        }
+        #introScreen div {
+          margin-bottom: 15px !important;
+          padding: 10px !important;
+        }
+      }
+      #gameCanvas {
+        background: #87CEEB;
+        display: block;
+        border: 4px solid #5F9EA0;
+        max-width: 95vw;
+        max-height: 95vh;
+        width: auto;
+        height: auto;
+        border-radius: 8px;
+      }
+      #scoreBoard {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        font-size: 20px;
+      }
+      #message {
+        position: absolute;
+        top: 40%;
+        width: 100%;
+        text-align: center;
+        font-size: 40px;
+        color: #FFD700;
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="introScreen" style="position: absolute; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: rgba(0,0,0,0.7); z-index: 10; overflow-y: auto; padding: 20px; box-sizing: border-box;">
+      <img src="https://aws.fuzzycode.dev/image_buddy_365day_cache/uploads/1c159ab3-db18-4cfe-847d-0342d6f3038c/cute cartoon cookie monster character with cookies!resize_300x300.png" alt="Cookie Monster" style="margin-bottom: 20px; max-width: 90%; height: auto;">
+      <h1 style="color: #FFD700; font-size: 48px; text-shadow: 3px 3px 5px #000; text-align: center; margin: 10px 0; max-width: 90%;">Cookie Monster Munch</h1>
+      <p style="color: #FFF; font-size: 24px; max-width: 90%; text-align: center; margin-bottom: 30px;">Help Cookie Monster collect all the cookie crumbs while avoiding the healthy vegetables!</p>
+      <div style="margin-bottom: 30px; background-color: rgba(255,255,255,0.2); padding: 20px; border-radius: 10px; max-width: 90%;">
+        <p style="color: #FFF; text-align: left; margin: 5px 0;"><span style="color: #FFD700;">⟡</span> Small dots are cookie crumbs</p>
+        <p style="color: #FFF; text-align: left; margin: 5px 0;"><span style="color: #D2691E;">⬤</span> Large cookies give special powers</p>
+        <p style="color: #FFF; text-align: left; margin: 5px 0;"><span style="color: #FF0000;">⬤</span> <span style="color: #FFA500;">⬤</span> <span style="color: #9ACD32;">⬤</span> <span style="color: #A020F0;">⬤</span> Avoid vegetables unless powered up</p>
+      </div>
+      <button id="startButton" style="background: #4169E1; color: white; border: none; padding: 15px 30px; font-size: 24px; border-radius: 10px; cursor: pointer; font-family: 'Comic Sans MS', cursive, sans-serif; box-shadow: 0 4px 8px rgba(0,0,0,0.3); max-width: 90%;">Start Game</button>
+    </div>
+    <div id="gameInterface" style="display: none; width: 100%; height: 100%; position: relative;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 10px; max-width: 560px;">
+        <div id="scoreBoard" style="background: rgba(255,255,255,0.7); padding: 5px 10px; border-radius: 10px; font-size: 20px;">Cookies: 0</div>
+        <div id="levelBoard" style="background: rgba(255,255,255,0.7); padding: 5px 10px; border-radius: 10px; font-size: 20px;">Level: 1</div>
+        <div id="livesBoard" style="background: rgba(255,255,255,0.7); padding: 5px 10px; border-radius: 10px; font-size: 20px;">Crumbs: 3</div>
+      </div>
+      <canvas id="gameCanvas" width="560" height="620"></canvas>
+      <div id="message"></div>
+    </div>
+    <script>
+      const tileSize = 20;
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+      
+      // Scale canvas to fit screen while maintaining aspect ratio
+      function resizeCanvas() {
+        const maxWidth = window.innerWidth * 0.95;
+        const maxHeight = window.innerHeight * 0.95;
+        const aspectRatio = canvas.width / canvas.height;
+        
+        let newWidth = maxWidth;
+        let newHeight = maxWidth / aspectRatio;
+        
+        if (newHeight > maxHeight) {
+          newHeight = maxHeight;
+          newWidth = maxHeight * aspectRatio;
+        }
+        
+        canvas.style.width = `${newWidth}px`;
+        canvas.style.height = `${newHeight}px`;
+      }
+      
+      window.addEventListener('resize', resizeCanvas);
+      resizeCanvas();
+      const scoreBoard = document.getElementById("scoreBoard");
+      const levelBoard = document.getElementById("levelBoard");
+      const livesBoard = document.getElementById("livesBoard");
+      const messageEl = document.getElementById("message");
+
+      const initialMap = [
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
+        [1,3,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,3,1],
+        [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,0,1],
+        [1,0,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,0,1],
+        [1,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,0,1],
+        [1,1,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1],
+        [1,1,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1],
+        [1,1,1,1,1,1,0,1,1,0,0,0,0,0,0,0,0,0,0,1,1,0,1,1,1,1,1,1],
+        [1,1,1,1,1,1,0,1,1,0,1,1,1,2,2,1,1,1,0,1,1,0,1,1,1,1,1,1],
+        [1,1,1,1,1,1,0,1,1,0,1,2,2,2,2,2,2,1,0,1,1,0,1,1,1,1,1,1],
+        [0,0,0,0,0,0,0,0,0,0,1,2,2,2,2,2,2,1,0,0,0,0,0,0,0,0,0,0],
+        [1,1,1,1,1,1,0,1,1,0,1,2,2,2,2,2,2,1,0,1,1,0,1,1,1,1,1,1],
+        [1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1],
+        [1,1,1,1,1,1,0,1,1,0,0,0,0,0,0,0,0,0,0,1,1,0,1,1,1,1,1,1],
+        [1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
+        [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
+        [1,3,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,3,1],
+        [1,1,1,0,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,0,1,1,1],
+        [1,1,1,0,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,0,1,1,1],
+        [1,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,0,1],
+        [1,0,1,1,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,1,1,0,1],
+        [1,0,1,1,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,1,1,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+      ];
+
+      let map = JSON.parse(JSON.stringify(initialMap));
+      let score = 0;
+      let level = 1;
+      let lives = 3;
+      let dotsRemaining = 0;
+      
+      // Game theme elements
+      const gameTheme = {
+        playerName: "Cookie Monster",
+        dotName: "cookie crumb",
+        powerPelletName: "super cookie",
+        enemyName: "vegetable",
+        livesName: "crumbs"
+      };
+
+      // Count initial dots
+      for(let row=0; row<map.length; row++) {
+        for(let col=0; col<map[0].length; col++) {
+          if(map[row][col] === 0 || map[row][col] === 3) {
+            dotsRemaining++;
+          }
+        }
+      }
+
+      const pacman = {
+        row: 1,
+        col: 1,
+        dir: { x: 0, y: 0 },
+        nextDir: { x: 0, y: 0 },
+        speed: 4,
+        radius: tileSize / 2 - 2,
+        pixelX: 1 * tileSize + tileSize / 2,
+        pixelY: 1 * tileSize + tileSize / 2,
+        mouthAngle: 0.25,
+        mouthOpen: true
+      };
+
+      const ghosts = [
+        {
+          row: 14, col: 13, pixelX: 13 * tileSize + tileSize / 2,
+          pixelY: 14 * tileSize + tileSize / 2, speed: 2,
+          dir: { x: 0, y: 0 }, color: "#FF0000", scared: false, // Tomato
+          blinkState: 1, name: "Tomato Terry"
+        },
+        {
+          row: 14, col: 14, pixelX: 14 * tileSize + tileSize / 2,
+          pixelY: 14 * tileSize + tileSize / 2, speed: 2,
+          dir: { x: 0, y: 0 }, color: "#FFA500", scared: false, // Carrot
+          name: "Carrot Carl" 
+        },
+        {
+          row: 14, col: 15, pixelX: 15 * tileSize + tileSize / 2,
+          pixelY: 14 * tileSize + tileSize / 2, speed: 2,
+          dir: { x: 0, y: 0 }, color: "#9ACD32", scared: false, // Broccoli (green)
+          name: "Broccoli Bruce"
+        },
+        {
+          row: 14, col: 16, pixelX: 16 * tileSize + tileSize / 2,
+          pixelY: 14 * tileSize + tileSize / 2, speed: 2,
+          dir: { x: 0, y: 0 }, color: "#A020F0", scared: false, // Eggplant (purple)
+          name: "Eggplant Eddie"
+        }
+      ];
+
+      let powerPelletActive = false;
+      let powerPelletTimer = 0;
+      let bgMusic = new Audio("https://sounds.fuzzycode.dev/music?prompt=happy cheerful children's music with cookies and candy theme&duration=30&ext=.mp3");
+      let powerMusic = new Audio("https://sounds.fuzzycode.dev/music?prompt=exciting playful kids music with sugar rush energy&duration=30&ext=.mp3");
+
+      function initMusic() {
+        bgMusic.loop = true;
+        powerMusic.loop = true;
+        bgMusic.volume = 0.3;
+        powerMusic.volume = 0.3;
+        bgMusic.play();
+      }
+
+      function getValidDirections(row, col) {
+        const directions = [];
+        if(map[row-1] && map[row-1][col] !== 1) directions.push({x:0,y:-1});
+        if(map[row+1] && map[row+1][col] !== 1) directions.push({x:0,y:1});
+        if(map[row][col-1] !== undefined && map[row][col-1] !== 1) directions.push({x:-1,y:0});
+        if(map[row][col+1] !== undefined && map[row][col+1] !== 1) directions.push({x:1,y:0});
+        return directions;
+      }
+
+      const soundCache = {
+        "pellet eaten": new Audio("https://sounds.fuzzycode.dev/sound_effect?prompt=cookie%20crunch%20bite%20sound&duration=0.5&ext=.mp3"),
+        "power pellet": new Audio("https://sounds.fuzzycode.dev/sound_effect?prompt=magical%20sparkle%20power%20up%20for%20children&duration=1&ext=.mp3"),
+        "ghost eaten": new Audio("https://sounds.fuzzycode.dev/sound_effect?prompt=cartoon%20pop%20bubble%20victory&duration=0.5&ext=.mp3"),
+        "game over": new Audio("https://sounds.fuzzycode.dev/sound_effect?prompt=sad%20trombone%20children%20game%20over&duration=1&ext=.mp3")
+      };
+
+      function playSound(type) {
+        if (soundCache[type]) {
+          soundCache[type].currentTime = 0;
+          soundCache[type].play();
+        }
+      }
+
+      window.addEventListener("keydown", (e)=>{
+        let newDir = {x: 0, y: 0};
+        if(e.key === "ArrowUp" || e.key === "w"){
+          newDir = { x: 0, y: -1 };
+        } else if(e.key === "ArrowDown" || e.key === "s"){
+          newDir = { x: 0, y: 1 };
+        } else if(e.key === "ArrowLeft" || e.key === "a"){
+          newDir = { x: -1, y: 0 };
+        } else if(e.key === "ArrowRight" || e.key === "d"){
+          newDir = { x: 1, y: 0 };
+        }
+        pacman.nextDir = newDir;
+      });
+
+      function pixelToGrid(x) {
+        return Math.floor(x / tileSize);
+      }
+
+      let lastTime = 0;
+      let gameOver = false;
+      let gameStarted = false;
+
+      // Add event listener for start button
+      document.getElementById('startButton').addEventListener('click', function() {
+        document.getElementById('introScreen').style.display = 'none';
+        document.getElementById('gameInterface').style.display = 'block';
+        gameStarted = true;
+        initMusic();
+        // Play start game sound
+        let startSound = new Audio("https://sounds.fuzzycode.dev/sound_effect?prompt=happy%20children%20game%20start%20fanfare&duration=2&ext=.mp3");
+        startSound.play();
+      });
+
+      function update(time) {
+        if(!lastTime) lastTime = time;
+        const deltaTime = time - lastTime;
+        lastTime = time;
+        if(gameStarted && !gameOver) {
+          updatePacman();
+          updateGhost();
+          checkCollisions();
+        }
+        if(gameStarted) {
+          draw();
+        }
+        requestAnimationFrame(update);
+      }
+
+      function updatePacman() {
+        if (Math.abs(pacman.pixelX % tileSize - tileSize/2) < pacman.speed && 
+            Math.abs(pacman.pixelY % tileSize - tileSize/2) < pacman.speed) {
+          let centerCol = Math.floor(pacman.pixelX / tileSize);
+          let centerRow = Math.floor(pacman.pixelY / tileSize);
+          
+          if(pacman.nextDir.x !== pacman.dir.x || pacman.nextDir.y !== pacman.dir.y) {
+            let newRow = centerRow + pacman.nextDir.y;
+            let newCol = centerCol + pacman.nextDir.x;
+            if(map[newRow][newCol] !== 1) {
+              pacman.dir = {...pacman.nextDir};
+            }
+          }
+          
+          pacman.pixelX = centerCol*tileSize + tileSize/2;
+          pacman.pixelY = centerRow*tileSize + tileSize/2;
+        }
+
+        let nextX = pacman.pixelX + pacman.dir.x * pacman.speed;
+        let nextY = pacman.pixelY + pacman.dir.y * pacman.speed;
+
+        let nextLeftCol = Math.floor((nextX - pacman.radius) / tileSize);
+        let nextRightCol = Math.floor((nextX + pacman.radius) / tileSize);
+        let nextTopRow = Math.floor((nextY - pacman.radius) / tileSize);
+        let nextBottomRow = Math.floor((nextY + pacman.radius) / tileSize);
+
+        let canMove = true;
+        if (pacman.dir.x !== 0) {
+            if (pacman.dir.x > 0 && map[Math.floor(pacman.pixelY / tileSize)][nextRightCol] === 1) canMove = false;
+            if (pacman.dir.x < 0 && map[Math.floor(pacman.pixelY / tileSize)][nextLeftCol] === 1) canMove = false;
+        }
+        if (pacman.dir.y !== 0) {
+            if (pacman.dir.y > 0 && map[nextBottomRow][Math.floor(pacman.pixelX / tileSize)] === 1) canMove = false;
+            if (pacman.dir.y < 0 && map[nextTopRow][Math.floor(pacman.pixelX / tileSize)] === 1) canMove = false;
+        }
+
+        if(canMove) {
+            if (pacman.dir.x !== 0) {
+                if (nextX - pacman.radius < 0) {
+                    pacman.pixelX = canvas.width - pacman.radius;
+                } else if (nextX + pacman.radius > canvas.width) {
+                    pacman.pixelX = pacman.radius;
+                } else {
+                    pacman.pixelX = nextX;
+                }
+                pacman.pixelY = nextY;
+            } else {
+                pacman.pixelX = nextX;
+                pacman.pixelY = nextY;
+            }
+        }
+
+        let gridX = Math.floor(pacman.pixelX / tileSize);
+        let gridY = Math.floor(pacman.pixelY / tileSize);
+        
+        if(map[gridY][gridX] === 0) {
+          map[gridY][gridX] = 2;
+          score += 10;
+          dotsRemaining--;
+          console.log("Cookies remaining:", dotsRemaining);
+          scoreBoard.innerText = "Cookies: " + score;
+          playSound("pellet eaten");
+
+          if(dotsRemaining === 0) {
+            console.log("Level complete! Advancing to next level");
+            level++;
+            levelBoard.innerText = "Level: " + level;
+            
+            // Create level transition animation
+            messageEl.style.display = "block";
+            messageEl.style.opacity = "0";
+            messageEl.style.transition = "opacity 1s";
+            messageEl.innerText = "Yummy! Level " + level;
+            
+            // Play level complete sound
+            let levelUpSound = new Audio("https://sounds.fuzzycode.dev/sound_effect?prompt=arcade level complete victory fanfare&duration=2&ext=.mp3");
+            levelUpSound.play();
+            
+            // Fade in level message
+            setTimeout(() => {
+                messageEl.style.opacity = "1";
+            }, 100);
+            
+            // Wait for animation before resetting level
+            setTimeout(() => {
+                map = JSON.parse(JSON.stringify(initialMap));
+                dotsRemaining = 0;
+                for(let row=0; row<map.length; row++) {
+                    for(let col=0; col<map[0].length; col++) {
+                        if(map[row][col] === 0 || map[row][col] === 3) {
+                            dotsRemaining++;
+                        }
+                    }
+                }
+            }, 1000);
+            
+            pacman.row = 1;
+            pacman.col = 1;
+            pacman.pixelX = pacman.col * tileSize + tileSize/2;
+            pacman.pixelY = pacman.row * tileSize + tileSize/2;
+            pacman.dir = { x: 0, y: 0 };
+            pacman.nextDir = { x: 0, y: 0 };
+
+            ghosts.forEach((ghost, index) => {
+              ghost.row = 14;
+              ghost.col = 13 + index;
+              ghost.pixelX = ghost.col * tileSize + tileSize/2;
+              ghost.pixelY = ghost.row * tileSize + tileSize/2;
+              ghost.dir = { x: 0, y: 0 };
+              ghost.speed = 2 + (level - 1) * 0.5;
+              ghost.scared = false;
+            });
+            
+            // Fade out level message
+            setTimeout(() => {
+                messageEl.style.opacity = "0";
+                setTimeout(() => {
+                    messageEl.style.display = "none";
+                }, 1000);
+            }, 2000);
+          }
+        } else if(map[gridY][gridX] === 3) {
+          map[gridY][gridX] = 2;
+          score += 50;
+          dotsRemaining--;
+          scoreBoard.innerText = "Score: " + score;
+          powerPelletActive = true;
+          powerPelletTimer = 300;
+          ghosts.forEach(ghost => ghost.scared = true);
+          playSound("power pellet");
+          bgMusic.pause();
+          powerMusic.currentTime = 0;
+          powerMusic.play();
+        }
+      }
+
+      function updateGhost() {
+        if(powerPelletActive) {
+          powerPelletTimer--;
+          if(powerPelletTimer <= 180 && powerPelletTimer > 0) {
+            ghosts.forEach(ghost => {
+              ghost.blinkState = (powerPelletTimer / 180);
+            });
+          }
+          if(powerPelletTimer <= 0) {
+            powerPelletActive = false;
+            ghosts.forEach(ghost => {
+              ghost.scared = false;
+              ghost.blinkState = 1;
+            });
+            powerMusic.pause();
+            bgMusic.currentTime = 0;
+            bgMusic.play();
+          }
+        }
+
+        ghosts.forEach(ghost => {
+          if (Math.abs(ghost.pixelX % tileSize - tileSize/2) < ghost.speed && 
+              Math.abs(ghost.pixelY % tileSize - tileSize/2) < ghost.speed) {
+            let centerCol = Math.floor(ghost.pixelX / tileSize);
+            let centerRow = Math.floor(ghost.pixelY / tileSize);
+            let valid = getValidDirections(centerRow, centerCol);
+            let bestDir = ghost.dir;
+            let bestDistance = Infinity;
+
+            valid.forEach(dir => {
+              let newRow = centerRow + dir.y;
+              let newCol = centerCol + dir.x;
+              let dx = (newCol - Math.floor(pacman.pixelX / tileSize));
+              let dy = (newRow - Math.floor(pacman.pixelY / tileSize));
+              let distance = dx*dx+dy*dy;
+              if(ghost.scared) distance = -distance;
+              if(distance < bestDistance) {
+                bestDistance = distance;
+                bestDir = dir;
+              }
+            });
+
+            ghost.dir = bestDir;
+            ghost.pixelX = centerCol*tileSize + tileSize/2;
+            ghost.pixelY = centerRow*tileSize + tileSize/2;
+          }
+          ghost.pixelX += ghost.dir.x * ghost.speed;
+          ghost.pixelY += ghost.dir.y * ghost.speed;
+        });
+      }
+
+      function checkCollisions(){
+        ghosts.forEach((ghost, index) => {
+          let dx = pacman.pixelX - ghost.pixelX;
+          let dy = pacman.pixelY - ghost.pixelY;
+          let distance = Math.sqrt(dx*dx+dy*dy);
+          if(distance < pacman.radius){
+            if(ghost.scared) {
+              ghost.row = 10;
+              ghost.col = 9 + index;
+              ghost.pixelX = ghost.col * tileSize + tileSize/2;
+              ghost.pixelY = ghost.row * tileSize + tileSize/2;
+              ghost.scared = false;
+              score += 200;
+              scoreBoard.innerText = "Score: " + score;
+              playSound("ghost eaten");
+            } else if(!ghost.scared) {
+              lives--;
+              livesBoard.innerText = "Crumbs: " + lives;
+              if(lives <= 0) {
+                gameOver = true;
+                messageEl.style.display = "block";
+                messageEl.innerText = "Oh No! No More Cookies!";
+                playSound("game over");
+              } else {
+                pacman.row = 1;
+                pacman.col = 1;
+                pacman.pixelX = pacman.col * tileSize + tileSize/2;
+                pacman.pixelY = pacman.row * tileSize + tileSize/2;
+                pacman.dir = { x: 0, y: 0 };
+                pacman.nextDir = { x: 0, y: 0 };
+
+                ghosts.forEach((ghost, index) => {
+                  ghost.row = 14;
+                  ghost.col = 13 + index;
+                  ghost.pixelX = ghost.col * tileSize + tileSize/2;
+                  ghost.pixelY = ghost.row * tileSize + tileSize/2;
+                  ghost.dir = { x: 0, y: 0 };
+                });
+
+                messageEl.style.display = "block";
+                messageEl.innerText = lives + " Crumbs Left";
+                setTimeout(() => {
+                  messageEl.style.display = "none";
+                }, 2000);
+              }
+            }
+          }
+        });
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        for(let row=0; row<map.length; row++){
+          for(let col=0; col<map[0].length; col++){
+            let tile = map[row][col];
+            let x = col*tileSize;
+            let y = row*tileSize;
+            if(tile === 1){
+              ctx.fillStyle = "#8B4513";
+              ctx.fillRect(x, y, tileSize, tileSize);
+              // Add chocolate chip pattern
+              ctx.fillStyle = "#5D4037";
+              ctx.beginPath();
+              ctx.arc(x + tileSize/4, y + tileSize/4, 2, 0, Math.PI*2);
+              ctx.arc(x + 3*tileSize/4, y + tileSize/3, 2, 0, Math.PI*2);
+              ctx.arc(x + tileSize/3, y + 2*tileSize/3, 2, 0, Math.PI*2);
+              ctx.fill();
+            } else {
+              if(tile === 0){
+                ctx.fillStyle = "#FFD700";
+                ctx.beginPath();
+                ctx.arc(x + tileSize/2, y + tileSize/2, 3, 0, Math.PI*2);
+                ctx.fill();
+              } else if(tile === 3) {
+                // Draw a cookie
+                ctx.fillStyle = "#D2691E";
+                ctx.beginPath();
+                ctx.arc(x + tileSize/2, y + tileSize/2, 6, 0, Math.PI*2);
+                ctx.fill();
+                // Chocolate chips
+                ctx.fillStyle = "#3E2723";
+                ctx.beginPath();
+                ctx.arc(x + tileSize/2 - 2, y + tileSize/2 - 1, 1, 0, Math.PI*2);
+                ctx.arc(x + tileSize/2 + 2, y + tileSize/2 + 1, 1, 0, Math.PI*2);
+                ctx.arc(x + tileSize/2, y + tileSize/2 - 2, 1, 0, Math.PI*2);
+                ctx.fill();
+              }
+            }
+          }
+        }
+
+        // Draw Cookie Monster character
+        ctx.fillStyle = "#4169E1"; // Blue color for Cookie Monster
+        ctx.beginPath();
+        ctx.arc(pacman.pixelX, pacman.pixelY, pacman.radius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw eyes
+        ctx.fillStyle = "#FFF";
+        ctx.beginPath();
+        let eyeOffset = 4;
+        let eyeSize = 5;
+        ctx.arc(pacman.pixelX - eyeOffset, pacman.pixelY - 2, eyeSize, 0, Math.PI * 2);
+        ctx.arc(pacman.pixelX + eyeOffset, pacman.pixelY - 2, eyeSize, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw pupils (follow direction)
+        ctx.fillStyle = "#000";
+        let pupilOffset = 1;
+        if(pacman.dir.x > 0) pupilOffset = 2;
+        if(pacman.dir.x < 0) pupilOffset = -2;
+        let vertOffset = 0;
+        if(pacman.dir.y > 0) vertOffset = 2;
+        if(pacman.dir.y < 0) vertOffset = -2;
+        
+        ctx.beginPath();
+        ctx.arc(pacman.pixelX - eyeOffset + pupilOffset, pacman.pixelY - 2 + vertOffset, 2, 0, Math.PI * 2);
+        ctx.arc(pacman.pixelX + eyeOffset + pupilOffset, pacman.pixelY - 2 + vertOffset, 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw mouth
+        let mouthOpen = (Math.floor(Date.now()/100) % 2) === 0;
+        ctx.fillStyle = "#000";
+        ctx.beginPath();
+        if(mouthOpen) {
+          ctx.arc(pacman.pixelX, pacman.pixelY + 4, 6, 0, Math.PI);
+        } else {
+          ctx.arc(pacman.pixelX, pacman.pixelY + 4, 3, 0, Math.PI);
+        }
+        ctx.fill();
+
+        ghosts.forEach(ghost => {
+          // Base color for vegetables (enemies)
+          if (ghost.scared) {
+            // When scared, they become colorful candies
+            if (ghost.blinkState < 1) {
+              const blinkPhase = Math.sin(Date.now() / 100) * 0.5 + 0.5;
+              ctx.fillStyle = blinkPhase > 0.5 ? "#FF69B4" : "#7B68EE"; // Blinking candy colors
+            } else {
+              ctx.fillStyle = "#FF69B4"; // Pink candy
+            }
+          } else {
+            ctx.fillStyle = ghost.color; // Original vegetable colors
+          }
+          
+          // Draw vegetable body - rounded shape
+          ctx.beginPath();
+          ctx.arc(ghost.pixelX, ghost.pixelY, pacman.radius, 0, Math.PI*2);
+          ctx.closePath();
+          ctx.fill();
+          
+          // Add some details to make them look like vegetables or candies
+          if (ghost.scared) {
+            // Candy details
+            ctx.fillStyle = "#FFF";
+            ctx.beginPath();
+            ctx.arc(ghost.pixelX - 3, ghost.pixelY - 2, 2, 0, Math.PI*2);
+            ctx.arc(ghost.pixelX + 4, ghost.pixelY + 3, 2, 0, Math.PI*2);
+            ctx.fill();
+          } else {
+            // Vegetable details
+            ctx.fillStyle = ghost.color === "#FF0000" ? "#006400" : "#228B22"; // Green stems/leaves
+            ctx.beginPath();
+            ctx.arc(ghost.pixelX, ghost.pixelY - pacman.radius, 3, Math.PI, 0);
+            ctx.fill();
+          }
+
+          // Draw eyes for all
+          ctx.fillStyle = "#FFF";
+          const eyeOffsetX = 4, eyeOffsetY = 2, eyeRadius = 3;
+          ctx.beginPath();
+          ctx.arc(ghost.pixelX - eyeOffsetX, ghost.pixelY - eyeOffsetY, eyeRadius, 0, Math.PI*2);
+          ctx.arc(ghost.pixelX + eyeOffsetX, ghost.pixelY - eyeOffsetY, eyeRadius, 0, Math.PI*2);
+          ctx.fill();
+          
+          ctx.fillStyle = "#000";
+          ctx.beginPath();
+          ctx.arc(ghost.pixelX - eyeOffsetX, ghost.pixelY - eyeOffsetY, 1.5, 0, Math.PI*2);
+          ctx.arc(ghost.pixelX + eyeOffsetX, ghost.pixelY - eyeOffsetY, 1.5, 0, Math.PI*2);
+          ctx.fill();
+        });
+      }
+
+      // Don't start music until game starts
+      requestAnimationFrame(update);
+    </script>
+  </body>
+</html>

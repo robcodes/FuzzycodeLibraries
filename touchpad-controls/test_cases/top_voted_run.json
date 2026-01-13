@@ -1,0 +1,142 @@
+[
+  {
+    "game": "age-of-empires-style-game-v3-much-better-winnable-guard-towers-better3-fixed-speed-bug__610ff957166a.html",
+    "output": "age-of-empires-style-game-v3-much-better-winnable-guard-towers-better3-fixed-speed-bug__610ff957166a_touch_embedded.html",
+    "returncode": 0,
+    "stdout": "Wrote: /home/ubuntu/UAT/fuzzycode-platform/WIP_AUTO_TOUCHPAD_CONTROLS/test_cases/outputs/top_voted/age-of-empires-style-game-v3-much-better-winnable-guard-towers-better3-fixed-speed-bug__610ff957166a_touch_embedded.html\nPrompt: llm_runs/run_027_prompt.md\nOutput JSON: llm_runs/run_027_output.json",
+    "stderr": ""
+  },
+  {
+    "game": "asteroid-blaster-with-boss-battles__2ab6ef807a32.html",
+    "output": "asteroid-blaster-with-boss-battles__2ab6ef807a32_touch_embedded.html",
+    "returncode": 0,
+    "stdout": "Wrote: /home/ubuntu/UAT/fuzzycode-platform/WIP_AUTO_TOUCHPAD_CONTROLS/test_cases/outputs/top_voted/asteroid-blaster-with-boss-battles__2ab6ef807a32_touch_embedded.html\nPrompt: llm_runs/run_028_prompt.md\nOutput JSON: llm_runs/run_028_output.json",
+    "stderr": ""
+  },
+  {
+    "game": "avoid-the-germs-game-v3__c284065f70f0.html",
+    "output": "avoid-the-germs-game-v3__c284065f70f0_touch_embedded.html",
+    "returncode": 0,
+    "stdout": "Wrote: /home/ubuntu/UAT/fuzzycode-platform/WIP_AUTO_TOUCHPAD_CONTROLS/test_cases/outputs/top_voted/avoid-the-germs-game-v3__c284065f70f0_touch_embedded.html\nPrompt: llm_runs/run_029_prompt.md\nOutput JSON: llm_runs/run_029_output.json",
+    "stderr": ""
+  },
+  {
+    "game": "bible-typerunner__5959dde2f14f.html",
+    "output": "bible-typerunner__5959dde2f14f_touch_embedded.html",
+    "returncode": 0,
+    "stdout": "Wrote: /home/ubuntu/UAT/fuzzycode-platform/WIP_AUTO_TOUCHPAD_CONTROLS/test_cases/outputs/top_voted/bible-typerunner__5959dde2f14f_touch_embedded.html\nPrompt: llm_runs/run_030_prompt.md\nOutput JSON: llm_runs/run_030_output.json",
+    "stderr": ""
+  },
+  {
+    "game": "bodysuit-jumper-platformer__3b637562d778.html",
+    "output": "bodysuit-jumper-platformer__3b637562d778_touch_embedded.html",
+    "returncode": 0,
+    "stdout": "Wrote: /home/ubuntu/UAT/fuzzycode-platform/WIP_AUTO_TOUCHPAD_CONTROLS/test_cases/outputs/top_voted/bodysuit-jumper-platformer__3b637562d778_touch_embedded.html\nPrompt: llm_runs/run_031_prompt.md\nOutput JSON: llm_runs/run_031_output.json",
+    "stderr": ""
+  },
+  {
+    "game": "bogglebeast-quest-v2-many-levels-and-worlds-v1__84cbae393613.html",
+    "output": "bogglebeast-quest-v2-many-levels-and-worlds-v1__84cbae393613_touch_embedded.html",
+    "returncode": 0,
+    "stdout": "Wrote: /home/ubuntu/UAT/fuzzycode-platform/WIP_AUTO_TOUCHPAD_CONTROLS/test_cases/outputs/top_voted/bogglebeast-quest-v2-many-levels-and-worlds-v1__84cbae393613_touch_embedded.html\nPrompt: llm_runs/run_032_prompt.md\nOutput JSON: llm_runs/run_032_output.json",
+    "stderr": ""
+  },
+  {
+    "game": "bounce-quest-to-the-top__363f80e33d70.html",
+    "output": "bounce-quest-to-the-top__363f80e33d70_touch_embedded.html",
+    "returncode": 0,
+    "stdout": "Wrote: /home/ubuntu/UAT/fuzzycode-platform/WIP_AUTO_TOUCHPAD_CONTROLS/test_cases/outputs/top_voted/bounce-quest-to-the-top__363f80e33d70_touch_embedded.html\nPrompt: llm_runs/run_033_prompt.md\nOutput JSON: llm_runs/run_033_output.json",
+    "stderr": ""
+  },
+  {
+    "game": "bubblebound-1shotted-v2__3b5d636d7f22.html",
+    "output": "bubblebound-1shotted-v2__3b5d636d7f22_touch_embedded.html",
+    "returncode": 0,
+    "stdout": "Wrote: /home/ubuntu/UAT/fuzzycode-platform/WIP_AUTO_TOUCHPAD_CONTROLS/test_cases/outputs/top_voted/bubblebound-1shotted-v2__3b5d636d7f22_touch_embedded.html\nPrompt: llm_runs/run_034_prompt.md\nOutput JSON: llm_runs/run_034_output.json",
+    "stderr": ""
+  },
+  {
+    "game": "cookie-monster-munch__465d1281d6a5.html",
+    "output": "cookie-monster-munch__465d1281d6a5_touch_embedded.html",
+    "returncode": 0,
+    "stdout": "Wrote: /home/ubuntu/UAT/fuzzycode-platform/WIP_AUTO_TOUCHPAD_CONTROLS/test_cases/outputs/top_voted/cookie-monster-munch__465d1281d6a5_touch_embedded.html\nPrompt: llm_runs/run_035_prompt.md\nOutput JSON: llm_runs/run_035_output.json",
+    "stderr": ""
+  },
+  {
+    "game": "cosmic-brick-blaster__a554196936fa.html",
+    "output": "cosmic-brick-blaster__a554196936fa_touch_embedded.html",
+    "returncode": 0,
+    "stdout": "Wrote: /home/ubuntu/UAT/fuzzycode-platform/WIP_AUTO_TOUCHPAD_CONTROLS/test_cases/outputs/top_voted/cosmic-brick-blaster__a554196936fa_touch_embedded.html\nPrompt: llm_runs/run_036_prompt.md\nOutput JSON: llm_runs/run_036_output.json",
+    "stderr": ""
+  },
+  {
+    "game": "dance-fever-boss-battle__ba3c2373e25c.html",
+    "output": "dance-fever-boss-battle__ba3c2373e25c_touch_embedded.html",
+    "returncode": 0,
+    "stdout": "Wrote: /home/ubuntu/UAT/fuzzycode-platform/WIP_AUTO_TOUCHPAD_CONTROLS/test_cases/outputs/top_voted/dance-fever-boss-battle__ba3c2373e25c_touch_embedded.html\nPrompt: llm_runs/run_037_prompt.md\nOutput JSON: llm_runs/run_037_output.json",
+    "stderr": ""
+  },
+  {
+    "game": "educational-game-carrot-cruncher-math-adventure__5b0307aeb311.html",
+    "output": "educational-game-carrot-cruncher-math-adventure__5b0307aeb311_touch_embedded.html",
+    "returncode": 0,
+    "stdout": "Wrote: /home/ubuntu/UAT/fuzzycode-platform/WIP_AUTO_TOUCHPAD_CONTROLS/test_cases/outputs/top_voted/educational-game-carrot-cruncher-math-adventure__5b0307aeb311_touch_embedded.html\nPrompt: llm_runs/run_038_prompt.md\nOutput JSON: llm_runs/run_038_output.json",
+    "stderr": ""
+  },
+  {
+    "game": "fluffy-rope-swinger-fullscreen-pendulum__8f092763260d.html",
+    "output": "fluffy-rope-swinger-fullscreen-pendulum__8f092763260d_touch_embedded.html",
+    "returncode": 0,
+    "stdout": "Wrote: /home/ubuntu/UAT/fuzzycode-platform/WIP_AUTO_TOUCHPAD_CONTROLS/test_cases/outputs/top_voted/fluffy-rope-swinger-fullscreen-pendulum__8f092763260d_touch_embedded.html\nPrompt: llm_runs/run_039_prompt.md\nOutput JSON: llm_runs/run_039_output.json",
+    "stderr": ""
+  },
+  {
+    "game": "frog-jumper-math-game__1b934b1961de.html",
+    "output": "frog-jumper-math-game__1b934b1961de_touch_embedded.html",
+    "returncode": 0,
+    "stdout": "Wrote: /home/ubuntu/UAT/fuzzycode-platform/WIP_AUTO_TOUCHPAD_CONTROLS/test_cases/outputs/top_voted/frog-jumper-math-game__1b934b1961de_touch_embedded.html\nPrompt: llm_runs/run_040_prompt.md\nOutput JSON: llm_runs/run_040_output.json",
+    "stderr": ""
+  },
+  {
+    "game": "googly-boomerang-quest-portal-panic__7d6b4c125c07.html",
+    "output": "googly-boomerang-quest-portal-panic__7d6b4c125c07_touch_embedded.html",
+    "returncode": 0,
+    "stdout": "Wrote: /home/ubuntu/UAT/fuzzycode-platform/WIP_AUTO_TOUCHPAD_CONTROLS/test_cases/outputs/top_voted/googly-boomerang-quest-portal-panic__7d6b4c125c07_touch_embedded.html\nPrompt: llm_runs/run_041_prompt.md\nOutput JSON: llm_runs/run_041_output.json",
+    "stderr": ""
+  },
+  {
+    "game": "koala-survivor-rampage__32d23069c20a.html",
+    "output": "koala-survivor-rampage__32d23069c20a_touch_embedded.html",
+    "returncode": 0,
+    "stdout": "Wrote: /home/ubuntu/UAT/fuzzycode-platform/WIP_AUTO_TOUCHPAD_CONTROLS/test_cases/outputs/top_voted/koala-survivor-rampage__32d23069c20a_touch_embedded.html\nPrompt: llm_runs/run_042_prompt.md\nOutput JSON: llm_runs/run_042_output.json",
+    "stderr": ""
+  },
+  {
+    "game": "simba-s-bug-adventure-v2__82289e92f1c2.html",
+    "output": "simba-s-bug-adventure-v2__82289e92f1c2_touch_embedded.html",
+    "returncode": 0,
+    "stdout": "Wrote: /home/ubuntu/UAT/fuzzycode-platform/WIP_AUTO_TOUCHPAD_CONTROLS/test_cases/outputs/top_voted/simba-s-bug-adventure-v2__82289e92f1c2_touch_embedded.html\nPrompt: llm_runs/run_043_prompt.md\nOutput JSON: llm_runs/run_043_output.json",
+    "stderr": ""
+  },
+  {
+    "game": "space-invaders-with-powerups__0504eaffda94.html",
+    "output": "space-invaders-with-powerups__0504eaffda94_touch_embedded.html",
+    "returncode": 0,
+    "stdout": "Wrote: /home/ubuntu/UAT/fuzzycode-platform/WIP_AUTO_TOUCHPAD_CONTROLS/test_cases/outputs/top_voted/space-invaders-with-powerups__0504eaffda94_touch_embedded.html\nPrompt: llm_runs/run_044_prompt.md\nOutput JSON: llm_runs/run_044_output.json",
+    "stderr": ""
+  },
+  {
+    "game": "superhero-kid-vs-ninja-animals__34cc59f54c99.html",
+    "output": "superhero-kid-vs-ninja-animals__34cc59f54c99_touch_embedded.html",
+    "returncode": 0,
+    "stdout": "Wrote: /home/ubuntu/UAT/fuzzycode-platform/WIP_AUTO_TOUCHPAD_CONTROLS/test_cases/outputs/top_voted/superhero-kid-vs-ninja-animals__34cc59f54c99_touch_embedded.html\nPrompt: llm_runs/run_045_prompt.md\nOutput JSON: llm_runs/run_045_output.json",
+    "stderr": ""
+  },
+  {
+    "game": "tetris-game__2a94b719e827.html",
+    "output": "tetris-game__2a94b719e827_touch_embedded.html",
+    "returncode": 0,
+    "stdout": "Wrote: /home/ubuntu/UAT/fuzzycode-platform/WIP_AUTO_TOUCHPAD_CONTROLS/test_cases/outputs/top_voted/tetris-game__2a94b719e827_touch_embedded.html\nPrompt: llm_runs/run_046_prompt.md\nOutput JSON: llm_runs/run_046_output.json",
+    "stderr": ""
+  }
+]

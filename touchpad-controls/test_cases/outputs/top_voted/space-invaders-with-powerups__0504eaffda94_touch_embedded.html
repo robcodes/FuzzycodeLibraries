@@ -1,0 +1,3297 @@
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Space Invaders Deluxe</title>
+<style>
+  body { 
+    background-color: #000; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    height: 100vh; 
+    margin: 0; 
+    overflow: hidden;
+    font-family: 'Press Start 2P', cursive;
+  }
+  canvas { 
+    border: 3px solid #30f2f2; 
+    box-shadow: 0 0 20px #30f2f2;
+    border-radius: 5px;
+  }
+  #gameOver, #levelUp { 
+    position: absolute; 
+    top: 50%; 
+    left: 50%; 
+    transform: translate(-50%, -50%); 
+    color: #ff3e3e; 
+    font-size: 3em; 
+    display: none;
+    text-shadow: 0 0 10px #ff3e3e;
+    z-index: 100;
+    text-align: center;
+  }
+  #hud {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: white;
+    font-size: 1em;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .health-bar {
+    width: 200px;
+    height: 20px;
+    background-color: #333;
+    border: 2px solid #555;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .health-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff3e3e, #f2a93c);
+    transition: width 0.3s;
+  }
+  .level-indicator {
+    padding: 5px 10px;
+    background-color: rgba(0,0,0,0.7);
+    border: 1px solid #30f2f2;
+    border-radius: 5px;
+  }
+  #stars {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+  }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+</head>
+<body>
+<div id="stars"></div>
+<canvas id="gameCanvas" width="800" height="600"></canvas>
+<div id="gameOver">
+  <p>Game Over</p>
+  <p style="font-size: 0.5em;">Press ENTER to restart</p>
+</div>
+<div id="levelUp" style="color: #30f2f2;">Level Up!</div>
+<div id="hud">
+  <div class="level-indicator">LEVEL: <span id="levelDisplay">1</span></div>
+  <div>HEALTH:</div>
+  <div class="health-bar">
+    <div class="health-fill" id="healthFill" style="width: 100%;"></div>
+  </div>
+  <div id="powerUpIndicator" style="color: #f2a93c; display: none;">POWER UP ACTIVE!</div>
+</div>
+
+<script>
+  // Initialize canvas and context
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const gameOverDiv = document.getElementById('gameOver');
+  const levelUpDiv = document.getElementById('levelUp');
+  const levelDisplay = document.getElementById('levelDisplay');
+  const healthFill = document.getElementById('healthFill');
+  const powerUpIndicator = document.getElementById('powerUpIndicator');
+  const starsContainer = document.getElementById('stars');
+
+  // Preload all game sounds
+  const SOUNDS = {
+    playerShoot: 'https://sounds.fuzzycode.dev/sound_effect?prompt=laser+blast+sci-fi&duration=0.5&ext=.mp3',
+    enemyShoot: 'https://sounds.fuzzycode.dev/sound_effect?prompt=alien+weapon+fire&duration=0.5&ext=.mp3',
+    enemyHit: 'https://sounds.fuzzycode.dev/sound_effect?prompt=alien+damage+hit&duration=0.5&ext=.mp3',
+    enemyDestroyed: 'https://sounds.fuzzycode.dev/sound_effect?prompt=alien+ship+explosion&duration=1&ext=.mp3',
+    playerHit: 'https://sounds.fuzzycode.dev/sound_effect?prompt=spaceship+damage+alert&duration=0.5&ext=.mp3',
+    powerUp: 'https://sounds.fuzzycode.dev/sound_effect?prompt=power+up+collect+arcade&duration=0.5&ext=.mp3',
+    levelUp: 'https://sounds.fuzzycode.dev/sound_effect?prompt=level+up+success+fanfare&duration=1&ext=.mp3',
+    gameOver: 'https://sounds.fuzzycode.dev/sound_effect?prompt=game+over+arcade+8bit&duration=2&ext=.mp3',
+    backgroundMusic: 'https://sounds.fuzzycode.dev/music?prompt=retro+space+invaders+arcade+music+energetic&duration=30&ext=.mp3'
+  };
+
+  // Preload all sound files
+  const soundCache = {};
+  for (const [key, url] of Object.entries(SOUNDS)) {
+    const audio = new Audio();
+    audio.src = url;
+    audio.preload = 'auto';
+    soundCache[key] = audio;
+  }
+
+  // Function to play sounds
+  function playSound(soundName, volume = 1.0) {
+    if (soundCache[soundName]) {
+      const sound = soundCache[soundName].cloneNode();
+      sound.volume = volume;
+      sound.play().catch(e => console.error("Audio play error:", e));
+    }
+  }
+
+  // Start background music
+  function startBackgroundMusic() {
+    if (soundCache.backgroundMusic) {
+      soundCache.backgroundMusic.loop = true;
+      soundCache.backgroundMusic.volume = 0.3;
+      soundCache.backgroundMusic.play().catch(e => console.error("Background music error:", e));
+    }
+  }
+
+  // Create starfield background
+  function createStarfield() {
+    for (let i = 0; i < 200; i++) {
+      const star = document.createElement('div');
+      star.style.position = 'absolute';
+      star.style.width = Math.random() * 3 + 'px';
+      star.style.height = star.style.width;
+      star.style.backgroundColor = `rgba(255, 255, 255, ${Math.random() * 0.7 + 0.3})`;
+      star.style.left = Math.random() * 100 + '%';
+      star.style.top = Math.random() * 100 + '%';
+      star.style.borderRadius = '50%';
+      star.style.animation = `twinkle ${Math.random() * 5 + 2}s infinite`;
+      starsContainer.appendChild(star);
+    }
+  }
+
+  // Add CSS animation for stars
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes twinkle {
+      0% { opacity: ${Math.random() * 0.5 + 0.5}; }
+      50% { opacity: ${Math.random() * 0.3}; }
+      100% { opacity: ${Math.random() * 0.5 + 0.5}; }
+    }
+  `;
+  document.head.appendChild(style);
+  createStarfield();
+
+  // Game variables
+  let rightPressed = false;
+  let leftPressed = false;
+  let spacePressed = false;
+  let enterPressed = false;
+  let bullets = [];
+  let enemyBullets = [];
+  let enemies = [];
+  let explosions = [];
+  let powerUps = [];
+  let particles = [];
+  let stars = [];
+  let gameActive = true;
+  let lastBulletTime = 0;
+  let bulletCooldown = 300; // 300ms between shots
+  
+  // Player ship
+  let player = { 
+    x: canvas.width/2, 
+    y: canvas.height-80, 
+    width: 70, 
+    height: 50, 
+    speed: 8, 
+    maxHealth: 5,
+    health: 5, 
+    shaking: false, 
+    shakeAngle: 0,
+    forceFieldActive: false,
+    invulnerable: false,
+    thruster: {
+      particles: [],
+      lastEmit: 0
+    },
+    powerUps: {
+      rapidFire: false,
+      rapidFireUntil: 0,
+      shield: false,
+      shieldUntil: 0,
+      tripleShot: false,
+      tripleShotUntil: 0
+    }
+  };
+
+  // Load images
+  const playerImage = new Image();
+  playerImage.src = 'https://images.fuzzycode.dev/fast_ai?search=detailed+blue+spaceship+top+down+view+pixel+art&resize=70x50&transparency=true';
+  
+  const enemyImages = {
+    normal: new Image(),
+    super: new Image(),
+    boss: new Image()
+  };
+  
+  enemyImages.normal.src = 'https://images.fuzzycode.dev/fast_ai?search=alien+invader+pixel+art+green&resize=50x40&transparency=true';
+  enemyImages.super.src = 'https://images.fuzzycode.dev/fast_ai?search=advanced+alien+invader+pixel+art+orange&resize=60x50&transparency=true';
+  enemyImages.boss.src = 'https://images.fuzzycode.dev/fast_ai?search=boss+alien+mothership+pixel+art+red&resize=100x80&transparency=true';
+
+  const explosionSprite = new Image();
+  explosionSprite.src = 'https://images.fuzzycode.dev/fast_ai?search=explosion+sprite+sheet+pixel+art&resize=384x32&transparency=true';
+
+  const powerUpImages = {
+    health: new Image(),
+    rapidFire: new Image(),
+    shield: new Image(),
+    tripleShot: new Image()
+  };
+  
+  powerUpImages.health.src = 'https://images.fuzzycode.dev/fast_ai?search=health+powerup+pixel+art+heart&resize=30x30&transparency=true';
+  powerUpImages.rapidFire.src = 'https://images.fuzzycode.dev/fast_ai?search=rapid+fire+powerup+pixel+art&resize=30x30&transparency=true';
+  powerUpImages.shield.src = 'https://images.fuzzycode.dev/fast_ai?search=shield+powerup+pixel+art&resize=30x30&transparency=true';
+  powerUpImages.tripleShot.src = 'https://images.fuzzycode.dev/fast_ai?search=triple+shot+powerup+pixel+art&resize=30x30&transparency=true';
+
+  const backgroundImage = new Image();
+  backgroundImage.src = 'https://images.fuzzycode.dev/fast_ai?search=deep+space+nebula+background&resize=800x600';
+
+  // Level parameters
+  let level = 1;
+  const maxLevels = 10;
+  let enemyRows = 3;
+  let enemyColumns = 5;
+  let enemyHorizontalSpacing = 80;
+  let enemyVerticalSpacing = 60;
+  let enemyMarginTop = 80;
+  let enemyMarginLeft = 100;
+  let enemyDirection = 1;
+  let enemyDownShift = false;
+  let enemySpeed = 1;
+  let enemyShootProbability = 0.005;
+  let bossActive = false;
+
+  // Initialize enemies
+  function initEnemies() {
+    enemies = [];
+    
+    // Special boss level every 5 levels
+    if (level % 5 === 0) {
+      bossActive = true;
+      const boss = {
+        x: canvas.width / 2 - 50,
+        y: 50,
+        width: 100,
+        height: 80,
+        health: 20 + (level * 5),
+        maxHealth: 20 + (level * 5),
+        type: 'boss',
+        shaking: false,
+        shakeOffset: 0,
+        direction: 1,
+        shootTimer: setInterval(() => bossShoot(), 1000),
+        phaseShift: false
+      };
+      enemies.push(boss);
+    } else {
+      bossActive = false;
+      for(let i = 0; i < enemyColumns; i++) {
+        for(let j = 0; j < enemyRows; j++) {
+          let enemyType = 'normal';
+          // Higher chance for super enemies in higher levels
+          const superEnemyChance = Math.random() * 100;
+          if (superEnemyChance < level * 8) {
+            enemyType = 'super';
+          }
+
+          const enemy = {
+            x: enemyHorizontalSpacing * i + enemyMarginLeft,
+            y: enemyVerticalSpacing * j + enemyMarginTop,
+            width: enemyType === 'super' ? 60 : 50,
+            height: enemyType === 'super' ? 50 : 40,
+            health: enemyType === 'super' ? 3 + Math.floor(level/2) : 1 + Math.floor(level/3),
+            maxHealth: enemyType === 'super' ? 3 + Math.floor(level/2) : 1 + Math.floor(level/3),
+            type: enemyType,
+            shaking: false,
+            shakeOffset: 0,
+            shootProbability: enemyType === 'super' ? enemyShootProbability * 2 : enemyShootProbability
+          };
+          enemies.push(enemy);
+        }
+      }
+    }
+  }
+
+  // Event listeners
+  document.addEventListener('keydown', keyDownHandler, false);
+  document.addEventListener('keyup', keyUpHandler, false);
+
+  function keyDownHandler(e) {
+    if(e.key == "Right" || e.key == "ArrowRight") {
+      rightPressed = true;
+    }
+    else if(e.key == "Left" || e.key == "ArrowLeft") {
+      leftPressed = true;
+    }
+    else if(e.key == " " || e.key == "Spacebar") {
+      spacePressed = true;
+      if (gameActive) {
+        shootBullet();
+      }
+    }
+    else if(e.key == "Enter" && !gameActive) {
+      enterPressed = true;
+      restartGame();
+    }
+  }
+
+  function keyUpHandler(e) {
+    if(e.key == "Right" || e.key == "ArrowRight") {
+      rightPressed = false;
+    }
+    else if(e.key == "Left" || e.key == "ArrowLeft") {
+      leftPressed = false;
+    }
+    else if(e.key == " " || e.key == "Spacebar") {
+      spacePressed = false;
+    }
+    else if(e.key == "Enter") {
+      enterPressed = false;
+    }
+  }
+
+  // Shooting functions
+  function shootBullet() {
+    const currentTime = Date.now();
+    // Check cooldown
+    if (currentTime - lastBulletTime < (player.powerUps.rapidFire ? bulletCooldown / 3 : bulletCooldown)) {
+      return;
+    }
+    
+    // Standard bullet
+    bullets.push({ 
+      x: player.x + player.width/2 - 3, 
+      y: player.y, 
+      width: 6, 
+      height: 20,
+      color: '#30f2f2',
+      damage: 1
+    });
+    
+    // Triple shot power-up
+    if (player.powerUps.tripleShot) {
+      bullets.push({ 
+        x: player.x + player.width/4 - 3, 
+        y: player.y + 10, 
+        width: 6, 
+        height: 20,
+        color: '#30f2f2',
+        damage: 1,
+        angle: -0.2
+      });
+      
+      bullets.push({ 
+        x: player.x + (player.width * 3/4) - 3, 
+        y: player.y + 10, 
+        width: 6, 
+        height: 20,
+        color: '#30f2f2',
+        damage: 1,
+        angle: 0.2
+      });
+    }
+    
+    playSound('playerShoot', 0.4);
+    lastBulletTime = currentTime;
+    
+    // Add muzzle flash particles
+    for (let i = 0; i < 10; i++) {
+      particles.push({
+        x: player.x + player.width/2,
+        y: player.y,
+        size: Math.random() * 3 + 1,
+        speed: Math.random() * 3 + 1,
+        angle: Math.random() * Math.PI - Math.PI/2,
+        color: '#30f2f2',
+        alpha: 1,
+        life: 20
+      });
+    }
+  }
+
+  function bossShoot() {
+    if (!gameActive || enemies.length === 0 || !bossActive) return;
+    
+    const boss = enemies[0];
+    if (boss && boss.type === 'boss') {
+      // Pattern 1: Triple shot
+      enemyBullets.push({ 
+        x: boss.x + 40, 
+        y: boss.y + boss.height, 
+        width: 8, 
+        height: 20,
+        color: '#ff3e3e',
+        speed: 4
+      });
+      
+      enemyBullets.push({ 
+        x: boss.x + 20, 
+        y: boss.y + boss.height, 
+        width: 8, 
+        height: 20,
+        color: '#ff3e3e',
+        speed: 4,
+        angle: -0.2
+      });
+      
+      enemyBullets.push({ 
+        x: boss.x + 60, 
+        y: boss.y + boss.height, 
+        width: 8, 
+        height: 20,
+        color: '#ff3e3e',
+        speed: 4,
+        angle: 0.2
+      });
+      
+      // Pattern 2: If in phase shift, add homing bullets
+      if (boss.phaseShift) {
+        enemyBullets.push({ 
+          x: boss.x + boss.width/2, 
+          y: boss.y + boss.height,
+          width: 10, 
+          height: 10,
+          color: '#f2a93c',
+          speed: 3,
+          homing: true,
+          homingStrength: 0.03
+        });
+      }
+      
+      playSound('enemyShoot', 0.5);
+    }
+  }
+
+  function enemiesShoot() {
+    if (bossActive) return; // Boss has its own shooting mechanism
+    
+    enemies.forEach(enemy => {
+      if (Math.random() < enemy.shootProbability) {
+        enemyBullets.push({ 
+          x: enemy.x + enemy.width/2 - 3, 
+          y: enemy.y + enemy.height, 
+          width: 6, 
+          height: 15,
+          color: enemy.type === 'super' ? '#f2a93c' : '#ff3e3e',
+          speed: enemy.type === 'super' ? 5 : 3
+        });
+        playSound('enemyShoot', 0.3);
+      }
+    });
+  }
+
+  // Drawing functions
+  function drawPlayer() {
+    ctx.save(); 
+    ctx.translate(player.x + player.width / 2, player.y + player.height / 2); 
+
+    // Player ship shaking effect when hit
+    if (player.shaking) {
+      player.shakeAngle += 0.3; 
+      const shakeOffset = Math.sin(player.shakeAngle) * 5;
+      ctx.translate(shakeOffset, 0); 
+      if (player.shakeAngle > Math.PI * 4) { 
+        player.shaking = false;
+        player.shakeAngle = 0;
+      }
+    }
+
+    // Draw thruster flames
+    if (gameActive) {
+      drawThrusterFlames();
+    }
+
+    // Draw player ship
+    ctx.drawImage(playerImage, -player.width / 2, -player.height / 2, player.width, player.height);
+    
+    // Draw invulnerability effect
+    if (player.invulnerable) {
+      ctx.beginPath();
+      ctx.arc(0, 0, player.width / 1.5, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(255, 255, 255, ${0.3 + Math.sin(Date.now() / 100) * 0.2})`;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.closePath();
+    }
+    
+    ctx.restore();
+
+    // Draw shield if active
+    if (player.powerUps.shield) {
+      drawShield();
+    }
+  }
+
+  function drawThrusterFlames() {
+    const currentTime = Date.now();
+    
+    // Emit thruster particles
+    if (currentTime - player.thruster.lastEmit > 50) {
+      const baseX = 0;
+      const baseY = player.height / 2;
+      
+      // Main thruster
+      for (let i = 0; i < 3; i++) {
+        particles.push({
+          x: baseX,
+          y: baseY,
+          size: Math.random() * 4 + 2,
+          speed: Math.random() * 2 + 1,
+          angle: Math.PI / 2 + (Math.random() * 0.4 - 0.2),
+          color: Math.random() > 0.5 ? '#ff3e3e' : '#f2a93c',
+          alpha: 0.8,
+          life: 20
+        });
+      }
+      
+      player.thruster.lastEmit = currentTime;
+    }
+  }
+
+  function drawShield() {
+    ctx.beginPath();
+    ctx.arc(player.x + player.width / 2, player.y + player.height / 2, player.width / 1.2, 0, Math.PI * 2);
+    
+    // Create gradient for shield
+    const gradient = ctx.createRadialGradient(
+      player.x + player.width / 2, player.y + player.height / 2, player.width / 2,
+      player.x + player.width / 2, player.y + player.height / 2, player.width
+    );
+    
+    gradient.addColorStop(0, 'rgba(48, 242, 242, 0)');
+    gradient.addColorStop(0.7, 'rgba(48, 242, 242, 0.2)');
+    gradient.addColorStop(0.9, 'rgba(48, 242, 242, 0.6)');
+    gradient.addColorStop(1, 'rgba(48, 242, 242, 0.1)');
+    
+    ctx.fillStyle = gradient;
+    ctx.fill();
+    
+    // Add pulsing effect
+    const pulseSize = Math.sin(Date.now() / 200) * 5;
+    ctx.beginPath();
+    ctx.arc(player.x + player.width / 2, player.y + player.height / 2, player.width / 1.2 + pulseSize, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(48, 242, 242, 0.8)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.closePath();
+  }
+
+  function drawBullets() {
+    bullets.forEach((bullet, index) => {
+      ctx.save();
+      
+      // Apply angle if bullet has one
+      if (bullet.angle) {
+        ctx.translate(bullet.x + bullet.width / 2, bullet.y + bullet.height / 2);
+        ctx.rotate(bullet.angle);
+        ctx.translate(-(bullet.x + bullet.width / 2), -(bullet.y + bullet.height / 2));
+      }
+      
+      // Draw bullet glow
+      ctx.beginPath();
+      ctx.rect(bullet.x - 2, bullet.y - 2, bullet.width + 4, bullet.height + 4);
+      ctx.fillStyle = bullet.color + '50'; // Add transparency for glow
+      ctx.fill();
+      ctx.closePath();
+      
+      // Draw bullet
+      ctx.beginPath();
+      ctx.rect(bullet.x, bullet.y, bullet.width, bullet.height);
+      ctx.fillStyle = bullet.color;
+      ctx.fill();
+      ctx.closePath();
+      
+      ctx.restore();
+
+      // Update bullet position
+      if (bullet.angle) {
+        bullet.x += Math.sin(bullet.angle) * 7;
+        bullet.y -= Math.cos(bullet.angle) * 7;
+      } else {
+        bullet.y -= 7;
+      }
+
+      // Remove bullets that go off screen
+      if (bullet.y < -bullet.height) {
+        bullets.splice(index, 1);
+      }
+    });
+  }
+
+  function drawEnemyBullets() {
+    enemyBullets.forEach((bullet, index) => {
+      ctx.beginPath();
+      
+      // Draw bullet glow
+      ctx.rect(bullet.x - 2, bullet.y - 2, bullet.width + 4, bullet.height + 4);
+      ctx.fillStyle = bullet.color + '50'; // Add transparency for glow
+      ctx.fill();
+      ctx.closePath();
+      
+      // Draw bullet
+      ctx.beginPath();
+      ctx.rect(bullet.x, bullet.y, bullet.width, bullet.height);
+      ctx.fillStyle = bullet.color;
+      ctx.fill();
+      ctx.closePath();
+
+      // Update position - homing bullets track the player
+      const speed = bullet.speed || 4;
+      
+      if (bullet.homing) {
+        // Calculate angle to player
+        const dx = (player.x + player.width/2) - (bullet.x + bullet.width/2);
+        const dy = (player.y + player.height/2) - (bullet.y + bullet.height/2);
+        const angle = Math.atan2(dy, dx);
+        
+        // Update bullet position with homing behavior
+        bullet.x += Math.cos(angle) * speed * bullet.homingStrength * 10;
+        bullet.y += Math.sin(angle) * speed * bullet.homingStrength * 10;
+        bullet.y += speed * (1 - bullet.homingStrength);
+      } else {
+        bullet.y += speed;
+      }
+
+      // Remove bullets that go off screen
+      if (bullet.y > canvas.height) {
+        enemyBullets.splice(index, 1);
+      }
+    });
+  }
+
+  function drawEnemies() {
+    enemies.forEach(enemy => {
+      ctx.save();
+      
+      // Apply shaking effect when enemy is hit
+      if (enemy.shaking) {
+        enemy.shakeOffset = Math.sin(Date.now() * 0.1) * 5; 
+        ctx.translate(enemy.shakeOffset, 0);
+        setTimeout(() => { enemy.shaking = false; }, 200); 
+      }
+      
+      // Draw enemy
+      const img = enemy.type === 'normal' ? enemyImages.normal : 
+                 (enemy.type === 'super' ? enemyImages.super : enemyImages.boss);
+      
+      ctx.drawImage(img, enemy.x, enemy.y, enemy.width, enemy.height);
+      
+      // Draw health bar for enemies with more than 1 health
+      if (enemy.health > 1 || enemy.type === 'boss') {
+        const healthPercent = enemy.health / enemy.maxHealth;
+        const barWidth = enemy.width * 0.8;
+        const barHeight = 5;
+        const barX = enemy.x + (enemy.width - barWidth) / 2;
+        const barY = enemy.y - 10;
+        
+        // Health bar background
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.fillRect(barX, barY, barWidth, barHeight);
+        
+        // Health bar fill
+        let barColor;
+        if (healthPercent > 0.6) barColor = '#30f230';
+        else if (healthPercent > 0.3) barColor = '#f2a93c';
+        else barColor = '#ff3e3e';
+        
+        ctx.fillStyle = barColor;
+        ctx.fillRect(barX, barY, barWidth * healthPercent, barHeight);
+      }
+      
+      // Special effects for boss
+      if (enemy.type === 'boss') {
+        // Draw energy aura
+        const auraSize = 5 + Math.sin(Date.now() / 200) * 3;
+        ctx.beginPath();
+        ctx.rect(enemy.x - auraSize, enemy.y - auraSize, enemy.width + auraSize * 2, enemy.height + auraSize * 2);
+        ctx.fillStyle = `rgba(255, 62, 62, ${0.1 + Math.sin(Date.now() / 300) * 0.05})`;
+        ctx.fill();
+        ctx.closePath();
+        
+        // Draw phase indicator for boss phase shift
+        if (enemy.phaseShift) {
+          ctx.beginPath();
+          ctx.arc(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.width / 2 + 10, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(242, 169, 60, ${0.5 + Math.sin(Date.now() / 100) * 0.3})`;
+          ctx.lineWidth = 3;
+          ctx.stroke();
+          ctx.closePath();
+        }
+      }
+      
+      ctx.restore();
+    });
+  }
+
+  function drawPowerUps() {
+    powerUps.forEach(powerUp => {
+      // Draw glow effect
+      ctx.beginPath();
+      ctx.arc(powerUp.x, powerUp.y, powerUp.radius + 5, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255, 255, 255, ${0.3 + Math.sin(Date.now() / 200) * 0.2})`;
+      ctx.fill();
+      ctx.closePath();
+      
+      // Draw power-up icon
+      const img = powerUpImages[powerUp.type];
+      if (img) {
+        ctx.drawImage(img, powerUp.x - powerUp.radius, powerUp.y - powerUp.radius, powerUp.radius * 2, powerUp.radius * 2);
+      } else {
+        // Fallback if image not loaded
+        ctx.beginPath();
+        ctx.arc(powerUp.x, powerUp.y, powerUp.radius, 0, Math.PI * 2);
+        ctx.fillStyle = powerUp.color || "#FFFF00";
+        ctx.fill();
+        ctx.closePath();
+      }
+      
+      // Update position
+      powerUp.y += 1.5;
+      powerUp.angle = (powerUp.angle || 0) + 0.05;
+      
+      // Remove if off screen
+      if (powerUp.y > canvas.height + powerUp.radius) {
+        const index = powerUps.indexOf(powerUp);
+        if (index !== -1) {
+          powerUps.splice(index, 1);
+        }
+      }
+    });
+  }
+
+  function drawExplosions() {
+    explosions.forEach((explosion, index) => {
+      // Draw sprite-based explosion
+      const frameWidth = 32; // Width of each frame in the sprite sheet
+      const currentFrame = Math.floor(explosion.progress * 12); // 12 frames in total
+      
+      if (currentFrame < 12) {
+        ctx.drawImage(
+          explosionSprite,
+          currentFrame * frameWidth, 0, frameWidth, 32,
+          explosion.x - explosion.size/2, explosion.y - explosion.size/2, explosion.size, explosion.size
+        );
+      }
+      
+      // Update explosion progress
+      explosion.progress += 0.04;
+      if (explosion.progress >= 1) {
+        explosions.splice(index, 1);
+      }
+    });
+  }
+
+  function drawParticles() {
+    particles.forEach((particle, index) => {
+      ctx.beginPath();
+      ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+      ctx.fillStyle = particle.color + Math.floor(particle.alpha * 255).toString(16).padStart(2, '0');
+      ctx.fill();
+      ctx.closePath();
+      
+      // Update particle position
+      particle.x += Math.cos(particle.angle) * particle.speed;
+      particle.y += Math.sin(particle.angle) * particle.speed;
+      
+      // Update particle life and alpha
+      particle.life--;
+      particle.alpha = particle.life / 20;
+      
+      if (particle.life <= 0) {
+        particles.splice(index, 1);
+      }
+    });
+  }
+
+  function updateEnemies() {
+    if (bossActive && enemies.length > 0) {
+      // Boss movement pattern
+      const boss = enemies[0];
+      boss.x += 2 * boss.direction;
+      
+      // Reverse direction at edges
+      if (boss.x <= 0 || boss.x + boss.width >= canvas.width) {
+        boss.direction *= -1;
+      }
+      
+      // Phase shift when health is below 50%
+      if (boss.health <= boss.maxHealth / 2 && !boss.phaseShift) {
+        boss.phaseShift = true;
+        
+        // Visual effect for phase shift
+        for (let i = 0; i < 30; i++) {
+          particles.push({
+            x: boss.x + boss.width/2,
+            y: boss.y + boss.height/2,
+            size: Math.random() * 5 + 2,
+            speed: Math.random() * 4 + 2,
+            angle: Math.random() * Math.PI * 2,
+            color: '#f2a93c',
+            alpha: 1,
+            life: 40
+          });
+        }
+      }
+    } else {
+      // Regular enemies movement
+      const moveSide = enemySpeed * enemyDirection; 
+      
+      // Check if any enemy has reached the edge
+      const edgeReached = enemies.some(enemy => 
+        (enemy.x + moveSide > canvas.width - enemy.width) || 
+        (enemy.x + moveSide < 0)
+      );
+      
+      if (edgeReached) {
+        enemyDirection *= -1;
+        enemyDownShift = true;
+      }
+      
+      // Move all enemies
+      enemies.forEach(enemy => {
+        if (enemyDownShift) {
+          enemy.y += 15;
+        } else {
+          enemy.x += moveSide;
+        }
+      });
+      
+      if (enemyDownShift) {
+        enemyDownShift = false;
+      }
+    }
+  }
+
+  function updateGameObjects() {
+    // Check for bullet collisions with enemies
+    bullets.forEach((bullet, bulletIndex) => {
+      enemies.forEach((enemy, enemyIndex) => {
+        if(bullet.x < enemy.x + enemy.width &&
+           bullet.x + bullet.width > enemy.x &&
+           bullet.y < enemy.y + enemy.height &&
+           bullet.y + bullet.height > enemy.y) {
+          // Remove bullet
+          bullets.splice(bulletIndex, 1);
+          
+          // Damage enemy
+          enemy.health -= bullet.damage || 1;
+          enemy.shaking = true;
+          
+          // Play hit sound
+          playSound('enemyHit', 0.4);
+          
+          // Add hit particles
+          for (let i = 0; i < 8; i++) {
+            particles.push({
+              x: bullet.x,
+              y: bullet.y,
+              size: Math.random() * 3 + 1,
+              speed: Math.random() * 3 + 1,
+              angle: Math.random() * Math.PI * 2,
+              color: '#30f2f2',
+              alpha: 1,
+              life: 15
+            });
+          }
+          
+          // Check if enemy is destroyed
+          if (enemy.health <= 0) {
+            // Create explosion
+            explosions.push({ 
+              x: enemy.x + enemy.width/2, 
+              y: enemy.y + enemy.height/2, 
+              size: enemy.type === 'boss' ? 150 : (enemy.type === 'super' ? 80 : 60), 
+              progress: 0
+            });
+            
+            // Play explosion sound
+            playSound('enemyDestroyed', 0.5);
+            
+            // Clear shoot timer for boss
+            if (enemy.type === 'boss' && enemy.shootTimer) {
+              clearInterval(enemy.shootTimer);
+            }
+            
+            // Remove enemy
+            enemies.splice(enemyIndex, 1);
+            
+            // Chance to drop power-up
+            const powerUpChance = enemy.type === 'boss' ? 1.0 : 
+                                (enemy.type === 'super' ? 0.4 : 0.15);
+            
+            if (Math.random() < powerUpChance) {
+              // Determine power-up type
+              const powerUpTypes = ['health', 'rapidFire', 'shield', 'tripleShot'];
+              const powerUpType = powerUpTypes[Math.floor(Math.random() * powerUpTypes.length)];
+              
+              powerUps.push({ 
+                x: enemy.x + enemy.width/2, 
+                y: enemy.y + enemy.height/2, 
+                radius: 15,
+                type: powerUpType,
+                color: getPowerUpColor(powerUpType)
+              });
+            }
+          }
+        }
+      });
+    });
+
+    // Check for enemy bullet collisions with player
+    enemyBullets.forEach((bullet, bulletIndex) => {
+      if(bullet.x < player.x + player.width &&
+         bullet.x + bullet.width > player.x &&
+         bullet.y < player.y + player.height &&
+         bullet.y + bullet.height > player.y) {
+          // Remove the bullet
+          enemyBullets.splice(bulletIndex, 1);
+          
+          // If player has shield, block damage
+          if (player.powerUps.shield) {
+            // Shield effect
+            for (let i = 0; i < 15; i++) {
+              particles.push({
+                x: bullet.x,
+                y: bullet.y,
+                size: Math.random() * 3 + 1,
+                speed: Math.random() * 3 + 1,
+                angle: Math.random() * Math.PI * 2,
+                color: '#30f2f2',
+                alpha: 1,
+                life: 20
+              });
+            }
+            playSound('playerHit', 0.3);
+          } 
+          // If player is invulnerable, no damage
+          else if (player.invulnerable) {
+            // Deflection effect
+            for (let i = 0; i < 10; i++) {
+              particles.push({
+                x: bullet.x,
+                y: bullet.y,
+                size: Math.random() * 2 + 1,
+                speed: Math.random() * 2 + 1,
+                angle: Math.random() * Math.PI * 2,
+                color: '#ffffff',
+                alpha: 0.8,
+                life: 15
+              });
+            }
+          }
+          // Otherwise, take damage
+          else {
+            player.health--;
+            player.shaking = true;
+            player.invulnerable = true;
+            
+            // Make player invulnerable for a short time
+            setTimeout(() => { player.invulnerable = false; }, 1500);
+            
+            // Update health display
+            updateHealthDisplay();
+            
+            // Play hit sound
+            playSound('playerHit', 0.6);
+            
+            // Add hit particles
+            for (let i = 0; i < 15; i++) {
+              particles.push({
+                x: bullet.x,
+                y: bullet.y,
+                size: Math.random() * 4 + 2,
+                speed: Math.random() * 4 + 2,
+                angle: Math.random() * Math.PI * 2,
+                color: '#ff3e3e',
+                alpha: 1,
+                life: 25
+              });
+            }
+            
+            // Check if player is destroyed
+            if (player.health <= 0) {
+              gameOver();
+            }
+          }
+        }
+    });
+
+    // Check for power-up collisions with player
+    powerUps.forEach((powerUp, index) => {
+      if(Math.sqrt(Math.pow(powerUp.x - (player.x + player.width/2), 2) + 
+                   Math.pow(powerUp.y - (player.y + player.height/2), 2)) < 
+         (powerUp.radius + player.width/2)) {
+        
+        // Remove the power-up
+        powerUps.splice(index, 1);
+        
+        // Apply power-up effect
+        applyPowerUp(powerUp.type);
+        
+        // Play power-up sound
+        playSound('powerUp', 0.6);
+        
+        // Add collection particles
+        for (let i = 0; i < 20; i++) {
+          particles.push({
+            x: powerUp.x,
+            y: powerUp.y,
+            size: Math.random() * 4 + 2,
+            speed: Math.random() * 3 + 2,
+            angle: Math.random() * Math.PI * 2,
+            color: getPowerUpColor(powerUp.type),
+            alpha: 1,
+            life: 30
+          });
+        }
+      }
+    });
+
+    // Check if any enemies have reached the bottom
+    enemies.forEach(enemy => {
+      if (enemy.y + enemy.height > player.y) {
+        gameOver();
+      }
+    });
+    
+    // Update power-up timers
+    updatePowerUpTimers();
+  }
+
+  function getPowerUpColor(type) {
+    switch(type) {
+      case 'health': return '#30f230';
+      case 'rapidFire': return '#f2a93c';
+      case 'shield': return '#30f2f2';
+      case 'tripleShot': return '#ff3e3e';
+      default: return '#ffffff';
+    }
+  }
+
+  function applyPowerUp(type) {
+    const duration = 10000; // 10 seconds for power-ups
+    
+    switch(type) {
+      case 'health':
+        player.health = Math.min(player.health + 1, player.maxHealth);
+        updateHealthDisplay();
+        break;
+      case 'rapidFire':
+        player.powerUps.rapidFire = true;
+        player.powerUps.rapidFireUntil = Date.now() + duration;
+        powerUpIndicator.textContent = "RAPID FIRE ACTIVE!";
+        powerUpIndicator.style.color = '#f2a93c';
+        powerUpIndicator.style.display = 'block';
+        break;
+      case 'shield':
+        player.powerUps.shield = true;
+        player.powerUps.shieldUntil = Date.now() + duration;
+        powerUpIndicator.textContent = "SHIELD ACTIVE!";
+        powerUpIndicator.style.color = '#30f2f2';
+        powerUpIndicator.style.display = 'block';
+        break;
+      case 'tripleShot':
+        player.powerUps.tripleShot = true;
+        player.powerUps.tripleShotUntil = Date.now() + duration;
+        powerUpIndicator.textContent = "TRIPLE SHOT ACTIVE!";
+        powerUpIndicator.style.color = '#ff3e3e';
+        powerUpIndicator.style.display = 'block';
+        break;
+    }
+  }
+
+  function updatePowerUpTimers() {
+    const currentTime = Date.now();
+    
+    // Check rapid fire timer
+    if (player.powerUps.rapidFire && currentTime > player.powerUps.rapidFireUntil) {
+      player.powerUps.rapidFire = false;
+      if (!player.powerUps.shield && !player.powerUps.tripleShot) {
+        powerUpIndicator.style.display = 'none';
+      } else if (player.powerUps.shield) {
+        powerUpIndicator.textContent = "SHIELD ACTIVE!";
+        powerUpIndicator.style.color = '#30f2f2';
+      } else if (player.powerUps.tripleShot) {
+        powerUpIndicator.textContent = "TRIPLE SHOT ACTIVE!";
+        powerUpIndicator.style.color = '#ff3e3e';
+      }
+    }
+    
+    // Check shield timer
+    if (player.powerUps.shield && currentTime > player.powerUps.shieldUntil) {
+      player.powerUps.shield = false;
+      if (!player.powerUps.rapidFire && !player.powerUps.tripleShot) {
+        powerUpIndicator.style.display = 'none';
+      } else if (player.powerUps.rapidFire) {
+        powerUpIndicator.textContent = "RAPID FIRE ACTIVE!";
+        powerUpIndicator.style.color = '#f2a93c';
+      } else if (player.powerUps.tripleShot) {
+        powerUpIndicator.textContent = "TRIPLE SHOT ACTIVE!";
+        powerUpIndicator.style.color = '#ff3e3e';
+      }
+    }
+    
+    // Check triple shot timer
+    if (player.powerUps.tripleShot && currentTime > player.powerUps.tripleShotUntil) {
+      player.powerUps.tripleShot = false;
+      if (!player.powerUps.rapidFire && !player.powerUps.shield) {
+        powerUpIndicator.style.display = 'none';
+      } else if (player.powerUps.rapidFire) {
+        powerUpIndicator.textContent = "RAPID FIRE ACTIVE!";
+        powerUpIndicator.style.color = '#f2a93c';
+      } else if (player.powerUps.shield) {
+        powerUpIndicator.textContent = "SHIELD ACTIVE!";
+        powerUpIndicator.style.color = '#30f2f2';
+      }
+    }
+  }
+
+  function updateHealthDisplay() {
+    const healthPercentage = (player.health / player.maxHealth) * 100;
+    healthFill.style.width = `${healthPercentage}%`;
+  }
+
+  function nextLevel() {
+    level++;
+    levelDisplay.textContent = level;
+    
+    // Show level up message
+    levelUpDiv.style.display = 'block';
+    setTimeout(() => { levelUpDiv.style.display = 'none'; }, 2000);
+    
+    // Play level up sound
+    playSound('levelUp', 0.6);
+    
+    // Increase difficulty
+    enemySpeed = Math.min(enemySpeed + 0.2, 3);
+    enemyShootProbability = Math.min(enemyShootProbability + 0.001, 0.02);
+    
+    // Increase enemy count
+    if (level % 5 !== 0) { // Not a boss level
+      enemyRows = Math.min(enemyRows + 1, 5);
+      enemyColumns = Math.min(enemyColumns + 1, 10);
+    }
+    
+    // Initialize new enemies
+    initEnemies();
+    
+    // Add level transition particles
+    for (let i = 0; i < 50; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        size: Math.random() * 5 + 3,
+        speed: Math.random() * 3 + 2,
+        angle: Math.random() * Math.PI * 2,
+        color: '#30f2f2',
+        alpha: 1,
+        life: 60
+      });
+    }
+  }
+
+  function gameOver() {
+    gameActive = false;
+    gameOverDiv.style.display = 'block';
+    
+    // Play game over sound
+    playSound('gameOver', 0.7);
+    
+    // Stop background music
+    if (soundCache.backgroundMusic) {
+      soundCache.backgroundMusic.pause();
+    }
+    
+    // Add explosion particles for player ship
+    for (let i = 0; i < 40; i++) {
+      particles.push({
+        x: player.x + player.width/2,
+        y: player.y + player.height/2,
+        size: Math.random() * 5 + 3,
+        speed: Math.random() * 4 + 2,
+        angle: Math.random() * Math.PI * 2,
+        color: '#ff3e3e',
+        alpha: 1,
+        life: 60
+      });
+    }
+    
+    // Create big explosion
+    explosions.push({ 
+      x: player.x + player.width/2, 
+      y: player.y + player.height/2, 
+      size: 120, 
+      progress: 0
+    });
+  }
+
+  function restartGame() {
+    // Reset game state
+    gameActive = true;
+    gameOverDiv.style.display = 'none';
+    
+    // Reset player
+    player.x = canvas.width/2 - player.width/2;
+    player.y = canvas.height - 80;
+    player.health = player.maxHealth;
+    player.shaking = false;
+    player.invulnerable = false;
+    player.forceFieldActive = false;
+    player.powerUps = {
+      rapidFire: false,
+      rapidFireUntil: 0,
+      shield: false,
+      shieldUntil: 0,
+      tripleShot: false,
+      tripleShotUntil: 0
+    };
+    
+    // Reset arrays
+    bullets = [];
+    enemyBullets = [];
+    explosions = [];
+    powerUps = [];
+    particles = [];
+    
+    // Reset level
+    level = 1;
+    levelDisplay.textContent = level;
+    enemyRows = 3;
+    enemyColumns = 5;
+    enemySpeed = 1;
+    enemyShootProbability = 0.005;
+    
+    // Reset UI
+    updateHealthDisplay();
+    powerUpIndicator.style.display = 'none';
+    
+    // Initialize enemies
+    initEnemies();
+    
+    // Restart background music
+    startBackgroundMusic();
+  }
+
+  function drawBackground() {
+    // Draw background image
+    ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+    
+    // Add stars
+    if (stars.length < 100) {
+      stars.push({
+        x: Math.random() * canvas.width,
+        y: 0,
+        size: Math.random() * 2 + 1,
+        speed: Math.random() * 2 + 0.5
+      });
+    }
+    
+    // Draw and update stars
+    stars.forEach((star, index) => {
+      ctx.beginPath();
+      ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255, 255, 255, ${0.5 + Math.random() * 0.5})`;
+      ctx.fill();
+      ctx.closePath();
+      
+      star.y += star.speed;
+      
+      if (star.y > canvas.height) {
+        stars.splice(index, 1);
+      }
+    });
+  }
+
+  function gameLoop() {
+    if (!gameActive) {
+      // Only draw minimal things when game is over
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawBackground();
+      drawExplosions();
+      drawParticles();
+      requestAnimationFrame(gameLoop);
+      return;
+    }
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw game elements
+    drawBackground();
+    drawPlayer();
+    drawBullets();
+    drawEnemies();
+    drawPowerUps();
+    drawEnemyBullets();
+    drawExplosions();
+    drawParticles();
+    
+    // Update game state
+    updateGameObjects();
+    updateEnemies();
+    enemiesShoot();
+    
+    // Player movement
+    if(rightPressed && player.x < canvas.width - player.width) {
+      player.x += player.speed;
+    }
+    else if(leftPressed && player.x > 0) {
+      player.x -= player.speed;
+    }
+    
+    // Check for level completion
+    if (enemies.length === 0) {
+      nextLevel();
+    }
+    
+    requestAnimationFrame(gameLoop);
+  }
+
+  // Initialize game
+  initEnemies();
+  updateHealthDisplay();
+  startBackgroundMusic();
+  requestAnimationFrame(gameLoop);
+</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/nipplejs@0.10.2/dist/nipplejs.js" crossorigin="anonymous"></script>
+    <script>
+(function (root, factory) {
+    if (typeof module === "object" && module.exports) {
+        module.exports = factory();
+    } else {
+        root.TouchpadControls = factory();
+        root.touchpadControls = root.TouchpadControls;
+    }
+}(typeof self !== "undefined" ? self : this, function () {
+    "use strict";
+
+    const sections = {
+        CENTER_LEFT: { top: "50%", left: "130px", transform: "translate(-50%, -50%)" },
+        CENTER_TOP: { top: "130px", left: "50%", transform: "translate(-50%, -50%)" },
+        CENTER_RIGHT: { top: "50%", left: "calc(100% - 130px)", transform: "translate(-50%, -50%)" },
+        CENTER_BOTTOM: { top: "calc(100% - 130px)", left: "50%", transform: "translate(-50%, -50%)" }
+    };
+
+    const buttonPositions = {
+        CENTER_LEFT: { top: "0", left: "-50px" },
+        CENTER_TOP: { top: "-50px", left: "0" },
+        CENTER_RIGHT: { top: "0", left: "50px" },
+        CENTER_BOTTOM: { top: "50px", left: "0" }
+    };
+
+    const STYLE_ID = "touchpad-controls-style";
+    const MIN_TOUCH_TARGET = 48;
+
+    const injectTouchpadStyles = () => {
+        if (typeof document === "undefined") return;
+        if (document.getElementById(STYLE_ID)) return;
+
+        const style = document.createElement("style");
+        style.id = STYLE_ID;
+        style.textContent = `
+            :root {
+                --touchpad-size: 72px;
+                --touchpad-radius: 50%;
+                --touchpad-bg: radial-gradient(135% 135% at 25% 20%, rgba(255,255,255,0.15), rgba(0,0,0,0.6));
+                --touchpad-bg-image: none;
+                --touchpad-bg-image-size: cover;
+                --touchpad-bg-image-position: center;
+                --touchpad-bg-blend: soft-light;
+                --touchpad-border: 1px solid rgba(255,255,255,0.12);
+                --touchpad-shadow: 0 12px 40px rgba(0,0,0,0.7), inset 0 1px 1px rgba(255,255,255,0.1);
+                --touchpad-shadow-active: 0 4px 15px rgba(0,0,0,0.9), inset 0 1px 0 rgba(0,0,0,0.3);
+                --touchpad-icon: none;
+                --touchpad-icon-size: 52%;
+                --touchpad-icon-opacity: 0.9;
+                --touchpad-foreground-image: none;
+                --touchpad-foreground-size: 60%;
+                --touchpad-foreground-opacity: 0.8;
+                --touchpad-foreground-blend: normal;
+                --touchpad-label-color: #E2E8F0;
+                --touchpad-label-size: 12px;
+            }
+
+            .touchpad {
+                position: absolute;
+                width: var(--touchpad-size);
+                height: var(--touchpad-size);
+                padding: 0;
+                box-sizing: border-box;
+                border-radius: var(--touchpad-radius);
+                background-image: var(--touchpad-bg-image, none), var(--touchpad-bg);
+                background-size: var(--touchpad-bg-image-size, cover), 100%;
+                background-position: var(--touchpad-bg-image-position, center), center;
+                background-repeat: no-repeat, no-repeat;
+                background-blend-mode: var(--touchpad-bg-blend, soft-light), normal;
+                border: var(--touchpad-border);
+                box-shadow: var(--touchpad-shadow);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                touch-action: none;
+                user-select: none;
+                -webkit-user-select: none;
+                -ms-user-select: none;
+                font-size: 0;
+                color: transparent;
+                z-index: 9999;
+                overflow: visible;
+                backdrop-filter: blur(12px) saturate(180%);
+                -webkit-backdrop-filter: blur(12px) saturate(180%);
+                transition:
+                    transform 120ms cubic-bezier(0.2, 0, 0, 1),
+                    box-shadow 150ms ease,
+                    background 200ms ease,
+                    filter 150ms linear;
+                background-position: center;
+                background-repeat: no-repeat;
+                background-size: 45%;
+            }
+
+            .touchpad::after {
+                content: "";
+                position: absolute;
+                width: var(--touchpad-icon-size, 52%);
+                height: var(--touchpad-icon-size, 52%);
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+                background-image: var(--touchpad-icon, none);
+                background-repeat: no-repeat;
+                background-position: center;
+                background-size: contain;
+                opacity: var(--touchpad-icon-opacity, 0.9);
+                pointer-events: none;
+                filter: drop-shadow(0 2px 6px rgba(0,0,0,0.6));
+            }
+
+            .touchpad::before {
+                content: "";
+                position: absolute;
+                width: var(--touchpad-foreground-size, 60%);
+                height: var(--touchpad-foreground-size, 60%);
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+                background-image: var(--touchpad-foreground-image, none);
+                background-repeat: no-repeat;
+                background-position: center;
+                background-size: contain;
+                opacity: var(--touchpad-foreground-opacity, 0.8);
+                mix-blend-mode: var(--touchpad-foreground-blend, normal);
+                pointer-events: none;
+            }
+
+            .touchpad--label {
+                font-size: var(--touchpad-label-size, 12px);
+                color: var(--touchpad-label-color, #E2E8F0);
+            }
+
+            .touchpad-label {
+                position: absolute;
+                left: 0;
+                right: 0;
+                bottom: 10%;
+                text-align: center;
+                font-weight: 600;
+                pointer-events: none;
+                text-shadow: 0 2px 8px rgba(0,0,0,0.7);
+            }
+
+            .touchpad.is-active {
+                transform: scale(0.94) translate3d(0, 1px, 0);
+                box-shadow: var(--touchpad-shadow-active);
+            }
+
+            .touchpad:hover {
+                box-shadow: 0 12px 32px rgba(0,0,0,0.95);
+            }
+
+            .touchpad--button {
+                font-size: 18px;
+            }
+
+            .touchpad--joystick {
+                font-size: 14px;
+            }
+
+            .touchpad .nipple,
+            .touchpad .nipple * {
+                overflow: visible;
+            }
+
+            .touchpad .nipple .back {
+                box-shadow:
+                    0 0 0 1px rgba(15,23,42,0.85),
+                    0 0 0 6px rgba(148,163,184,0.12),
+                    0 10px 30px rgba(15,23,42,0.85);
+            }
+
+            .touchpad .nipple .front {
+                box-shadow:
+                    0 0 0 1px rgba(148,163,184,0.9),
+                    0 8px 18px rgba(15,23,42,0.9);
+            }
+        `;
+        document.head.appendChild(style);
+    };
+
+    const safeEntries = (obj) => {
+        if (!obj || typeof obj !== "object") return [];
+        return Object.entries(obj);
+    };
+
+    const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+
+    const formatCssValue = (value) => {
+        if (typeof value === "number" && Number.isFinite(value)) {
+            return `${value}px`;
+        }
+        return value;
+    };
+
+    const ICON_COLOR_DEFAULT = "#E2E8F0";
+    const ICON_STROKE = 4;
+
+    const svgToDataUri = (svg) => {
+        const encoded = encodeURIComponent(svg)
+            .replace(/%0A/g, "");
+        return `url(\"data:image/svg+xml,${encoded}\")`;
+    };
+
+    const iconArrow = (direction, color) => {
+        const stroke = color || ICON_COLOR_DEFAULT;
+        if (direction === "left") {
+            return svgToDataUri(
+                `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="${ICON_STROKE}" stroke-linecap="round" stroke-linejoin="round"><path d="M40 16 L24 32 L40 48"/><path d="M26 32 H50"/></svg>`
+            );
+        }
+        if (direction === "right") {
+            return svgToDataUri(
+                `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="${ICON_STROKE}" stroke-linecap="round" stroke-linejoin="round"><path d="M24 16 L40 32 L24 48"/><path d="M14 32 H38"/></svg>`
+            );
+        }
+        if (direction === "up") {
+            return svgToDataUri(
+                `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="${ICON_STROKE}" stroke-linecap="round" stroke-linejoin="round"><path d="M16 30 L32 14 L48 30"/><path d="M32 16 V52"/></svg>`
+            );
+        }
+        return svgToDataUri(
+            `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="${stroke}" stroke-width="${ICON_STROKE}" stroke-linecap="round" stroke-linejoin="round"><path d="M16 34 L32 50 L48 34"/><path d="M32 12 V48"/></svg>`
+        );
+    };
+
+    const iconHorizontal = (color) => svgToDataUri(
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="${color || ICON_COLOR_DEFAULT}" stroke-width="${ICON_STROKE}" stroke-linecap="round" stroke-linejoin="round"><path d="M18 22 L8 32 L18 42"/><path d="M46 22 L56 32 L46 42"/><path d="M14 32 H50"/></svg>`
+    );
+
+    const iconVertical = (color) => svgToDataUri(
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="${color || ICON_COLOR_DEFAULT}" stroke-width="${ICON_STROKE}" stroke-linecap="round" stroke-linejoin="round"><path d="M22 18 L32 8 L42 18"/><path d="M22 46 L32 56 L42 46"/><path d="M32 14 V50"/></svg>`
+    );
+
+    const iconDpad = (color) => svgToDataUri(
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="${color || ICON_COLOR_DEFAULT}" stroke-width="${ICON_STROKE}" stroke-linecap="round" stroke-linejoin="round"><path d="M32 16 V48"/><path d="M16 32 H48"/><path d="M24 22 L32 14 L40 22"/><path d="M24 42 L32 50 L40 42"/><path d="M22 24 L14 32 L22 40"/><path d="M42 24 L50 32 L42 40"/></svg>`
+    );
+
+    const iconCircle = (filled, color) => {
+        const fillColor = color || ICON_COLOR_DEFAULT;
+        if (filled) {
+            return svgToDataUri(
+                `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="14" fill="${fillColor}"/></svg>`
+            );
+        }
+        return svgToDataUri(
+            `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="14" fill="none" stroke="${fillColor}" stroke-width="${ICON_STROKE}"/></svg>`
+        );
+    };
+
+    const iconSquare = (color) => svgToDataUri(
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect x="20" y="20" width="24" height="24" rx="4" fill="${color || ICON_COLOR_DEFAULT}"/></svg>`
+    );
+
+    const iconTriangle = (direction, color) => {
+        const fillColor = color || ICON_COLOR_DEFAULT;
+        if (direction === "left") {
+            return svgToDataUri(
+                `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path d="M22 32 L42 18 V46 Z" fill="${fillColor}"/></svg>`
+            );
+        }
+        if (direction === "right") {
+            return svgToDataUri(
+                `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path d="M42 32 L22 18 V46 Z" fill="${fillColor}"/></svg>`
+            );
+        }
+        return svgToDataUri(
+            `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path d="M32 18 L18 42 H46 Z" fill="${fillColor}"/></svg>`
+        );
+    };
+
+    const iconChevron = (color) => svgToDataUri(
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="${color || ICON_COLOR_DEFAULT}" stroke-width="${ICON_STROKE}" stroke-linecap="round" stroke-linejoin="round"><path d="M22 18 L34 32 L22 46"/><path d="M34 18 L46 32 L34 46"/></svg>`
+    );
+
+    const iconPause = (color) => svgToDataUri(
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect x="20" y="18" width="8" height="28" rx="2" fill="${color || ICON_COLOR_DEFAULT}"/><rect x="36" y="18" width="8" height="28" rx="2" fill="${color || ICON_COLOR_DEFAULT}"/></svg>`
+    );
+
+    const keyLabel = (key) => {
+        if (!key) return "";
+        if (key.startsWith("Key") && key.length === 4) return key.slice(3);
+        if (key.startsWith("Digit") && key.length === 6) return key.slice(5);
+        if (key === "Space") return "SP";
+        if (key === "Escape") return "ESC";
+        if (key === "Enter") return "ENT";
+        if (key === "Tab") return "TAB";
+        if (key === "Backspace") return "BK";
+        if (key === "ShiftLeft" || key === "ShiftRight") return "SH";
+        if (key === "ControlLeft" || key === "ControlRight") return "CT";
+        if (key === "AltLeft" || key === "AltRight") return "AL";
+        if (key === "MetaLeft" || key === "MetaRight") return "MD";
+        return key.slice(0, 3).toUpperCase();
+    };
+
+    const normalizeTheme = (theme) => {
+        if (!theme || typeof theme !== "object") {
+            return {
+                iconColor: ICON_COLOR_DEFAULT,
+                iconOpacity: 0.9,
+                iconScale: 0.52,
+                labelMode: "none",
+                labelColor: ICON_COLOR_DEFAULT,
+                labelSize: 12,
+                background: null,
+                backgroundImage: null,
+                backgroundBlend: "soft-light",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                foregroundImage: null,
+                foregroundOpacity: 0.8,
+                foregroundSize: "60%",
+                foregroundBlend: "normal"
+            };
+        }
+        return {
+            iconColor: theme.iconColor || ICON_COLOR_DEFAULT,
+            iconOpacity: typeof theme.iconOpacity === "number" ? theme.iconOpacity : 0.9,
+            iconScale: typeof theme.iconScale === "number" ? theme.iconScale : 0.52,
+            labelMode: theme.labelMode || "none",
+            labelColor: theme.labelColor || ICON_COLOR_DEFAULT,
+            labelSize: typeof theme.labelSize === "number" ? theme.labelSize : 12,
+            background: theme.background || null,
+            backgroundImage: theme.backgroundImage || null,
+            backgroundBlend: theme.backgroundBlend || "soft-light",
+            backgroundSize: theme.backgroundSize || "cover",
+            backgroundPosition: theme.backgroundPosition || "center",
+            foregroundImage: theme.foregroundImage || null,
+            foregroundOpacity: typeof theme.foregroundOpacity === "number" ? theme.foregroundOpacity : 0.8,
+            foregroundSize: theme.foregroundSize || "60%",
+            foregroundBlend: theme.foregroundBlend || "normal"
+        };
+    };
+
+    const mergeTheme = (base, override) => {
+        if (!override || typeof override !== "object") return base;
+        return normalizeTheme(Object.assign({}, base, override));
+    };
+
+    const normalizeImageValue = (value) => {
+        if (!value) return null;
+        if (value.includes("url(")) return value;
+        return `url(\"${value}\")`;
+    };
+
+    const applyThemeVars = (element, theme) => {
+        if (!element || !theme) return;
+        if (theme.background) {
+            element.style.setProperty("--touchpad-bg", theme.background);
+        }
+        if (theme.backgroundImage) {
+            element.style.setProperty("--touchpad-bg-image", normalizeImageValue(theme.backgroundImage));
+            element.style.setProperty("--touchpad-bg-blend", theme.backgroundBlend || "soft-light");
+            element.style.setProperty("--touchpad-bg-image-size", theme.backgroundSize || "cover");
+            element.style.setProperty("--touchpad-bg-image-position", theme.backgroundPosition || "center");
+        }
+        if (theme.foregroundImage) {
+            element.style.setProperty("--touchpad-foreground-image", normalizeImageValue(theme.foregroundImage));
+            element.style.setProperty("--touchpad-foreground-opacity", String(theme.foregroundOpacity));
+            element.style.setProperty("--touchpad-foreground-size", theme.foregroundSize || "60%");
+            element.style.setProperty("--touchpad-foreground-blend", theme.foregroundBlend || "normal");
+        }
+        if (theme.iconOpacity != null) {
+            element.style.setProperty("--touchpad-icon-opacity", String(theme.iconOpacity));
+        }
+        if (theme.iconScale != null) {
+            element.style.setProperty("--touchpad-icon-size", `${Math.round(theme.iconScale * 100)}%`);
+        }
+        if (theme.labelColor) {
+            element.style.setProperty("--touchpad-label-color", theme.labelColor);
+        }
+        if (theme.labelSize) {
+            element.style.setProperty("--touchpad-label-size", `${theme.labelSize}px`);
+        }
+    };
+
+    const resolveLabelText = (btn, labelMode) => {
+        if (!btn) return "";
+        if (labelMode === "none") return "";
+        if (labelMode === "text") {
+            if (btn.label) return String(btn.label);
+            if (typeof btn.keys === "string") return keyLabel(btn.keys);
+            return "";
+        }
+        if (labelMode === "key") {
+            if (typeof btn.keys === "string") return keyLabel(btn.keys);
+            return "";
+        }
+        if (labelMode === "both") {
+            if (btn.label) return String(btn.label);
+            if (typeof btn.keys === "string") return keyLabel(btn.keys);
+            return "";
+        }
+        return "";
+    };
+
+    const iconKeycap = (label, color) => {
+        const fillColor = color || ICON_COLOR_DEFAULT;
+        const safe = String(label || "").replace(/[^A-Z0-9]/g, "");
+        const text = safe || "";
+        return svgToDataUri(
+            `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect x="12" y="14" width="40" height="36" rx="8" fill="none" stroke="${fillColor}" stroke-width="${ICON_STROKE}"/><text x="32" y="38" font-size="16" text-anchor="middle" fill="${fillColor}" font-family="monospace">${text}</text></svg>`
+        );
+    };
+
+    const resolveDirectionForKey = (key, role) => {
+        if (key === "ArrowLeft") return "left";
+        if (key === "ArrowRight") return "right";
+        if (key === "ArrowUp") return "up";
+        if (key === "ArrowDown") return "down";
+        if (role === "move" || role === "aim") {
+            if (key === "KeyA") return "left";
+            if (key === "KeyD") return "right";
+            if (key === "KeyW") return "up";
+            if (key === "KeyS") return "down";
+        }
+        return null;
+    };
+
+    const resolveIcon = (btn, theme) => {
+        if (!btn) return null;
+        if (btn.icon) return btn.icon;
+        const iconColor = theme && theme.iconColor ? theme.iconColor : ICON_COLOR_DEFAULT;
+        const meta = btn.meta || null;
+        const keys = btn.keys;
+        const role = btn.role;
+
+        if (meta && meta.pair_position) {
+            return iconTriangle(meta.pair_position === "right" ? "right" : "left", iconColor);
+        }
+
+        if (keys && typeof keys === "object" && !Array.isArray(keys)) {
+            const hasLeft = !!keys.left;
+            const hasRight = !!keys.right;
+            const hasUp = !!keys.up;
+            const hasDown = !!keys.down;
+            if (hasLeft && hasRight && hasUp && hasDown) return iconDpad(iconColor);
+            if (hasLeft && hasRight && !hasUp && !hasDown) return iconHorizontal(iconColor);
+            if (hasUp && hasDown && !hasLeft && !hasRight) return iconVertical(iconColor);
+            if (hasLeft && !hasRight && !hasUp && !hasDown) return iconArrow("left", iconColor);
+            if (hasRight && !hasLeft && !hasUp && !hasDown) return iconArrow("right", iconColor);
+            if (hasUp && !hasLeft && !hasRight && !hasDown) return iconArrow("up", iconColor);
+            if (hasDown && !hasLeft && !hasRight && !hasUp) return iconArrow("down", iconColor);
+        }
+
+        if (typeof keys === "string") {
+            const direction = resolveDirectionForKey(keys, role);
+            if (direction) return iconArrow(direction, iconColor);
+        }
+
+        if (role === "jump") return iconArrow("up", iconColor);
+        if (role === "pause") return iconPause(iconColor);
+        if (role === "primary") return iconCircle(true, iconColor);
+        if (role === "secondary") return iconCircle(false, iconColor);
+        if (role === "tertiary") return iconSquare(iconColor);
+        if (role === "modifier") return iconChevron(iconColor);
+        if (role === "magnitude") return iconArrow("up", iconColor);
+
+        if (typeof keys === "string") {
+            return iconKeycap(keyLabel(keys), iconColor);
+        }
+
+        return null;
+    };
+
+    const KEY_ALIASES = {
+        " ": "Space",
+        "space": "Space",
+        "Spacebar": "Space",
+        "Esc": "Escape",
+        "Return": "Enter",
+        "Left": "ArrowLeft",
+        "Right": "ArrowRight",
+        "Up": "ArrowUp",
+        "Down": "ArrowDown",
+        "Del": "Delete",
+        "Shift": "ShiftLeft",
+        "Control": "ControlLeft",
+        "Alt": "AltLeft",
+        "Meta": "MetaLeft"
+    };
+
+    const KEY_DESCRIPTORS = {
+        ArrowLeft: { key: "ArrowLeft", keyCode: 37 },
+        ArrowRight: { key: "ArrowRight", keyCode: 39 },
+        ArrowUp: { key: "ArrowUp", keyCode: 38 },
+        ArrowDown: { key: "ArrowDown", keyCode: 40 },
+        Space: { key: " ", keyCode: 32 },
+        Enter: { key: "Enter", keyCode: 13 },
+        Tab: { key: "Tab", keyCode: 9 },
+        Escape: { key: "Escape", keyCode: 27 },
+        Backspace: { key: "Backspace", keyCode: 8 },
+        Delete: { key: "Delete", keyCode: 46 },
+        Insert: { key: "Insert", keyCode: 45 },
+        Home: { key: "Home", keyCode: 36 },
+        End: { key: "End", keyCode: 35 },
+        PageUp: { key: "PageUp", keyCode: 33 },
+        PageDown: { key: "PageDown", keyCode: 34 },
+        CapsLock: { key: "CapsLock", keyCode: 20 },
+        NumLock: { key: "NumLock", keyCode: 144 },
+        ScrollLock: { key: "ScrollLock", keyCode: 145 },
+        Pause: { key: "Pause", keyCode: 19 },
+        PrintScreen: { key: "PrintScreen", keyCode: 44 },
+        ContextMenu: { key: "ContextMenu", keyCode: 93 },
+        ShiftLeft: { key: "Shift", keyCode: 16, location: 1 },
+        ShiftRight: { key: "Shift", keyCode: 16, location: 2 },
+        ControlLeft: { key: "Control", keyCode: 17, location: 1 },
+        ControlRight: { key: "Control", keyCode: 17, location: 2 },
+        AltLeft: { key: "Alt", keyCode: 18, location: 1 },
+        AltRight: { key: "Alt", keyCode: 18, location: 2 },
+        MetaLeft: { key: "Meta", keyCode: 91, location: 1 },
+        MetaRight: { key: "Meta", keyCode: 91, location: 2 },
+        Minus: { key: "-", keyCode: 189 },
+        Equal: { key: "=", keyCode: 187 },
+        BracketLeft: { key: "[", keyCode: 219 },
+        BracketRight: { key: "]", keyCode: 221 },
+        Backslash: { key: "\\", keyCode: 220 },
+        Semicolon: { key: ";", keyCode: 186 },
+        Quote: { key: "'", keyCode: 222 },
+        Backquote: { key: "`", keyCode: 192 },
+        Comma: { key: ",", keyCode: 188 },
+        Period: { key: ".", keyCode: 190 },
+        Slash: { key: "/", keyCode: 191 }
+    };
+
+    const NUMPAD_DESCRIPTORS = {
+        NumpadAdd: { key: "+", keyCode: 107, location: 3 },
+        NumpadSubtract: { key: "-", keyCode: 109, location: 3 },
+        NumpadMultiply: { key: "*", keyCode: 106, location: 3 },
+        NumpadDivide: { key: "/", keyCode: 111, location: 3 },
+        NumpadDecimal: { key: ".", keyCode: 110, location: 3 },
+        NumpadEnter: { key: "Enter", keyCode: 13, location: 3 },
+        NumpadEqual: { key: "=", keyCode: 187, location: 3 }
+    };
+
+    const resolveKeyDescriptor = (rawKey) => {
+        const raw = String(rawKey);
+        const key = KEY_ALIASES[raw] || raw;
+        let keyCode;
+        let code;
+        let keyValue = key;
+        let location;
+
+        const preset = KEY_DESCRIPTORS[key];
+        if (preset) {
+            keyCode = preset.keyCode;
+            code = key;
+            keyValue = preset.key;
+            location = preset.location;
+        }
+
+        if (keyCode == null) {
+            if (/^Key[a-zA-Z]$/.test(key)) {
+                const letter = key.charAt(3).toUpperCase();
+                keyCode = letter.charCodeAt(0);
+                code = key;
+                keyValue = letter.toLowerCase();
+            } else if (/^Digit[0-9]$/.test(key)) {
+                const digit = key.charAt(5);
+                keyCode = 48 + parseInt(digit, 10);
+                code = key;
+                keyValue = digit;
+            } else if (/^F([1-9]|1[0-9]|2[0-4])$/.test(key)) {
+                const number = parseInt(key.slice(1), 10);
+                keyCode = 111 + number;
+                code = key;
+                keyValue = key;
+            } else if (/^Numpad[0-9]$/.test(key)) {
+                const digit = parseInt(key.slice(6), 10);
+                keyCode = 96 + digit;
+                code = key;
+                keyValue = String(digit);
+                location = 3;
+            } else if (NUMPAD_DESCRIPTORS[key]) {
+                const numpadPreset = NUMPAD_DESCRIPTORS[key];
+                keyCode = numpadPreset.keyCode;
+                code = key;
+                keyValue = numpadPreset.key;
+                location = numpadPreset.location;
+            } else if (key.length === 1) {
+                const upper = key.toUpperCase();
+                keyCode = upper.charCodeAt(0);
+                code = upper;
+                keyValue = key;
+            } else {
+                keyCode = key.toUpperCase().charCodeAt(0);
+                code = key;
+                keyValue = key;
+            }
+        }
+
+        return { key: keyValue, code, keyCode, location };
+    };
+
+    const simulateKeyEvent = (key, type) => {
+        const { key: keyValue, code, keyCode, location } = resolveKeyDescriptor(key);
+
+        if (typeof KeyboardEvent === "undefined") return;
+
+        const eventOptions = {
+            key: keyValue,
+            code: code,
+            keyCode: keyCode,
+            which: keyCode,
+            bubbles: true,
+            cancelable: true
+        };
+        if (location != null) {
+            eventOptions.location = location;
+        }
+        const event = new KeyboardEvent(type, eventOptions);
+
+        const canvas = typeof document !== "undefined" ? document.querySelector("canvas") : null;
+        if (canvas && typeof canvas.focus === "function") {
+            canvas.focus();
+            canvas.dispatchEvent(event);
+        } else if (typeof document !== "undefined") {
+            document.dispatchEvent(event);
+        }
+    };
+
+    const sanitizeActionMeta = (actionMeta) => {
+        if (!actionMeta || typeof actionMeta !== "object") return {};
+        const allowedBehavior = new Set(["continuous", "discrete"]);
+        const allowedInteraction = new Set(["tap", "hold", "repeat"]);
+        const allowedControlSpace = new Set(["vector", "rate", "magnitude"]);
+        const allowedActivation = new Set(["hold", "latch"]);
+        const allowedDirectionMode = new Set(["vector", "cardinal"]);
+        const allowedGranularity = new Set(["fine", "coarse"]);
+        const allowedPairPosition = new Set(["left", "right"]);
+
+        const sanitized = {};
+        Object.entries(actionMeta).forEach(([action, meta]) => {
+            if (!meta || typeof meta !== "object") return;
+            const cleaned = {};
+            Object.entries(meta).forEach(([key, value]) => {
+                if (key === "behavior" && allowedBehavior.has(value)) cleaned[key] = value;
+                else if (key === "interaction" && allowedInteraction.has(value)) cleaned[key] = value;
+                else if (key === "simultaneous" && typeof value === "boolean") cleaned[key] = value;
+                else if (key === "control_space" && allowedControlSpace.has(value)) cleaned[key] = value;
+                else if (key === "activation" && allowedActivation.has(value)) cleaned[key] = value;
+                else if (key === "direction_mode" && allowedDirectionMode.has(value)) cleaned[key] = value;
+                else if (key === "granularity" && allowedGranularity.has(value)) cleaned[key] = value;
+                else if (key === "pair_id" && typeof value === "string") cleaned[key] = value;
+                else if (key === "pair_position" && allowedPairPosition.has(value)) cleaned[key] = value;
+                else if (key === "kind" && typeof value === "string") cleaned[key] = value;
+            });
+            if (Object.keys(cleaned).length) {
+                sanitized[action] = cleaned;
+            }
+        });
+        return sanitized;
+    };
+
+    const extractMeta = (spec, kind) => {
+        const meta = {};
+        if (spec && typeof spec === "object") {
+            ["behavior", "interaction", "simultaneous", "control_space", "activation", "direction_mode", "granularity", "pair_id", "pair_position"].forEach((field) => {
+                if (field in spec) meta[field] = spec[field];
+            });
+        }
+        if (kind) meta.kind = kind;
+        return meta;
+    };
+
+    const extractActionKeys = (spec) => {
+        if (spec && typeof spec === "object") {
+            if ("keys" in spec) return spec.keys;
+            if ("key" in spec) return spec.key;
+        }
+        return spec;
+    };
+
+    const selectSingleKey = (keys) => {
+        if (!keys || typeof keys !== "object") return null;
+        const order = ["up", "right", "down", "left"];
+        for (let i = 0; i < order.length; i += 1) {
+            const key = keys[order[i]];
+            if (key) return key;
+        }
+        return null;
+    };
+
+    const axisPriority = (axis) => {
+        const priority = axis.priority;
+        const priorityScore = priority === "primary" ? 2 : priority === "secondary" ? 1 : 0;
+        const controlSpace = axis.control_space;
+        const controlScore = controlSpace === "vector" ? 2 : controlSpace === "rate" ? 1 : 0;
+        return [priorityScore, controlScore];
+    };
+
+    const extractBindingsFromAxesActions = (data) => {
+        if (!data || typeof data !== "object") return null;
+        const axes = data.axes;
+        const actions = data.actions;
+        if (!Array.isArray(axes) && (typeof actions !== "object" || actions === null)) {
+            return null;
+        }
+
+        const bindings = {};
+        let actionMeta = {};
+
+        if (actions && typeof actions === "object") {
+            Object.entries(actions).forEach(([role, spec]) => {
+                const keys = extractActionKeys(spec);
+                if (!keys) return;
+                bindings[role] = keys;
+                const meta = extractMeta(spec, "button");
+                if (Object.keys(meta).length) {
+                    actionMeta[role] = meta;
+                }
+            });
+        }
+
+        const movementAxes = [];
+        const aimAxes = [];
+
+        if (Array.isArray(axes)) {
+            axes.forEach((axis) => {
+                if (!axis || typeof axis !== "object") return;
+                const keys = axis.keys;
+                if (!keys || typeof keys !== "object") return;
+                const usage = axis.usage;
+                const controlSpace = axis.control_space;
+                if (usage !== "movement" && usage !== "aim") return;
+
+                if (controlSpace === "magnitude") {
+                    if (bindings.magnitude) return;
+                    const magKey = selectSingleKey(keys);
+                    if (!magKey) return;
+                    bindings.magnitude = magKey;
+                    const magMeta = extractMeta(axis, "button");
+                    magMeta.control_space = "magnitude";
+                    actionMeta.magnitude = magMeta;
+                    return;
+                }
+
+                if (usage === "movement") movementAxes.push(axis);
+                if (usage === "aim") aimAxes.push(axis);
+            });
+        }
+
+        const buildAxisMapping = (axis) => {
+            const keys = axis.keys;
+            const meta = extractMeta(axis, "axis");
+            if (axis.control_space) meta.control_space = axis.control_space;
+            return { keys, meta };
+        };
+
+        const compareAxis = (a, b) => {
+            const [ap, ac] = axisPriority(a);
+            const [bp, bc] = axisPriority(b);
+            if (ap !== bp) return bp - ap;
+            return bc - ac;
+        };
+
+        if (movementAxes.length) {
+            movementAxes.sort(compareAxis);
+            const move = buildAxisMapping(movementAxes[0]);
+            bindings.move = move.keys;
+            if (Object.keys(move.meta).length) actionMeta.move = move.meta;
+
+            if (aimAxes.length) {
+                aimAxes.sort(compareAxis);
+                const aim = buildAxisMapping(aimAxes[0]);
+                bindings.aim = aim.keys;
+                if (Object.keys(aim.meta).length) actionMeta.aim = aim.meta;
+            }
+        } else if (aimAxes.length) {
+            aimAxes.sort(compareAxis);
+            const move = buildAxisMapping(aimAxes[0]);
+            bindings.move = move.keys;
+            if (Object.keys(move.meta).length) actionMeta.move = move.meta;
+
+            if (aimAxes.length > 1) {
+                const aim = buildAxisMapping(aimAxes[1]);
+                bindings.aim = aim.keys;
+                if (Object.keys(aim.meta).length) actionMeta.aim = aim.meta;
+            }
+        }
+
+        actionMeta = sanitizeActionMeta(actionMeta);
+        return { bindings, actionMeta };
+    };
+
+    const resolveBindingsAndMeta = (config = {}) => {
+        let bindings = config.bindings || {};
+        let actionMeta = config.actionMeta || config.action_meta || {};
+
+        let analysis = null;
+        if (Array.isArray(config.axes) || (config.actions && typeof config.actions === "object")) {
+            analysis = { axes: config.axes || [], actions: config.actions || {} };
+        } else if (bindings && typeof bindings === "object" && (bindings.axes || bindings.actions)) {
+            analysis = { axes: bindings.axes || [], actions: bindings.actions || {} };
+        } else if (actionMeta && typeof actionMeta === "object" && (actionMeta.axes || actionMeta.actions)) {
+            analysis = { axes: actionMeta.axes || [], actions: actionMeta.actions || {} };
+        }
+
+        if (analysis) {
+            const extracted = extractBindingsFromAxesActions(analysis);
+            if (extracted) {
+                bindings = extracted.bindings || {};
+                actionMeta = extracted.actionMeta || {};
+            }
+        }
+
+        if (!bindings || typeof bindings !== "object") bindings = {};
+        if (!actionMeta || typeof actionMeta !== "object") actionMeta = {};
+
+        return { bindings, actionMeta };
+    };
+
+    const parseKeys = (keys) => {
+        let keyMap = { left: null, right: null, up: null, down: null, key: null };
+
+        if (Array.isArray(keys)) {
+            if (keys.length === 2) {
+                keyMap.left = keys[0] || null;
+                keyMap.right = keys[1] || null;
+            } else if (keys.length === 1) {
+                keyMap.key = keys[0];
+            } else {
+                keyMap.left = keys[0] || null;
+                keyMap.right = keys[1] || null;
+                keyMap.up = keys[2] || null;
+                keyMap.down = keys[3] || null;
+            }
+        } else if (keys && typeof keys === "object") {
+            keyMap.left = keys.left || null;
+            keyMap.right = keys.right || null;
+            keyMap.up = keys.up || null;
+            keyMap.down = keys.down || null;
+            if (keys.key) keyMap.key = keys.key;
+        } else if (typeof keys === "string") {
+            keyMap.key = keys;
+        }
+
+        return keyMap;
+    };
+
+    const createNipple = (element, keys) => {
+        if (typeof nipplejs === "undefined") {
+            throw new Error(
+                "[touchpad_controls] nipplejs is required to create joystick controls. " +
+                "Include nipplejs before touchpad-controls.js."
+            );
+        }
+
+        const options = {
+            zone: element,
+            mode: "static",
+            position: { top: "50%", left: "50%" },
+            color: "gray",
+            size: 120,
+            threshold: 0.25
+        };
+
+        const keyMap = parseKeys(keys);
+
+        const hasLeft = keyMap.left != null;
+        const hasRight = keyMap.right != null;
+        const hasUp = keyMap.up != null;
+        const hasDown = keyMap.down != null;
+        const hasSingleKey = keyMap.key != null;
+
+        if ((hasLeft || hasRight) && !(hasUp || hasDown)) {
+            options.lockX = true;
+        } else if ((hasUp || hasDown) && !(hasLeft || hasRight)) {
+            options.lockY = true;
+        } else if (hasSingleKey) {
+            options.lockX = true;
+            options.lockY = true;
+        } else {
+            options.lockX = false;
+            options.lockY = false;
+        }
+
+        const manager = nipplejs.create(options);
+
+        const activeKeys = {};
+        const activeDirections = new Set();
+
+        const getDirections = (direction) => {
+            if (!direction) return [];
+            const directions = [];
+            if (direction.x === "left" || direction.x === "right") {
+                directions.push(direction.x);
+            }
+            if (direction.y === "up" || direction.y === "down") {
+                directions.push(direction.y);
+            }
+            return directions;
+        };
+
+        manager.on("start", () => {
+            element.classList.add("is-active");
+        });
+
+        const syncDirections = (directionsSet) => {
+            const toRelease = [];
+            activeDirections.forEach((direction) => {
+                if (!directionsSet.has(direction)) {
+                    toRelease.push(direction);
+                }
+            });
+
+            toRelease.forEach((direction) => {
+                const key = keyMap[direction];
+                if (key && activeKeys[key]) {
+                    simulateKeyEvent(key, "keyup");
+                    activeKeys[key] = false;
+                }
+                activeDirections.delete(direction);
+            });
+
+            directionsSet.forEach((direction) => {
+                if (activeDirections.has(direction)) return;
+                const key = keyMap[direction];
+                if (!key) return;
+                if (!activeKeys[key]) {
+                    simulateKeyEvent(key, "keydown");
+                    activeKeys[key] = true;
+                }
+                activeDirections.add(direction);
+            });
+        };
+
+        manager.on("dir", (evt, data) => {
+            const directions = getDirections(data && data.direction);
+            if (!directions.length) return;
+            syncDirections(new Set(directions));
+        });
+
+        const releaseAllKeys = () => {
+            Object.keys(activeKeys).forEach((key) => {
+                if (activeKeys[key]) {
+                    simulateKeyEvent(key, "keyup");
+                    activeKeys[key] = false;
+                }
+            });
+            activeDirections.clear();
+        };
+
+        manager.on("move", (evt, data) => {
+            if (!data || !data.direction) {
+                releaseAllKeys();
+                return;
+            }
+
+            const currentDirections = new Set();
+            if (data.direction.x) currentDirections.add(data.direction.x);
+            if (data.direction.y) currentDirections.add(data.direction.y);
+
+            syncDirections(currentDirections);
+        });
+
+        manager.on("end", () => {
+            releaseAllKeys();
+            element.classList.remove("is-active");
+        });
+
+        return manager;
+    };
+
+    const createButton = (element, key) => {
+        const keys = Array.isArray(key) ? key.filter((k) => k != null) : [key];
+        if (!keys.length) return;
+
+        let isActive = false;
+
+        const press = (event) => {
+            if (event && typeof event.preventDefault === "function") {
+                event.preventDefault();
+            }
+            if (isActive) return;
+            isActive = true;
+            element.classList.add("is-active");
+            keys.forEach((k) => simulateKeyEvent(k, "keydown"));
+        };
+
+        const release = (event) => {
+            if (event && typeof event.preventDefault === "function") {
+                event.preventDefault();
+            }
+            if (!isActive) return;
+            isActive = false;
+            element.classList.remove("is-active");
+            keys.forEach((k) => simulateKeyEvent(k, "keyup"));
+        };
+
+        const handleMouseDown = (event) => {
+            press(event);
+            const handleMouseUp = (e) => {
+                release(e);
+                window.removeEventListener("mouseup", handleMouseUp);
+            };
+            window.addEventListener("mouseup", handleMouseUp);
+        };
+
+        const handleTouchStart = (event) => {
+            press(event);
+            const handleTouchEndOrCancel = (e) => {
+                release(e);
+                window.removeEventListener("touchend", handleTouchEndOrCancel);
+                window.removeEventListener("touchcancel", handleTouchEndOrCancel);
+            };
+            window.addEventListener("touchend", handleTouchEndOrCancel);
+            window.addEventListener("touchcancel", handleTouchEndOrCancel);
+        };
+
+        element.addEventListener("mousedown", handleMouseDown);
+        element.addEventListener("touchstart", handleTouchStart, {
+            passive: false
+        });
+
+        element.addEventListener("mouseup", release);
+        element.addEventListener("mouseleave", release);
+        element.addEventListener("touchend", release);
+        element.addEventListener("touchcancel", release);
+    };
+
+    const createTouchpadControls = (config = {}) => {
+        if (typeof document === "undefined") {
+            throw new Error("[touchpad_controls] document is required to render controls.");
+        }
+
+        injectTouchpadStyles();
+
+        const root = config.root || document.body || document.documentElement;
+        const baseTheme = normalizeTheme(config.theme);
+        const buttons = Array.isArray(config.buttons) ? config.buttons : [];
+
+        const touchpads = [];
+        const nippleManagers = [];
+
+        buttons.forEach((btn) => {
+            if (!btn) return;
+
+            const theme = mergeTheme(baseTheme, btn.theme);
+            const touchpad = document.createElement("div");
+            touchpad.id = btn.id || "";
+            touchpad.className = "touchpad";
+
+            if (btn.className) {
+                touchpad.className += " " + btn.className;
+            }
+            if (Array.isArray(btn.classList)) {
+                btn.classList.forEach((cls) => {
+                    if (cls) touchpad.classList.add(cls);
+                });
+            }
+
+            let type = btn.type;
+            if (!type) {
+                if (
+                    (Array.isArray(btn.keys) && btn.keys.length > 1) ||
+                    (btn.keys && typeof btn.keys === "object" && !Array.isArray(btn.keys))
+                ) {
+                    type = "joystick";
+                } else {
+                    type = "button";
+                }
+            }
+
+            const labelMode = btn.labelMode || theme.labelMode || "none";
+            const labelText = type === "button" ? resolveLabelText(btn, labelMode) : "";
+            if (labelText) {
+                const labelEl = document.createElement("span");
+                labelEl.className = "touchpad-label";
+                labelEl.textContent = labelText;
+                touchpad.classList.add("touchpad--label");
+                touchpad.appendChild(labelEl);
+            }
+
+            const ariaLabel = btn.label != null
+                ? String(btn.label)
+                : (labelText || (typeof btn.keys === "string" ? keyLabel(btn.keys) : ""));
+            if (ariaLabel) {
+                touchpad.setAttribute("aria-label", ariaLabel);
+            }
+
+            const sectionName = btn.section;
+            const section = sectionName && sections[sectionName] ? sections[sectionName] : null;
+
+            safeEntries(section).forEach(([key, value]) => {
+                touchpad.style[key] = value;
+            });
+
+            const posName = btn.position;
+            const buttonPosition =
+                posName && buttonPositions[posName]
+                    ? buttonPositions[posName]
+                    : null;
+
+            if (section && buttonPosition) {
+                safeEntries(buttonPosition).forEach(([key, value]) => {
+                    const base = section[key] || "0px";
+                    touchpad.style[key] = `calc(${base} + ${value})`;
+                });
+            }
+
+            if (btn.top != null) {
+                touchpad.style.top = formatCssValue(btn.top);
+            }
+            if (btn.left != null) {
+                touchpad.style.left = formatCssValue(btn.left);
+            }
+            if (btn.x != null) {
+                touchpad.style.left = formatCssValue(btn.x);
+            }
+            if (btn.y != null) {
+                touchpad.style.top = formatCssValue(btn.y);
+            }
+
+            safeEntries(btn.style).forEach(([key, value]) => {
+                if (value != null) {
+                    touchpad.style[key] = formatCssValue(value);
+                }
+            });
+
+            applyThemeVars(touchpad, theme);
+
+            const showIcon = labelMode !== "text" && labelMode !== "key";
+            if (showIcon) {
+                const icon = resolveIcon(btn, theme);
+                if (icon) {
+                    touchpad.style.setProperty("--touchpad-icon", icon);
+                }
+            }
+
+            root.appendChild(touchpad);
+
+            touchpad.dataset.touchpadType = type;
+            if (type === "joystick") {
+                touchpad.classList.add("touchpad--joystick");
+            } else {
+                touchpad.classList.add("touchpad--button");
+            }
+
+            const tp = { element: touchpad, keys: btn.keys, type: type };
+            touchpads.push(tp);
+        });
+
+        touchpads.forEach((tp) => {
+            if (tp.type === "joystick") {
+                const manager = createNipple(tp.element, tp.keys);
+                if (manager) nippleManagers.push(manager);
+            } else {
+                createButton(tp.element, tp.keys);
+            }
+        });
+
+        const destroy = () => {
+            nippleManagers.forEach((manager) => {
+                if (manager && typeof manager.destroy === "function") {
+                    manager.destroy();
+                }
+            });
+
+            touchpads.forEach((tp) => {
+                const el = tp.element;
+                if (el && el.parentNode) {
+                    el.parentNode.removeChild(el);
+                }
+            });
+        };
+
+        return { touchpads, destroy };
+    };
+
+    const getSafeAreaInsets = (viewport) => {
+        if (viewport && viewport.safeArea) {
+            return {
+                top: viewport.safeArea.top || 0,
+                right: viewport.safeArea.right || 0,
+                bottom: viewport.safeArea.bottom || 0,
+                left: viewport.safeArea.left || 0
+            };
+        }
+
+        if (typeof document === "undefined") {
+            return { top: 0, right: 0, bottom: 0, left: 0 };
+        }
+
+        const measure = document.createElement("div");
+        measure.style.cssText = [
+            "position: fixed",
+            "top: 0",
+            "left: 0",
+            "right: 0",
+            "bottom: 0",
+            "padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)",
+            "pointer-events: none",
+            "visibility: hidden"
+        ].join(";");
+
+        const root = document.body || document.documentElement;
+        root.appendChild(measure);
+        const style = window.getComputedStyle(measure);
+        const insets = {
+            top: parseFloat(style.paddingTop) || 0,
+            right: parseFloat(style.paddingRight) || 0,
+            bottom: parseFloat(style.paddingBottom) || 0,
+            left: parseFloat(style.paddingLeft) || 0
+        };
+        root.removeChild(measure);
+        return insets;
+    };
+
+    const normalizeBindings = (bindings = {}) => {
+        const move = parseKeys(bindings.move || bindings.movement || null);
+        const aim = parseKeys(bindings.aim || bindings.look || null);
+
+        const jump = bindings.jump || null;
+        const magnitude = bindings.magnitude || null;
+        const primary = bindings.primary || bindings.shoot || bindings.fire || null;
+        const secondary = bindings.secondary || bindings.attack || null;
+        const tertiary = bindings.tertiary || (bindings.shoot && bindings.shoot !== primary ? bindings.shoot : null) || null;
+        const modifier = bindings.modifier || bindings.run || null;
+
+        return { move, aim, jump, magnitude, primary, secondary, tertiary, modifier };
+    };
+
+    const normalizeActionMeta = (actionMeta = {}) => {
+        if (!actionMeta || typeof actionMeta !== "object") return {};
+        return actionMeta;
+    };
+
+    const hasDirectionalKeys = (keyMap) => !!(keyMap && (keyMap.left || keyMap.right || keyMap.up || keyMap.down));
+
+    const deriveAxisKeys = (keyMap, meta) => {
+        if (!keyMap || !meta || typeof meta !== "object") return keyMap;
+        const controlSpace = meta.control_space;
+        if (controlSpace === "rate") {
+            if (!keyMap.left && !keyMap.right) return keyMap;
+            return {
+                left: keyMap.left || null,
+                right: keyMap.right || null,
+                up: null,
+                down: null
+            };
+        }
+        if (controlSpace === "magnitude") {
+            if (!keyMap.up && !keyMap.down) return keyMap;
+            return {
+                left: null,
+                right: null,
+                up: keyMap.up || null,
+                down: keyMap.down || null
+            };
+        }
+        return keyMap;
+    };
+
+    const chooseLayout = (bindings, preferredLayout, actionMeta = {}) => {
+        if (preferredLayout && preferredLayout !== "auto") return preferredLayout;
+
+        const moveMeta = actionMeta && actionMeta.move ? actionMeta.move : null;
+        const moveKeys = deriveAxisKeys(bindings.move, moveMeta);
+        const hasMove = hasDirectionalKeys(moveKeys);
+        const hasAim = hasDirectionalKeys(bindings.aim);
+
+        if (hasAim) return "dual-stick";
+        if (hasMove) {
+            const isCardinal = moveMeta && moveMeta.direction_mode === "cardinal";
+            const isDiscrete = moveMeta && (
+                moveMeta.behavior === "discrete" ||
+                moveMeta.activation === "latch" ||
+                moveMeta.granularity === "coarse"
+            );
+            const requiresChord = moveMeta && moveMeta.simultaneous === true;
+            const hasVertical = !!(moveKeys.up || moveKeys.down);
+            if (!requiresChord && (isDiscrete || (isCardinal && hasVertical))) {
+                return "digital-dpad";
+            }
+            if (moveKeys.up || moveKeys.down) return "fast-platformer";
+            return "safe-platformer";
+        }
+        return "runner";
+    };
+
+    const getLayoutMetrics = (viewport, options = {}) => {
+        const width = viewport && Number.isFinite(viewport.width)
+            ? viewport.width
+            : (typeof window !== "undefined" ? window.innerWidth : 0);
+        const height = viewport && Number.isFinite(viewport.height)
+            ? viewport.height
+            : (typeof window !== "undefined" ? window.innerHeight : 0);
+
+        const safeArea = getSafeAreaInsets(viewport);
+        const minDim = Math.max(1, Math.min(width, height));
+        const orientation = width >= height ? "landscape" : "portrait";
+
+        const baseSize = clamp(minDim * 0.17, 64, 112);
+        const actionSize = clamp(minDim * 0.14, 56, 96);
+        const smallActionSize = clamp(minDim * 0.12, MIN_TOUCH_TARGET, 80);
+        const miniActionSize = clamp(minDim * 0.1, MIN_TOUCH_TARGET, 72);
+        const spacing = clamp(minDim * 0.03, 10, 20);
+        const edgePadding = clamp(minDim * 0.05, 16, 32);
+        const verticalOffset = orientation === "portrait"
+            ? clamp(minDim * 0.04, 8, 16)
+            : clamp(minDim * 0.02, 6, 12);
+
+        const bottomY = height - safeArea.bottom - edgePadding;
+
+        return {
+            width,
+            height,
+            orientation,
+            safeArea,
+            minDim,
+            baseSize,
+            actionSize,
+            smallActionSize,
+            miniActionSize,
+            spacing,
+            edgePadding,
+            verticalOffset,
+            bottomY
+        };
+    };
+
+    const clampPosition = (pos, size, metrics) => {
+        const minX = metrics.safeArea.left + metrics.edgePadding + size / 2;
+        const maxX = metrics.width - metrics.safeArea.right - metrics.edgePadding - size / 2;
+        const minY = metrics.safeArea.top + metrics.edgePadding + size / 2;
+        const maxY = metrics.height - metrics.safeArea.bottom - metrics.edgePadding - size / 2;
+        return {
+            x: clamp(pos.x, minX, maxX),
+            y: clamp(pos.y, minY, maxY)
+        };
+    };
+
+    const makeButton = (spec) => {
+        const baseStyle = {
+            width: spec.size,
+            height: spec.size,
+            transform: "translate(-50%, -50%)"
+        };
+
+        return {
+            id: spec.id,
+            label: spec.label || "",
+            keys: spec.keys,
+            x: spec.x,
+            y: spec.y,
+            size: spec.size,
+            role: spec.role,
+            type: spec.type,
+            meta: spec.meta || null,
+            icon: spec.icon || null,
+            classList: spec.classList || [],
+            style: Object.assign(baseStyle, spec.style || {})
+        };
+    };
+
+    const getActionSize = (sizes, role) => {
+        if (!sizes) return 0;
+        return sizes[role] || sizes.secondary || sizes.primary || 0;
+    };
+
+    const findPairedActions = (actions = []) => {
+        const groups = new Map();
+        actions.forEach((action) => {
+            const meta = action && action.meta ? action.meta : null;
+            const pairId = meta && meta.pair_id;
+            if (!pairId) return;
+            if (!groups.has(pairId)) groups.set(pairId, []);
+            groups.get(pairId).push(action);
+        });
+
+        for (const [pairId, group] of groups.entries()) {
+            if (group.length < 2) continue;
+            let left = group.find((action) => action.meta && action.meta.pair_position === "left");
+            let right = group.find((action) => action.meta && action.meta.pair_position === "right");
+            if (!left || !right) {
+                left = group[0];
+                right = group[1];
+            }
+            if (left === right) continue;
+            return { pairId, left, right };
+        }
+        return null;
+    };
+
+    const buildActionCluster = (anchor, actions, sizes, metrics) => {
+        const buttons = [];
+        if (!actions.length) return buttons;
+
+        const pair = findPairedActions(actions);
+        if (!pair) {
+            const primary = actions[0];
+            const primarySize = sizes.primary;
+            const primaryPos = clampPosition(anchor, primarySize, metrics);
+            buttons.push(makeButton({
+                id: primary.role,
+                keys: primary.keys,
+                role: primary.role,
+                x: primaryPos.x,
+                y: primaryPos.y,
+                size: primarySize,
+                meta: primary.meta || null,
+                classList: ["touchpad-role-" + primary.role]
+            }));
+
+            if (actions[1]) {
+                const secondary = actions[1];
+                const secondarySize = sizes.secondary;
+                const secondaryPos = clampPosition({
+                    x: anchor.x,
+                    y: anchor.y - (primarySize / 2 + metrics.spacing + secondarySize / 2)
+                }, secondarySize, metrics);
+                buttons.push(makeButton({
+                    id: secondary.role,
+                    keys: secondary.keys,
+                    role: secondary.role,
+                    x: secondaryPos.x,
+                    y: secondaryPos.y,
+                    size: secondarySize,
+                    meta: secondary.meta || null,
+                    classList: ["touchpad-role-" + secondary.role]
+                }));
+            }
+
+            if (actions[2]) {
+                const tertiary = actions[2];
+                const tertiarySize = sizes.tertiary;
+                const tertiaryPos = clampPosition({
+                    x: anchor.x - (primarySize / 2 + metrics.spacing + tertiarySize / 2),
+                    y: anchor.y - primarySize * 0.2
+                }, tertiarySize, metrics);
+                buttons.push(makeButton({
+                    id: tertiary.role,
+                    keys: tertiary.keys,
+                    role: tertiary.role,
+                    x: tertiaryPos.x,
+                    y: tertiaryPos.y,
+                    size: tertiarySize,
+                    meta: tertiary.meta || null,
+                    classList: ["touchpad-role-" + tertiary.role]
+                }));
+            }
+
+            if (actions[3]) {
+                const modifier = actions[3];
+                const modifierSize = sizes.modifier;
+                const modifierPos = clampPosition({
+                    x: anchor.x - (primarySize / 2 + metrics.spacing + modifierSize / 2),
+                    y: anchor.y - (primarySize / 2 + metrics.spacing + modifierSize / 2)
+                }, modifierSize, metrics);
+                buttons.push(makeButton({
+                    id: modifier.role,
+                    keys: modifier.keys,
+                    role: modifier.role,
+                    x: modifierPos.x,
+                    y: modifierPos.y,
+                    size: modifierSize,
+                    meta: modifier.meta || null,
+                    classList: ["touchpad-role-" + modifier.role]
+                }));
+            }
+
+            return buttons;
+        }
+
+        const used = new Set();
+        const place = (action, pos, size) => {
+            if (!action || used.has(action)) return;
+            used.add(action);
+            const clamped = clampPosition(pos, size, metrics);
+            buttons.push(makeButton({
+                id: action.role,
+                keys: action.keys,
+                role: action.role,
+                x: clamped.x,
+                y: clamped.y,
+                size,
+                meta: action.meta || null,
+                classList: ["touchpad-role-" + action.role]
+            }));
+        };
+
+        const primary = actions.find((action) => action.role === "primary" && action !== pair.left && action !== pair.right)
+            || actions.find((action) => action !== pair.left && action !== pair.right);
+        const primarySize = primary ? getActionSize(sizes, primary.role) : 0;
+
+        const leftAction = pair.left;
+        const rightAction = pair.right;
+        const leftSize = getActionSize(sizes, leftAction.role);
+        const rightSize = getActionSize(sizes, rightAction.role);
+        const rowHeight = Math.max(leftSize, rightSize);
+        const rowWidth = leftSize + rightSize + metrics.spacing;
+
+        const minCenterX = metrics.safeArea.left + metrics.edgePadding + rowWidth / 2;
+        const maxCenterX = metrics.width - metrics.safeArea.right - metrics.edgePadding - rowWidth / 2;
+        const centerX = clamp(anchor.x, minCenterX, maxCenterX);
+
+        let primaryPos = null;
+        if (primary) {
+            primaryPos = clampPosition({ x: centerX, y: anchor.y }, primarySize, metrics);
+            place(primary, primaryPos, primarySize);
+        }
+
+        const baseY = primaryPos ? primaryPos.y : anchor.y;
+        const rowY = primaryPos
+            ? baseY - (primarySize / 2 + metrics.spacing + rowHeight / 2)
+            : baseY;
+
+        const leftX = centerX - rowWidth / 2 + leftSize / 2;
+        const rightX = centerX + rowWidth / 2 - rightSize / 2;
+        place(leftAction, { x: leftX, y: rowY }, leftSize);
+        place(rightAction, { x: rightX, y: rowY }, rightSize);
+
+        let stackY = rowY - rowHeight / 2 - metrics.spacing;
+        actions.forEach((action) => {
+            if (used.has(action)) return;
+            const size = getActionSize(sizes, action.role);
+            place(action, { x: centerX, y: stackY - size / 2 }, size);
+            stackY = stackY - size - metrics.spacing;
+        });
+
+        return buttons;
+    };
+
+    const buildButtonsForLayout = (layout, bindings, metrics, actionMeta) => {
+        const buttons = [];
+        const actions = [];
+        const roleOrder = ["magnitude", "jump", "primary", "secondary", "tertiary", "modifier"];
+        const roleBaseScore = {
+            magnitude: 5,
+            jump: 4,
+            primary: 3,
+            secondary: 2,
+            tertiary: 1,
+            modifier: 1
+        };
+
+        const moveMeta = actionMeta && actionMeta.move ? actionMeta.move : null;
+        const moveKeys = deriveAxisKeys(bindings.move, moveMeta);
+
+        const usedKeys = new Set();
+        const addAction = (role, keys) => {
+            if (!keys) return;
+            const signature = JSON.stringify(keys);
+            if (usedKeys.has(signature)) return;
+            usedKeys.add(signature);
+            actions.push({
+                role,
+                keys,
+                meta: actionMeta && actionMeta[role] ? actionMeta[role] : null
+            });
+        };
+
+        roleOrder.forEach((role) => addAction(role, bindings[role]));
+
+        actions.forEach((action, index) => {
+            const meta = action.meta || {};
+            let score = roleBaseScore[action.role] || 0;
+            if (meta.behavior === "discrete") score += 1;
+            if (meta.interaction === "tap") score += 1;
+            if (meta.simultaneous === true) score += 1;
+            if (meta.control_space === "magnitude") score += 2;
+            if (meta.behavior === "continuous" && meta.interaction === "hold" && meta.simultaneous === false) {
+                score -= 1;
+            }
+            action._score = score;
+            action._index = index;
+        });
+
+        actions.sort((a, b) => {
+            if (b._score !== a._score) return b._score - a._score;
+            return a._index - b._index;
+        });
+
+        const leftAnchor = {
+            x: metrics.safeArea.left + metrics.edgePadding + metrics.baseSize / 2,
+            y: metrics.bottomY - metrics.baseSize / 2 - metrics.verticalOffset
+        };
+        const rightAnchor = {
+            x: metrics.width - metrics.safeArea.right - metrics.edgePadding - metrics.baseSize / 2,
+            y: metrics.bottomY - metrics.baseSize / 2 - metrics.verticalOffset
+        };
+
+        if (!actions.length && !hasDirectionalKeys(moveKeys) && !hasDirectionalKeys(bindings.aim)) {
+            return buttons;
+        }
+
+        if (layout === "digital-dpad") {
+            if (hasDirectionalKeys(moveKeys)) {
+                const dpadSize = clamp(metrics.baseSize * 0.5, MIN_TOUCH_TARGET, metrics.baseSize * 0.75);
+                const dpadGap = clamp(dpadSize * 0.2, 6, 14);
+                const offset = dpadSize + dpadGap;
+                const radius = offset + dpadSize / 2;
+                const minCenterX = metrics.safeArea.left + metrics.edgePadding + radius;
+                const maxCenterX = metrics.width - metrics.safeArea.right - metrics.edgePadding - radius;
+                const minCenterY = metrics.safeArea.top + metrics.edgePadding + radius;
+                const maxCenterY = metrics.height - metrics.safeArea.bottom - metrics.edgePadding - radius;
+                const center = {
+                    x: clamp(leftAnchor.x, minCenterX, maxCenterX),
+                    y: clamp(leftAnchor.y, minCenterY, maxCenterY)
+                };
+                const directions = [
+                    { name: "up", x: center.x, y: center.y - offset },
+                    { name: "down", x: center.x, y: center.y + offset },
+                    { name: "left", x: center.x - offset, y: center.y },
+                    { name: "right", x: center.x + offset, y: center.y }
+                ];
+
+                directions.forEach((dir) => {
+                    const key = moveKeys[dir.name];
+                    if (!key) return;
+                    buttons.push(makeButton({
+                        id: `move-${dir.name}`,
+                        keys: key,
+                        role: "move",
+                        x: dir.x,
+                        y: dir.y,
+                        size: dpadSize,
+                        type: "button",
+                        meta: actionMeta && actionMeta.move ? actionMeta.move : null,
+                        classList: ["touchpad-role-move", "touchpad--dpad", `touchpad-move-${dir.name}`]
+                    }));
+                });
+            }
+
+            const clusterButtons = buildActionCluster(
+                rightAnchor,
+                actions,
+                {
+                    primary: metrics.actionSize,
+                    secondary: metrics.smallActionSize,
+                    tertiary: metrics.smallActionSize,
+                    modifier: metrics.miniActionSize
+                },
+                metrics
+            );
+            buttons.push(...clusterButtons);
+        } else if (layout === "safe-platformer" || layout === "fast-platformer") {
+            if (hasDirectionalKeys(moveKeys)) {
+                const moveSize = metrics.baseSize;
+                const movePos = clampPosition(leftAnchor, moveSize, metrics);
+                buttons.push(makeButton({
+                    id: "move",
+                    keys: moveKeys,
+                    role: "move",
+                    x: movePos.x,
+                    y: movePos.y,
+                    size: moveSize,
+                    meta: actionMeta && actionMeta.move ? actionMeta.move : null,
+                    classList: ["touchpad-role-move"]
+                }));
+            }
+
+            const clusterButtons = buildActionCluster(
+                rightAnchor,
+                actions,
+                {
+                    primary: metrics.actionSize,
+                    secondary: metrics.smallActionSize,
+                    tertiary: metrics.smallActionSize,
+                    modifier: metrics.miniActionSize
+                },
+                metrics
+            );
+            buttons.push(...clusterButtons);
+        } else if (layout === "dual-stick") {
+            const moveSize = clamp(metrics.baseSize * 1.05, 64, 120);
+            const aimSize = clamp(metrics.baseSize * 0.95, 60, 112);
+
+            if (hasDirectionalKeys(moveKeys)) {
+                const leftPos = clampPosition({
+                    x: metrics.safeArea.left + metrics.edgePadding + moveSize / 2,
+                    y: metrics.bottomY - moveSize / 2 - metrics.verticalOffset
+                }, moveSize, metrics);
+                buttons.push(makeButton({
+                    id: "move",
+                    keys: moveKeys,
+                    role: "move",
+                    x: leftPos.x,
+                    y: leftPos.y,
+                    size: moveSize,
+                    meta: actionMeta && actionMeta.move ? actionMeta.move : null,
+                    classList: ["touchpad-role-move"]
+                }));
+            }
+
+            if (hasDirectionalKeys(bindings.aim)) {
+                const rightPos = clampPosition({
+                    x: metrics.width - metrics.safeArea.right - metrics.edgePadding - aimSize / 2,
+                    y: metrics.bottomY - aimSize / 2 - metrics.verticalOffset
+                }, aimSize, metrics);
+                buttons.push(makeButton({
+                    id: "aim",
+                    keys: bindings.aim,
+                    role: "aim",
+                    x: rightPos.x,
+                    y: rightPos.y,
+                    size: aimSize,
+                    meta: actionMeta && actionMeta.aim ? actionMeta.aim : null,
+                    classList: ["touchpad-role-aim"]
+                }));
+
+                if (actions[0]) {
+                    const fireSize = metrics.actionSize;
+                    const firePos = clampPosition({
+                        x: rightPos.x,
+                        y: rightPos.y - (aimSize / 2 + metrics.spacing + fireSize / 2)
+                    }, fireSize, metrics);
+                    buttons.push(makeButton({
+                        id: actions[0].role,
+                        keys: actions[0].keys,
+                        role: actions[0].role,
+                        x: firePos.x,
+                        y: firePos.y,
+                        size: fireSize,
+                        meta: actions[0].meta || null,
+                        classList: ["touchpad-role-" + actions[0].role]
+                    }));
+                }
+            }
+        } else if (layout === "runner") {
+            const actionCount = Math.min(actions.length || 1, 4);
+            const slots = actionCount === 1
+                ? [0.5]
+                : actionCount === 2
+                    ? [0.35, 0.65]
+                    : actionCount === 3
+                        ? [0.2, 0.5, 0.8]
+                        : [0.15, 0.4, 0.6, 0.85];
+
+            const size = metrics.actionSize;
+            const availableWidth = metrics.width - metrics.safeArea.left - metrics.safeArea.right - metrics.edgePadding * 2;
+            const bandY = metrics.bottomY - size / 2 - metrics.verticalOffset;
+
+            for (let i = 0; i < actionCount; i += 1) {
+                const action = actions[i] || actions[0] || { role: "primary", keys: bindings.primary };
+                const x = metrics.safeArea.left + metrics.edgePadding + availableWidth * slots[i];
+                const pos = clampPosition({ x, y: bandY }, size, metrics);
+                buttons.push(makeButton({
+                    id: action.role,
+                    keys: action.keys,
+                    role: action.role,
+                    x: pos.x,
+                    y: pos.y,
+                    size: size,
+                    meta: action.meta || null,
+                    classList: ["touchpad-role-" + action.role]
+                }));
+            }
+        }
+
+        return buttons;
+    };
+
+    const buildLayout = (config = {}) => {
+        const resolved = resolveBindingsAndMeta(config);
+        const normalized = normalizeBindings(resolved.bindings || {});
+        const actionMeta = normalizeActionMeta(resolved.actionMeta || {});
+        const layout = chooseLayout(normalized, config.layout, actionMeta);
+        const metrics = getLayoutMetrics(config.viewport, config);
+        const buttons = buildButtonsForLayout(layout, normalized, metrics, actionMeta);
+        return { layout, buttons, metrics, bindings: normalized, actionMeta };
+    };
+
+    const roundLayoutValue = (value) => {
+        if (typeof value !== "number" || !Number.isFinite(value)) return value;
+        return Math.round(value * 10) / 10;
+    };
+
+    const summarizeLayout = (layoutConfig) => {
+        if (!layoutConfig || typeof layoutConfig !== "object") return null;
+        const buttons = Array.isArray(layoutConfig.buttons) ? layoutConfig.buttons : [];
+        return {
+            layout: layoutConfig.layout || null,
+            buttons: buttons.map((btn) => ({
+                id: btn.id || null,
+                role: btn.role || null,
+                type: btn.type || (btn.keys && typeof btn.keys === "object" ? "joystick" : "button"),
+                keys: btn.keys || null,
+                x: roundLayoutValue(btn.x),
+                y: roundLayoutValue(btn.y),
+                size: roundLayoutValue(btn.size)
+            }))
+        };
+    };
+
+    const createGesturePrevention = (options = {}) => {
+        if (typeof document === "undefined") return () => {};
+
+        const extraExclusions = Array.isArray(options.excludeSelectors) ? options.excludeSelectors : [];
+        const handler = (event) => {
+            if (!event || typeof event.preventDefault !== "function") return;
+            const target = event.target;
+            if (!target) {
+                event.preventDefault();
+                return;
+            }
+
+            const tagName = target.tagName;
+            const blockedTags = ["SELECT", "OPTION", "BUTTON", "INPUT", "TEXTAREA", "A"];
+            if (tagName && blockedTags.includes(tagName)) return;
+
+            if (extraExclusions.some((selector) => target.closest && target.closest(selector))) return;
+
+            event.preventDefault();
+        };
+
+        document.addEventListener("touchmove", handler, { passive: false });
+        document.addEventListener("touchstart", handler, { passive: false });
+        document.addEventListener("gesturestart", handler);
+        document.addEventListener("gesturechange", handler);
+        document.addEventListener("gestureend", handler);
+
+        return () => {
+            document.removeEventListener("touchmove", handler);
+            document.removeEventListener("touchstart", handler);
+            document.removeEventListener("gesturestart", handler);
+            document.removeEventListener("gesturechange", handler);
+            document.removeEventListener("gestureend", handler);
+        };
+    };
+
+    const create = (config = {}) => {
+        const layoutConfig = buildLayout(config);
+        if (config.debug && typeof console !== "undefined" && typeof console.info === "function") {
+            console.info("[touchpad_controls] layout", summarizeLayout(layoutConfig));
+        }
+        const hasCustomButtons = Array.isArray(config.buttons) && config.buttons.length > 0;
+        const buttons = hasCustomButtons ? config.buttons : layoutConfig.buttons;
+        const root = config.root;
+
+        if (config.preventGestures !== false) {
+            const excludeSelectors = config.excludeSelectors || [];
+            var removeGesturePrevention = createGesturePrevention({ excludeSelectors });
+        }
+
+        let instance = createTouchpadControls({ root, buttons });
+        let resizeTimer = null;
+
+        const rebuild = () => {
+            if (instance && typeof instance.destroy === "function") {
+                instance.destroy();
+            }
+            const nextLayout = buildLayout(config);
+            if (config.debug && typeof console !== "undefined" && typeof console.info === "function") {
+                console.info("[touchpad_controls] layout", summarizeLayout(nextLayout));
+            }
+            const nextButtons = hasCustomButtons ? config.buttons : nextLayout.buttons;
+            instance = createTouchpadControls({ root, buttons: nextButtons });
+        };
+
+        const handleResize = () => {
+            if (resizeTimer) window.clearTimeout(resizeTimer);
+            resizeTimer = window.setTimeout(rebuild, 120);
+        };
+
+        if (config.responsive !== false && typeof window !== "undefined") {
+            window.addEventListener("resize", handleResize);
+        }
+
+        return {
+            layout: layoutConfig.layout,
+            buttons,
+            diagnostics: config.debug ? summarizeLayout(layoutConfig) : null,
+            destroy: () => {
+                if (resizeTimer && typeof window !== "undefined") {
+                    window.clearTimeout(resizeTimer);
+                }
+                if (config.responsive !== false && typeof window !== "undefined") {
+                    window.removeEventListener("resize", handleResize);
+                }
+                if (instance && typeof instance.destroy === "function") {
+                    instance.destroy();
+                }
+                if (typeof removeGesturePrevention === "function") {
+                    removeGesturePrevention();
+                }
+            },
+            rebuild
+        };
+    };
+
+    return {
+        createTouchpadControls,
+        create,
+        buildLayout,
+        chooseLayout,
+        getLayoutMetrics,
+        parseKeys,
+        simulateKeyEvent,
+        resolveKeyDescriptor,
+        _internal: {
+            buildButtonsForLayout,
+            normalizeBindings,
+            clampPosition,
+            summarizeLayout,
+            extractBindingsFromAxesActions,
+            resolveBindingsAndMeta
+        }
+    };
+}));
+
+</script>
+    <script>
+    const touchBindings = {
+        "primary": "Space",
+        "restart": "Enter",
+        "move": {
+            "left": "ArrowLeft",
+            "right": "ArrowRight"
+        }
+    };
+    const touchActionMeta = {
+        "primary": {
+            "behavior": "discrete",
+            "interaction": "tap",
+            "simultaneous": true,
+            "kind": "button"
+        },
+        "restart": {
+            "behavior": "discrete",
+            "interaction": "tap",
+            "simultaneous": false,
+            "kind": "button"
+        },
+        "move": {
+            "behavior": "continuous",
+            "interaction": "hold",
+            "simultaneous": false,
+            "control_space": "vector",
+            "activation": "hold",
+            "direction_mode": "cardinal",
+            "granularity": "fine",
+            "kind": "axis"
+        }
+    };
+
+    TouchpadControls.create({
+        layout: "auto",
+        bindings: touchBindings,
+        actionMeta: touchActionMeta,
+        debug: true,
+    });
+</script>
+</body>
+</html>

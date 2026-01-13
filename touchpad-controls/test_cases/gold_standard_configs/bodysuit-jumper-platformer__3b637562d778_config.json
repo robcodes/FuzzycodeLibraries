@@ -1,0 +1,29 @@
+{
+  "layout": "auto",
+  "bindings": {
+    "jump": "Space",
+    "move": {
+      "left": "ArrowLeft",
+      "right": "ArrowRight"
+    }
+  },
+  "action_meta": {
+    "jump": {
+      "behavior": "discrete",
+      "interaction": "tap",
+      "simultaneous": true,
+      "kind": "button"
+    },
+    "move": {
+      "behavior": "continuous",
+      "interaction": "hold",
+      "simultaneous": false,
+      "control_space": "vector",
+      "activation": "hold",
+      "direction_mode": "cardinal",
+      "granularity": "fine",
+      "kind": "axis"
+    }
+  },
+  "source_output": "test_cases/outputs/top_voted/bodysuit-jumper-platformer__3b637562d778_touch_embedded.html"
+}

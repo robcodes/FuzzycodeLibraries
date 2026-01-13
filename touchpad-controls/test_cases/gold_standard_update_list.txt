@@ -1,0 +1,5 @@
+# Subset of gold standards to refresh after re-runs.
+fluffy-rope-swinger-fullscreen-pendulum__8f092763260d
+googly-boomerang-quest-portal-panic__7d6b4c125c07
+koala-survivor-rampage__32d23069c20a
+tetris-game__2a94b719e827

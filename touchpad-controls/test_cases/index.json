@@ -1,0 +1,128 @@
+{
+  "source": [
+    "pages_csv",
+    "replit_db_backup"
+  ],
+  "results": [
+    {
+      "requested": "bogglebeast",
+      "matched": null,
+      "score": 0.5
+    },
+    {
+      "requested": "bodysuit jumper",
+      "matched": null,
+      "score": 0.5
+    },
+    {
+      "requested": "bible typerunner",
+      "matched": "Bible Typerunner",
+      "hashkey": "25aac7c26a25",
+      "slug": "bible-typerunner",
+      "score": 1.0,
+      "source": "pages_csv",
+      "file": "test_cases/games/bible-typerunner__25aac7c26a25.html"
+    },
+    {
+      "requested": "space invaders with powerups",
+      "matched": "Space Invaders",
+      "hashkey": "8d5906a933fd",
+      "slug": "space-invaders",
+      "score": 1.0,
+      "source": "pages_csv",
+      "file": "test_cases/games/space-invaders__8d5906a933fd.html"
+    },
+    {
+      "requested": "cookie monster munch",
+      "matched": null,
+      "score": 0.5
+    },
+    {
+      "requested": "dance fever boss battle",
+      "matched": null,
+      "score": 0.486
+    },
+    {
+      "requested": "carrot cruncher",
+      "matched": null,
+      "score": 0.533
+    },
+    {
+      "requested": "asteroid blaster with boss battles",
+      "matched": null,
+      "score": 0.483
+    },
+    {
+      "requested": "simbas bug adventure",
+      "matched": "Simba's Bug Adventure",
+      "hashkey": "82289e92f1c2",
+      "slug": "simba-s-bug-adventure",
+      "score": 1.0,
+      "source": "pages_csv",
+      "file": "test_cases/games/simba-s-bug-adventure__82289e92f1c2.html"
+    },
+    {
+      "requested": "fluffy rope swinger",
+      "matched": "Fluffy Rope Swinger - Fullscreen Pendulum",
+      "hashkey": "9c49a59e114a",
+      "slug": "fluffy-rope-swinger-fullscreen-pendulum",
+      "score": 1.0,
+      "source": "pages_csv",
+      "file": "test_cases/games/fluffy-rope-swinger-fullscreen-pendulum__9c49a59e114a.html"
+    },
+    {
+      "requested": "superhero kid vs ninja animals",
+      "matched": null,
+      "score": 0.512
+    },
+    {
+      "requested": "bounce quest",
+      "matched": null,
+      "score": 0.56
+    },
+    {
+      "requested": "cosmic brick blaster",
+      "matched": null,
+      "score": 0.667
+    },
+    {
+      "requested": "koala survivor",
+      "matched": null,
+      "score": 0.643
+    },
+    {
+      "requested": "googly boomerang quest",
+      "matched": null,
+      "score": 0.462
+    },
+    {
+      "requested": "age of empires style game",
+      "matched": null,
+      "score": 0.615
+    },
+    {
+      "requested": "bubblebound",
+      "matched": null,
+      "score": 0.667
+    },
+    {
+      "requested": "frog jumper math game",
+      "matched": null,
+      "score": 0.593
+    },
+    {
+      "requested": "tetris game",
+      "matched": "Tetris Game",
+      "hashkey": "2a94b719e827",
+      "slug": "tetris-game",
+      "score": 1.0,
+      "source": "pages_csv",
+      "file": "test_cases/games/tetris-game__2a94b719e827.html"
+    },
+    {
+      "requested": "avoid the gemrs v3",
+      "matched": null,
+      "score": 0.48
+    }
+  ]
+}

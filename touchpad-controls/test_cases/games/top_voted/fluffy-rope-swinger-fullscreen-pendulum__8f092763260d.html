@@ -1,0 +1,1458 @@
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Fluffy Rope Swinger - Adventure Edition</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #1a1a1a;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+    font-family: sans-serif;
+  }
+
+  #gameCanvas {
+    display: block;
+    background: #333;
+  }
+
+  .instructions {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: #fff;
+    background: rgba(0,0,0,0.7);
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 14px;
+    z-index: 9999;
+    max-width: 400px;
+  }
+
+  /* Game UI is handled within Phaser */
+
+  .level-select {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+  }
+
+  .level-button {
+    background: #4a5568;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 15px 25px;
+    margin: 10px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .level-button:hover {
+    background: #2d3748;
+    transform: scale(1.05);
+  }
+
+  .level-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-top: 20px;
+  }
+
+  .title {
+    font-size: 36px;
+    color: white;
+    margin-bottom: 30px;
+    text-shadow: 0 0 10px #00aaff;
+  }
+
+  .locked {
+    background: #718096;
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  .locked:hover {
+    transform: none;
+    background: #718096;
+  }
+
+  .stars {
+    display: flex;
+    justify-content: center;
+    margin-top: 5px;
+  }
+
+  .star {
+    color: #ffd700;
+    margin: 0 2px;
+  }
+
+  .empty-star {
+    color: #718096;
+  }
+</style>
+</head>
+<body>
+
+<!-- Game UI is handled within Phaser -->
+
+<script src="https://cdn.fuzzycode.dev/resolve?url=https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.js"></script>
+<script>
+const levels = [
+  {
+    level_data: [
+      "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+      "B...............K......K.........K.....B",
+      "B.......................................B",
+      "B...............G.......................B",
+      "B.P.....................................B",
+      "B.....G.....................G...........B",
+      "B###.###......#####...................F.B",
+      "B.......................................B",
+      "B.........K.................K...........B",
+      "B.......................................B",
+      "B.......................................B",
+      "B...G.......................G...........B",
+      "B.......................................B",
+      "B.......................................B",
+      "B.......................................B",
+      "B.......................................B",
+      "........................................."
+    ],
+    name: "Training Grounds",
+    par_time: 30,
+    gem_count: 4
+  },
+  {
+    level_data: [
+      "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+      "B.....K.........K.........K.........K.........K...........B",
+      "B.........................................................B",
+      "B.........................................................B",
+      "B.P......................................................FB",
+      "B#####....#####....#####....#####....#####................B",
+      "B.........................................................B",
+      "B.........................................................B",
+      "B.....G.......S.......G.......S.......G...................B",
+      "B.........................................................B",
+      "B.........................................................B",
+      "B.................H.......................................B",
+      "B.........................................................B",
+      "..........................................................."
+    ],
+    name: "Pendulum Valley",
+    par_time: 40,
+    gem_count: 3
+  },
+  {
+    level_data: [
+      "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+      "B.....K.........K.........K.........K.........K.........K.........K.............B",
+      "B...............................................................................B",
+      "B.P.............................................................................B",
+      "B###............................................................................B",
+      "B...............................................................................B",
+      "B...............................................................................B",
+      "B......G.......H.......G.......S.......G.......H.......G.......S.......G.....F..B",
+      "B...............................................................................B",
+      "B...............................................................................B",
+      "B...............................................................................B",
+      "B...............................................................................B",
+      "B...............................................................................B",
+      "................................................................................."
+    ],
+    name: "Danger Swing",
+    par_time: 60,
+    gem_count: 6
+  },
+  {
+    level_data: [
+      "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+      "B...............................................................................B",
+      "B...............................................................................B",
+      "B...............................................................................B",
+      "B.P.............................................................................B",
+      "B###............................................................................B",
+      "B.........K.....K.....K.....K.....K.....K.....K.....K.....K.....K...............B",
+      "B...............................................................................B",
+      "B...............................................................................B",
+      "B...............................................................................B",
+      "B...............................................................................B",
+      "B.......G.......H.......S.......G.......H.......S.......G.......................B",
+      "B...............................................................................B",
+      "B.................................................................####..........B",
+      "B.................................................................#.............B",
+      "B.................................................................#.............B",
+      "B.................................................................#.............B",
+      "B.................................................................#.....F.......B",
+      "B...............................................................................B",
+      "................................................................................."
+    ],
+    name: "Swing Master",
+    par_time: 80,
+    gem_count: 5
+  },
+  {
+    level_data: [
+      "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+      "B...............................................................................B",
+      "B...............................................................................B",
+      "B...............................................................................B",
+      "B.P.............................................................................B",
+      "B###............................................................................B",
+      "B...............................................................................B",
+      "B...............................................................................B",
+      "B...............................................................................B",
+      "B...............................................................................B",
+      "B.......K.......................................................................B",
+      "B...............................................................................B",
+      "B.........K.....................................................................B",
+      "B...............................................................................B",
+      "B...........K...................................................................B",
+      "B...............................................................................B",
+      "B.............K.................................................................B",
+      "B...............................................................................B",
+      "B...............K...............................................................B",
+      "B...............................................................................B",
+      "B.................K.............................................................B",
+      "B...............................................................................B",
+      "B...................K...........................................................B",
+      "B...............................................................................B",
+      "B.....................K.........................................................B",
+      "B...............................................................................B",
+      "B.......................K.......................................................B",
+      "B...............................................................................B",
+      "B.........................K.....................................................B",
+      "B...............................................................................B",
+      "B...........................K...................................................B",
+      "B...............................................................................B",
+      "B.............................K.................................................B",
+      "B...............................................................................B",
+      "B...............................K...............................................B",
+      "B...............................................................................B",
+      "B.................................K.............................................B",
+      "B...............................................................................B",
+      "B...................................K...........................................B",
+      "B...............................................................................B",
+      "B.....................................K.........................................B",
+      "B...............................................................................B",
+      "B.......................................K.......................................B",
+      "B...............................................................................B",
+      "B.........................................K.....................................B",
+      "B...............................................................................B",
+      "B...........................................K...................................B",
+      "B...............................................................................B",
+      "B.............................................K.................................B",
+      "B...............................................................................B",
+      "B...............................................K...............................B",
+      "B...............................................................................B",
+      "B.................................................K.............................B",
+      "B...............................................................................B",
+      "B...................................................K...........................B",
+      "B...............................................................................B",
+      "B.....................................................K.........................B",
+      "B...............................................................................B",
+      "B.......................................................K.......................B",
+      "B...............................................................................B",
+      "B.........................................................K.....................B",
+      "B...............................................................................B",
+      "B...........................................................K...................B",
+      "B...............................................................................B",
+      "B.............................................................K.................B",
+      "B...............................................................................B",
+      "B...............................................................K...............B",
+      "B...............................................................................B",
+      "B.................................................................K.............B",
+      "B...............................................................................B",
+      "B...................................................................K...........B",
+      "B...............................................................................B",
+      "B.....................................................................K.........B",
+      "B...............................................................................B",
+      "B.......................................................................K.......B",
+      "B...............................................................................B",
+      "B.........................................................................K.....B",
+      "B...............................................................................B",
+      "B...........................................................................K...B",
+      "B...............................................................................B",
+      "B.............................................................................K.B",
+      "B...............................................................................B",
+      "B...............................................................................B",
+      "B...............................................................................F",
+      "B...............................................................................B",
+      "................................................................................."
+    ],
+    name: "The Long Haul",
+    par_time: 120,
+    gem_count: 0
+  }
+];
+
+// Load saved game data or initialize new data
+const savedData = localStorage.getItem('fluffyRopeSwinger');
+let gameData = savedData ? JSON.parse(savedData) : {
+  levelsUnlocked: 1,
+  levelStars: Array(levels.length).fill(0),
+  bestTimes: Array(levels.length).fill(null),
+  gemCollected: Array(levels.length).fill(0)
+};
+
+// Sound effects
+const SOUNDS = {
+  SWING: "https://sounds.fuzzycode.dev/sound_effect?prompt=rope swing swoosh&duration=0.5&ext=.mp3",
+  JUMP: "https://sounds.fuzzycode.dev/sound_effect?prompt=spring jump boing&duration=0.5&ext=.mp3",
+  GEM: "https://sounds.fuzzycode.dev/sound_effect?prompt=gem collection sparkle&duration=0.5&ext=.mp3",
+  SPLASH: "https://sounds.fuzzycode.dev/sound_effect?prompt=water splash&duration=0.5&ext=.mp3",
+  WIN: "https://sounds.fuzzycode.dev/sound_effect?prompt=victory fanfare&duration=1.5&ext=.mp3",
+  HURT: "https://sounds.fuzzycode.dev/sound_effect?prompt=character hurt oof&duration=0.5&ext=.mp3",
+  BACKGROUND: "https://sounds.fuzzycode.dev/music?prompt=upbeat adventure game background music&duration=30&ext=.mp3"
+};
+
+// Preload audio
+const audioCache = {};
+Object.entries(SOUNDS).forEach(([key, url]) => {
+  audioCache[key] = new Audio(url);
+  if (key === 'BACKGROUND') {
+    audioCache[key].loop = true;
+    audioCache[key].volume = 0.4;
+  }
+});
+
+function  playSound(sound) {
+  if (audioCache[sound]) {
+    // Make sure to pause first to prevent any overlapping sounds
+    audioCache[sound].pause();
+    audioCache[sound].currentTime = 0;
+    audioCache[sound].play().catch(e => console.log("Audio play error:", e));
+  }
+}
+
+class TitleScene extends Phaser.Scene {
+  constructor() {
+    super({ key: 'TitleScene' });
+  }
+
+  preload() {
+    this.load.image('titleBg', 'https://images.fuzzycode.dev/fast_ai?search=fluffy cute animal in magical forest with rope swing adventure&resize=800x600');
+    this.load.image('logo', 'https://images.fuzzycode.dev/fast_ai?search=cute game logo fluffy rope swinger adventure&resize=400x200&transparency=true');
+  }
+
+  create() {
+    // Start the physics world for the game
+    this.matter.world.resume();
+
+    // Background
+    this.add.image(window.innerWidth/2, window.innerHeight/2, 'titleBg')
+      .setDisplaySize(window.innerWidth, window.innerHeight);
+
+    // Logo
+    const logo = this.add.image(window.innerWidth/2, 150, 'logo')
+      .setOrigin(0.5);
+
+    // Start button
+    const startButton = this.add.rectangle(window.innerWidth/2, window.innerHeight - 150, 200, 60, 0x3498db)
+      .setStrokeStyle(4, 0x2980b9)
+      .setInteractive({ useHandCursor: true });
+
+    const startText = this.add.text(window.innerWidth/2, window.innerHeight - 150, 'START GAME', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '24px',
+      color: '#ffffff',
+      fontStyle: 'bold'
+    }).setOrigin(0.5);
+
+    startButton.on('pointerover', () => {
+      startButton.fillColor = 0x2980b9;
+    });
+
+    startButton.on('pointerout', () => {
+      startButton.fillColor = 0x3498db;
+    });
+
+    startButton.on('pointerdown', () => {
+      this.scene.start('LevelSelectScene');
+    });
+
+    // Instructions panel - positioned higher on the screen to avoid overlapping the start button
+    const instructionsPanel = this.add.rectangle(window.innerWidth/2, window.innerHeight/2 - 50, 500, 350, 0x000000, 0.7)
+      .setStrokeStyle(2, 0xffffff);
+
+    const instructionsTitle = this.add.text(window.innerWidth/2, window.innerHeight/2 - 200, 'HOW TO PLAY', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '28px',
+      color: '#ffffff',
+      fontStyle: 'bold'
+    }).setOrigin(0.5);
+
+    const controlsText = this.add.text(window.innerWidth/2 - 230, window.innerHeight/2 - 150, 
+      'CONTROLS:\n\n• Press and hold SPACE to hook onto the nearest anchor\n• Release SPACE to let go and jump\n• Use A/D or LEFT/RIGHT ARROW keys to control mid-air\n• Press R to restart level', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '16px',
+      color: '#ffffff',
+      align: 'left'
+    });
+
+    const goalsText = this.add.text(window.innerWidth/2 - 230, window.innerHeight/2 - 30, 
+      'GOALS:\n\n• Collect gems for bonus points\n• Reach your cozy bed home as fast as possible\n• Avoid hazards and water\n• Complete special challenges for stars', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '16px',
+      color: '#ffffff',
+      align: 'left'
+    });
+  }
+}
+
+class LevelSelectScene extends Phaser.Scene {
+  constructor() {
+    super({ key: 'LevelSelectScene' });
+  }
+
+  preload() {
+    this.load.image('bgTile', 'https://aws.fuzzycode.dev/image_buddy_365day_cache/uploads/1c159ab3-db18-4cfe-847d-0342d6f3038c/deep blue space with stars background!resize_128x128.png');
+  }
+
+  create() {
+    // Background
+    const bgWidth = this.textures.get('bgTile').getSourceImage().width;
+    const bgHeight = this.textures.get('bgTile').getSourceImage().height;
+
+    const cols = Math.ceil(window.innerWidth / bgWidth);
+    const rows = Math.ceil(window.innerHeight / bgHeight);
+
+    for (let x = 0; x < cols; x++) {
+      for (let y = 0; y < rows; y++) {
+        this.add.image(x * bgWidth + bgWidth/2, y * bgHeight + bgHeight/2, 'bgTile');
+      }
+    }
+
+    // Title
+    const title = this.add.text(window.innerWidth / 2, 100, 'FLUFFY ROPE SWINGER', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '48px',
+      color: '#ffffff',
+      fontStyle: 'bold',
+      stroke: '#000000',
+      strokeThickness: 6,
+      shadow: { offsetX: 2, offsetY: 2, color: '#000', blur: 5, stroke: true, fill: true }
+    }).setOrigin(0.5);
+
+    // Create level selection grid
+    const container = this.add.container(window.innerWidth / 2, window.innerHeight / 2);
+
+    let gridX = -250;
+    let gridY = -100;
+    const buttonWidth = 150;
+    const buttonHeight = 100;
+    const buttonsPerRow = 3;
+
+    for (let i = 0; i < levels.length; i++) {
+      const row = Math.floor(i / buttonsPerRow);
+      const col = i % buttonsPerRow;
+
+      const x = gridX + col * (buttonWidth + 20);
+      const y = gridY + row * (buttonHeight + 40);
+
+      const isLocked = i >= gameData.levelsUnlocked;
+
+      // Button background
+      const button = this.add.rectangle(x, y, buttonWidth, buttonHeight, isLocked ? 0x555555 : 0x3498db, isLocked ? 0.7 : 1)
+        .setStrokeStyle(4, isLocked ? 0x444444 : 0x2980b9)
+        .setInteractive({ useHandCursor: true });
+
+      if (!isLocked) {
+        button.on('pointerover', () => {
+          button.fillColor = 0x2980b9;
+        });
+
+        button.on('pointerout', () => {
+          button.fillColor = 0x3498db;
+        });
+
+        button.on('pointerdown', () => {
+          this.scene.start('MainScene', { currentLevel: i });
+        });
+      }
+
+      // Level number
+      const levelText = this.add.text(x, y - 15, `Level ${i + 1}`, {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '24px',
+        color: '#ffffff',
+        fontStyle: 'bold'
+      }).setOrigin(0.5);
+
+      // Level name
+      const nameText = this.add.text(x, y + 15, isLocked ? "Locked" : levels[i].name, {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '16px',
+        color: '#ffffff'
+      }).setOrigin(0.5);
+
+      // Stars
+      if (!isLocked) {
+        const starsEarned = gameData.levelStars[i];
+        const starY = y + 40;
+        const starSpacing = 20;
+
+        for (let s = 0; s < 3; s++) {
+          const starX = x + (s - 1) * starSpacing;
+          const starColor = s < starsEarned ? 0xffcc00 : 0x555555;
+
+          const star = this.add.star(starX, starY, 5, 8, 15, starColor);
+          star.setStrokeStyle(1, 0x000000);
+        }
+      }
+
+      container.add([button, levelText, nameText]);
+    }
+
+    // Reset progress button
+    const resetButton = this.add.rectangle(window.innerWidth / 2, window.innerHeight - 50, 200, 40, 0xe74c3c)
+      .setStrokeStyle(2, 0xc0392b)
+      .setInteractive({ useHandCursor: true });
+
+    resetButton.on('pointerover', () => {
+      resetButton.fillColor = 0xc0392b;
+    });
+
+    resetButton.on('pointerout', () => {
+      resetButton.fillColor = 0xe74c3c;
+    });
+
+    resetButton.on('pointerdown', () => {
+      if (confirm("Are you sure you want to reset all progress?")) {
+        gameData = {
+          levelsUnlocked: 1,
+          levelStars: Array(levels.length).fill(0),
+          bestTimes: Array(levels.length).fill(null),
+          gemCollected: Array(levels.length).fill(0)
+        };
+        localStorage.setItem('fluffyRopeSwinger', JSON.stringify(gameData));
+        this.scene.restart();
+      }
+    });
+
+    const resetText = this.add.text(window.innerWidth / 2, window.innerHeight - 50, "Reset Progress", {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '16px',
+      color: '#ffffff',
+      fontStyle: 'bold'
+    }).setOrigin(0.5);
+  }
+}
+
+class MainScene extends Phaser.Scene {
+  constructor() {
+    super({ key: 'MainScene' });
+  }
+
+  preload() {
+    this.load.image('bgTile', 'https://images.fuzzycode.dev/fast_ai?search=blue sky with clouds background&resize=128x128');
+    this.load.image('player', 'https://images.fuzzycode.dev/fast_ai?search=fluffy cartoon creature with big eyes&resize=64x64&transparency=true');
+    this.load.image('playerHurt', 'https://images.fuzzycode.dev/fast_ai?search=fluffy cartoon creature with big eyes looking hurt&resize=64x64&transparency=true');
+    this.load.image('knob', 'https://images.fuzzycode.dev/fast_ai?search=metal hook attachment point&resize=32x32&transparency=true');
+    this.load.image('finishLine', 'https://images.fuzzycode.dev/fast_ai?search=cute fluffy animal bed with pillows&resize=64x64&transparency=true');
+    this.load.image('water', 'https://images.fuzzycode.dev/fast_ai?search=blue water animated pixel art&resize=64x32');
+    this.load.image('gem', 'https://images.fuzzycode.dev/fast_ai?search=sparkling blue diamond gem&resize=32x32&transparency=true');
+    this.load.image('spikes', 'https://images.fuzzycode.dev/fast_ai?search=metal spikes trap&resize=64x32&transparency=true');
+    this.load.image('platform', 'https://images.fuzzycode.dev/fast_ai?search=stone platform tile&resize=32x32');
+    this.load.image('block', 'https://aws.fuzzycode.dev/image_buddy_365day_cache/uploads/1c159ab3-db18-4cfe-847d-0342d6f3038c/stone wall block!resize_32x32.png');
+
+    // We're using direct Audio objects instead of Phaser's audio system
+    // to avoid doubled music playback, so we don't need to load audio in Phaser
+  }
+
+  create() {
+    // Important: create() gets called for each level restart, so we need to check
+    // if this is the final win state before resetting everything
+    const isGameComplete = this.scene.settings.data?.gameComplete || false;
+
+    this.matter.world.resume(); // Resume the world immediately instead of pausing
+    this.gameStarted = true; // Start immediately since we have title screen instructions now
+    this.gameOver = false;
+    this.levelComplete = false;
+
+    // Setup background music - using only the direct Audio object
+    // to avoid doubled music playback
+    if (!audioCache['BACKGROUND'].isPlaying) {
+      audioCache['BACKGROUND'].play().catch(e => console.log("Audio play error:", e));
+    }
+
+    if (isGameComplete) {
+      this.winText = this.add.text(400, 200, '🎉 CONGRATULATIONS! 🎉\n\nYou\'ve completed all levels!\n\nPress SPACE to return to level select', {
+        fontSize: '32px',
+        fill: '#fff',
+        align: 'center',
+        backgroundColor: '#000000aa',
+        padding: { x: 20, y: 10 }
+      });
+      this.winText.setOrigin(0.5);
+      this.winText.setScrollFactor(0);
+      this.winText.setDepth(10);
+      this.winText.setVisible(true);
+
+      const returnToMenu = () => {
+        this.scene.start('LevelSelectScene');
+      };
+      this.input.keyboard.once('keydown-SPACE', returnToMenu);
+      this.input.once('pointerdown', returnToMenu);
+      return;
+    }
+
+    this.currentLevel = this.scene.settings.data?.currentLevel || 0;
+    const levelMap = levels[this.currentLevel].level_data;
+    this.levelParTime = levels[this.currentLevel].par_time;
+    this.totalGems = levels[this.currentLevel].gem_count;
+    this.collectedGems = 0;
+
+    this.elapsedTime = 0;
+    this.timerEvent = null;
+
+    // Initialize physics groups and collections
+    this.tileSize = 32;
+    this.anchors = [];
+    this.platforms = [];
+    this.gems = [];
+    this.hazards = [];
+    this.blocks = [];
+
+    // Create background
+    const bgWidth = this.textures.get('bgTile').getSourceImage().width;
+    const bgHeight = this.textures.get('bgTile').getSourceImage().height;
+    this.resizeBackground(bgWidth, bgHeight);
+
+    // Parse the level map
+    for (let y = 0; y < levelMap.length; y++) {
+      for (let x = 0; x < levelMap[y].length; x++) {
+        const tile = levelMap[y][x];
+        const posX = x * this.tileSize + this.tileSize/2;
+        const posY = y * this.tileSize + this.tileSize/2;
+
+        switch(tile) {
+          case 'K': // Anchor points
+            let anchorBody = this.matter.add.circle(posX, posY, 16, {
+              isStatic: true,
+              isSensor: true,
+              collisionFilter: {
+                group: -1,
+                category: 0x0002,
+                mask: 0x0000
+              }
+            });
+            let anchorGraphics = this.add.image(posX, posY, 'knob').setScale(1);
+            anchorGraphics.setDepth(1);
+            this.anchors.push({ body: anchorBody, x: posX, y: posY, sprite: anchorGraphics });
+            break;
+
+          case 'P': // Player start position
+            this.player = this.matter.add.image(posX, posY, 'player', null, {
+              shape: { type: 'circle', radius: 16 },
+              frictionAir: 0.01,
+              restitution: 0.3,
+              friction: 0.05
+            }).setScale(0.8);
+            this.player.setFixedRotation();
+            this.player.setMass(2);
+            this.player.setDepth(5);
+            this.playerStartPosition = { x: posX, y: posY };
+            break;
+
+          case 'F': // Finish line
+            this.finishLine = this.add.image(posX, posY, 'finishLine');
+            this.finishLine.setDepth(2);
+            // Add a sensor for the finish line
+            this.finishSensor = this.matter.add.rectangle(posX, posY, 32, 64, {
+              isStatic: true,
+              isSensor: true
+            });
+            break;
+
+          case '#': // Platforms
+            let platform = this.matter.add.image(posX, posY, 'platform', null, {
+              isStatic: true,
+              friction: 0.5
+            });
+            platform.setDepth(1);
+            this.platforms.push(platform);
+            break;
+
+          case 'G': // Gems
+            let gem = this.matter.add.image(posX, posY, 'gem', null, {
+              isStatic: true,
+              isSensor: true
+            }).setScale(0.8);
+            gem.setDepth(3);
+            gem.collected = false;
+            this.gems.push(gem);
+            break;
+
+          case 'S': // Spikes (hazards)
+            let spikes = this.matter.add.image(posX, posY, 'spikes', null, {
+              isStatic: true,
+              isSensor: true
+            });
+            spikes.setDepth(3);
+            this.hazards.push(spikes);
+            break;
+
+          case 'B': // Boundary blocks
+            let block = this.matter.add.image(posX, posY, 'block', null, {
+              isStatic: true
+            });
+            block.setDepth(1);
+            this.blocks.push(block);
+            break;
+
+          case 'H': // Moving hazards (pendulums)
+            // Create a pendulum with a spike at the end
+            const pendulumLength = 120;
+            const anchorX = posX;
+            const anchorY = posY - pendulumLength;
+
+            // Create static anchor point
+            const pendulumAnchor = this.matter.add.circle(anchorX, anchorY, 8, {
+              isStatic: true
+            });
+
+            // Create the pendulum body
+            const pendulumSpike = this.matter.add.image(posX, posY, 'spikes', null, {
+              shape: { type: 'circle', radius: 16 },
+              isSensor: true
+            }).setScale(1.2);
+            pendulumSpike.setDepth(4);
+
+            // Create a constraint between anchor and spike
+            this.matter.add.constraint(pendulumAnchor, pendulumSpike.body, pendulumLength, 0, {
+              pointA: { x: 0, y: 0 },
+              pointB: { x: 0, y: -16 }
+            });
+
+            // Add to hazards
+            this.hazards.push(pendulumSpike);
+
+            // Draw the chain
+            const pendulumGraphics = this.add.graphics();
+            pendulumGraphics.setDepth(2);
+            this.pendulumGraphics = pendulumGraphics;
+
+            // Give initial swing
+            this.matter.body.setVelocity(pendulumSpike.body, { x: 2, y: 0 });
+            break;
+        }
+      }
+    }
+
+    // Setup game mechanics
+    this.hookConstraint = null;
+    this.currentAnchor = null;
+    this.isHurt = false;
+
+    // Graphics for rope and highlights
+    this.hookGraphics = this.add.graphics();
+    this.hookGraphics.setDepth(3);
+
+    this.highlightGraphics = this.add.graphics();
+    this.highlightGraphics.setDepth(3);
+
+    // Trail effect for player
+    this.playerTrail = this.add.graphics();
+    this.playerTrail.setDepth(2);
+    this.trailPoints = [];
+    this.trailMaxPoints = 10;
+
+    // Input handlers
+    this.setupInputHandlers();
+
+    // Camera follow
+    this.setupCamera();
+
+    // Water/lava at the bottom
+    this.setupWater();
+
+    // UI elements
+    this.setupUI();
+
+    // Collision handlers
+    this.setupCollisions();
+
+    // Resize handler
+    window.addEventListener('resize', () => this.scale.resize(window.innerWidth, window.innerHeight));
+    this.scale.resize(window.innerWidth, window.innerHeight);
+
+    // Update gem counter
+    this.updateGemCounter();
+
+    // Add restart key
+    this.input.keyboard.on('keydown-R', () => {
+      if (this.gameStarted && !this.gameOver && !this.levelComplete) {
+        this.restartLevel();
+      }
+    });
+
+    // Add mid-air control keys
+    this.leftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT);
+    this.rightKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.RIGHT);
+    this.aKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+    this.dKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
+  }
+
+  resizeBackground(bgWidth, bgHeight) {
+    const levelWidth = Math.max(...levels[this.currentLevel].level_data.map(row => row.length)) * this.tileSize;
+    const levelHeight = levels[this.currentLevel].level_data.length * this.tileSize;
+
+    const cols = Math.ceil(levelWidth / bgWidth);
+    const rows = Math.ceil(levelHeight / bgHeight);
+
+    for (let x = 0; x < cols; x++) {
+      for (let y = 0; y < rows; y++) {
+        this.add.image(x * bgWidth + bgWidth/2, y * bgHeight + bgHeight/2, 'bgTile').setDepth(-1);
+      }
+    }
+  }
+
+  setupInputHandlers() {
+    const startHook = () => {
+      if (!this.gameStarted) {
+        this.gameStarted = true;
+        this.startTimer();
+      }
+
+      if (this.hookConstraint || this.gameOver || this.levelComplete) return;
+
+      let candidate = this.findNearestAnchorAbove();
+      if (candidate) {
+        let dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, candidate.x, candidate.y);
+        if (dist < 300) { // Maximum hook distance
+          this.hookConstraint = this.matter.add.constraint(this.player.body, candidate.body, dist, 0.2);
+          this.currentAnchor = candidate;
+          playSound('SWING');
+
+          // Add a little swing boost
+          const angle = Phaser.Math.Angle.Between(this.player.x, this.player.y, candidate.x, candidate.y);
+          const perpAngle = angle + Math.PI/2;
+          this.matter.body.applyForce(this.player.body, 
+            {x: this.player.x, y: this.player.y}, 
+            {x: Math.cos(perpAngle) * 0.05, y: Math.sin(perpAngle) * 0.05});
+        }
+      }
+    };
+
+    const releaseHook = () => {
+      if (this.hookConstraint) {
+        this.matter.world.removeConstraint(this.hookConstraint);
+        this.hookConstraint = null;
+        this.currentAnchor = null;
+
+        // Apply jump boost on release
+        const currentVelocity = this.player.body.velocity;
+        const jumpForce = 0.08;
+
+        this.matter.body.applyForce(
+          this.player.body,
+          {x: this.player.x, y: this.player.y},
+          {x: 0, y: -jumpForce}
+        );
+
+        playSound('JUMP');
+
+        // Temporarily reduce gravity for more floaty jumps
+        let originalGravity = this.matter.world.engine.world.gravity.y;
+        this.matter.world.engine.world.gravity.y = 0.5;
+
+        this.time.delayedCall(500, () => {
+          if (!this.gameOver && !this.levelComplete) {
+            this.matter.world.engine.world.gravity.y = originalGravity;
+          }
+        });
+      }
+    };
+
+    this.input.keyboard.on('keydown-SPACE', startHook);
+    this.input.keyboard.on('keyup-SPACE', releaseHook);
+
+    this.input.on('pointerdown', startHook);
+    this.input.on('pointerup', releaseHook);
+  }
+
+  setupCamera() {
+    const levelWidth = Math.max(...levels[this.currentLevel].level_data.map(row => row.length)) * this.tileSize;
+    const levelHeight = levels[this.currentLevel].level_data.length * this.tileSize;
+
+    this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+    this.cameras.main.setFollowOffset(-100, 0);
+    this.cameras.main.setBounds(0, 0, levelWidth, levelHeight);
+  }
+
+  setupWater() {
+    const levelWidth = Math.max(...levels[this.currentLevel].level_data.map(row => row.length)) * this.tileSize;
+    const levelHeight = levels[this.currentLevel].level_data.length * this.tileSize;
+
+    // Add water tiles at the bottom
+    const waterY = levelHeight - 16;
+    this.waterTiles = [];
+    for (let x = 0; x < levelWidth; x += 64) {
+      const waterTile = this.add.image(x + 32, waterY, 'water');
+      waterTile.setDepth(1);
+      this.waterTiles.push(waterTile);
+    }
+
+    // Add water collision sensor
+    this.waterSensor = this.matter.add.rectangle(
+      levelWidth / 2,
+      waterY,
+      levelWidth,
+      32,
+      { isSensor: true, isStatic: true }
+    );
+  }
+
+  setupUI() {
+    // Timer text
+    this.timerText = this.add.text(window.innerWidth - 20, 20, 'Time: 0:00', {
+      fontSize: '20px',
+      fill: '#fff',
+      fontStyle: 'bold',
+      backgroundColor: '#000000aa',
+      padding: { x: 10, y: 5 }
+    });
+    this.timerText.setOrigin(1, 0);
+    this.timerText.setScrollFactor(0);
+    this.timerText.setDepth(10);
+
+    // Gem counter
+    this.gemText = this.add.text(window.innerWidth - 20, 60, `Gems: 0/${this.totalGems}`, {
+      fontSize: '20px',
+      fill: '#fff',
+      fontStyle: 'bold',
+      backgroundColor: '#000000aa',
+      padding: { x: 10, y: 5 }
+    });
+    this.gemText.setOrigin(1, 0);
+    this.gemText.setScrollFactor(0);
+    this.gemText.setDepth(10);
+
+    // Level text
+    this.levelText = this.add.text(20, 20, `Level ${this.currentLevel + 1}: ${levels[this.currentLevel].name}`, {
+      fontSize: '20px',
+      fill: '#fff',
+      fontStyle: 'bold',
+      backgroundColor: '#000000aa',
+      padding: { x: 10, y: 5 }
+    });
+    this.levelText.setScrollFactor(0);
+    this.levelText.setDepth(10);
+
+    // Win text (initially hidden)
+    this.winText = this.add.text(window.innerWidth/2, window.innerHeight/2 - 100, '', {
+      fontSize: '32px',
+      fill: '#fff',
+      align: 'center',
+      backgroundColor: '#000000aa',
+      padding: { x: 20, y: 10 }
+    });
+    this.winText.setOrigin(0.5);
+    this.winText.setScrollFactor(0);
+    this.winText.setDepth(10);
+    this.winText.setVisible(false);
+
+    // Stars display for level completion
+    this.starsGroup = this.add.container(window.innerWidth/2, window.innerHeight/2);
+    this.starsGroup.setScrollFactor(0);
+    this.starsGroup.setDepth(10);
+    this.starsGroup.setVisible(false);
+
+    // Create star outlines
+    for (let i = 0; i < 3; i++) {
+      const x = (i - 1) * 80;
+      const starOutline = this.add.star(x, 0, 5, 30, 60, 0x333333);
+      starOutline.setStrokeStyle(2, 0x000000);
+      this.starsGroup.add(starOutline);
+    }
+
+    // Stars will be filled in when earned
+    this.starsFilled = [];
+  }
+
+  setupCollisions() {
+    // Collision with finish line
+    this.matter.world.on('collisionstart', (event) => {
+      const pairs = event.pairs;
+
+      for (let i = 0; i < pairs.length; i++) {
+        const bodyA = pairs[i].bodyA;
+        const bodyB = pairs[i].bodyB;
+
+        // Check for water collision
+        if ((bodyA === this.player.body && bodyB === this.waterSensor) ||
+            (bodyB === this.player.body && bodyA === this.waterSensor)) {
+          if (!this.gameOver && !this.levelComplete) {
+            this.playerDeath('water');
+          }
+          return;
+        }
+
+        // Check for finish line
+        if ((bodyA === this.player.body && bodyB === this.finishSensor) ||
+            (bodyB === this.player.body && bodyA === this.finishSensor)) {
+          if (!this.gameOver && !this.levelComplete) {
+            this.completeLevel();
+          }
+          return;
+        }
+
+        // Check for gem collection
+        for (let j = 0; j < this.gems.length; j++) {
+          if (!this.gems[j].collected && 
+              ((bodyA === this.player.body && bodyB === this.gems[j].body) ||
+               (bodyB === this.player.body && bodyA === this.gems[j].body))) {
+            this.collectGem(this.gems[j]);
+            break;
+          }
+        }
+
+        // Check for hazard collision
+        for (let j = 0; j < this.hazards.length; j++) {
+          if ((bodyA === this.player.body && bodyB === this.hazards[j].body) ||
+              (bodyB === this.player.body && bodyA === this.hazards[j].body)) {
+            if (!this.isHurt && !this.gameOver && !this.levelComplete) {
+              this.hurtPlayer();
+            }
+            break;
+          }
+        }
+      }
+    });
+  }
+
+  startTimer() {
+    this.timerEvent = this.time.addEvent({
+      delay: 1000,
+      callback: this.updateTimer,
+      callbackScope: this,
+      loop: true
+    });
+  }
+
+  updateTimer() {
+    this.elapsedTime++;
+    const minutes = Math.floor(this.elapsedTime / 60);
+    const seconds = this.elapsedTime % 60;
+    this.timerText.setText(`Time: ${minutes}:${seconds.toString().padStart(2, '0')}`);
+  }
+
+  updateGemCounter() {
+    this.gemText.setText(`Gems: ${this.collectedGems}/${this.totalGems}`);
+  }
+
+  findNearestAnchorAbove() {
+    let playerX = this.player.x;
+    let playerY = this.player.y;
+    let minDist = Infinity;
+    let candidate = null;
+
+    for (let a of this.anchors) {
+      let dist = Phaser.Math.Distance.Between(playerX, playerY, a.x, a.y);
+      // Only consider anchors within a reasonable distance
+      if (dist < 300 && dist < minDist) {
+        minDist = dist;
+        candidate = a;
+      }
+    }
+    return candidate;
+  }
+
+  collectGem(gem) {
+    if (gem.collected) return;
+
+    gem.collected = true;
+    this.collectedGems++;
+    this.updateGemCounter();
+
+    // Play sound
+    playSound('GEM');
+
+    // Visual feedback
+    this.tweens.add({
+      targets: gem,
+      y: gem.y - 50,
+      alpha: 0,
+      scale: 1.5,
+      duration: 500,
+      ease: 'Power2',
+      onComplete: () => {
+        gem.setVisible(false);
+        gem.body.destroy();
+      }
+    });
+
+    // Particle effect - updated for Phaser 3.60.0
+    const particleConfig = {
+      x: gem.x,
+      y: gem.y,
+      speed: { min: 50, max: 100 },
+      scale: { start: 0.4, end: 0 },
+      alpha: { start: 1, end: 0 },
+      lifespan: 800,
+      blendMode: 'ADD'
+    };
+
+    // Create particle manager with emitter configuration
+    const particles = this.add.particles(gem.x, gem.y, 'gem', {
+      emitting: true,
+      lifespan: 800,
+      speed: { min: 50, max: 100 },
+      scale: { start: 0.4, end: 0 },
+      alpha: { start: 1, end: 0 },
+      blendMode: 'ADD',
+      quantity: 20
+    });
+
+    // Stop emitting after a short time
+    this.time.delayedCall(300, () => {
+      particles.stop();
+      this.time.delayedCall(800, () => {
+        particles.destroy();
+      });
+    });
+  }
+
+  hurtPlayer() {
+    if (this.isHurt) return;
+
+    this.isHurt = true;
+    playSound('HURT');
+
+    // Visual feedback
+    this.player.setTexture('playerHurt');
+
+    // Apply knockback
+    const knockbackForce = 0.1;
+    const knockbackDirection = { x: Math.random() - 0.5, y: -1 };
+    this.matter.body.applyForce(
+      this.player.body,
+      { x: this.player.x, y: this.player.y },
+      { x: knockbackDirection.x * knockbackForce, y: knockbackDirection.y * knockbackForce }
+    );
+
+    // Release hook if attached
+    if (this.hookConstraint) {
+      this.matter.world.removeConstraint(this.hookConstraint);
+      this.hookConstraint = null;
+      this.currentAnchor = null;
+    }
+
+    // Camera shake
+    this.cameras.main.shake(300, 0.01);
+
+    // Reset after a delay
+    this.time.delayedCall(1000, () => {
+      if (!this.gameOver && !this.levelComplete) {
+        this.player.setTexture('player');
+        this.isHurt = false;
+      }
+    });
+  }
+
+  playerDeath(cause) {
+    this.gameOver = true;
+
+    // Stop any active constraints
+    if (this.hookConstraint) {
+      this.matter.world.removeConstraint(this.hookConstraint);
+      this.hookConstraint = null;
+      this.currentAnchor = null;
+    }
+
+    // Play appropriate sound
+    if (cause === 'water') {
+      playSound('SPLASH');
+    } else {
+      playSound('HURT');
+    }
+
+    // Visual feedback
+    this.player.setTexture('playerHurt');
+    this.player.setTint(0xff0000);
+
+    // Camera effects
+    this.cameras.main.shake(500, 0.02);
+    this.cameras.main.flash(500, 255, 0, 0);
+
+    // Restart the level after a delay
+    this.time.delayedCall(1500, () => {
+      this.restartLevel();
+    });
+  }
+
+  restartLevel() {
+    if (this.timerEvent) {
+      this.timerEvent.remove();
+    }
+    this.scene.restart({ currentLevel: this.currentLevel });
+  }
+
+  completeLevel() {
+    if (this.levelComplete) return;
+
+    this.levelComplete = true;
+
+    // Stop timer
+    if (this.timerEvent) {
+      this.timerEvent.remove();
+    }
+
+    // Play win sound
+    playSound('WIN');
+
+    // Calculate stars earned
+    let starsEarned = 0;
+
+    // Star 1: Level completed
+    starsEarned++;
+
+    // Star 2: All gems collected
+    if (this.collectedGems === this.totalGems && this.totalGems > 0) {
+      starsEarned++;
+    }
+
+    // Star 3: Completed within par time
+    if (this.elapsedTime <= this.levelParTime) {
+      starsEarned++;
+    }
+
+    // Save progress
+    if (starsEarned > gameData.levelStars[this.currentLevel]) {
+      gameData.levelStars[this.currentLevel] = starsEarned;
+    }
+
+    if (gameData.bestTimes[this.currentLevel] === null || this.elapsedTime < gameData.bestTimes[this.currentLevel]) {
+      gameData.bestTimes[this.currentLevel] = this.elapsedTime;
+    }
+
+    if (this.collectedGems > gameData.gemCollected[this.currentLevel]) {
+      gameData.gemCollected[this.currentLevel] = this.collectedGems;
+    }
+
+    // Unlock next level
+    if (this.currentLevel + 1 >= gameData.levelsUnlocked && this.currentLevel + 1 < levels.length) {
+      gameData.levelsUnlocked = this.currentLevel + 2;
+    }
+
+    // Save to localStorage
+    localStorage.setItem('fluffyRopeSwinger', JSON.stringify(gameData));
+
+    // Show completion UI
+    this.showLevelComplete(starsEarned);
+  }
+
+  showLevelComplete(starsEarned) {
+    // Update win text
+    const minutes = Math.floor(this.elapsedTime / 60);
+    const seconds = this.elapsedTime % 60;
+    const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+    let message = `Made it Home!\n\nTime: ${timeString}\nGems: ${this.collectedGems}/${this.totalGems}\n\n`;
+
+    if (this.currentLevel + 1 < levels.length) {
+      message += 'Press SPACE for next level\nPress ESC for level select';
+    } else {
+      message += 'CONGRATULATIONS!\nYou completed all levels!\n\nPress SPACE to return to level select';
+    }
+
+    this.winText.setText(message);
+    this.winText.setVisible(true);
+
+    // Show stars
+    this.starsGroup.setVisible(true);
+
+    // Animate stars filling in
+    for (let i = 0; i < starsEarned; i++) {
+      this.time.delayedCall(i * 500, () => {
+        const x = (i - 1) * 80;
+        const star = this.add.star(x, 0, 5, 30, 60, 0xffcc00);
+        star.setStrokeStyle(2, 0x000000);
+        star.setScale(0);
+        this.starsGroup.add(star);
+
+        this.tweens.add({
+          targets: star,
+          scale: 1,
+          duration: 500,
+          ease: 'Back.out'
+        });
+
+        playSound('GEM');
+      });
+    }
+
+    // Setup input for next level or return to menu
+    this.input.keyboard.once('keydown-SPACE', () => {
+      if (this.currentLevel + 1 < levels.length) {
+        this.scene.restart({ currentLevel: this.currentLevel + 1 });
+      } else {
+        this.scene.restart({ currentLevel: 0, gameComplete: true });
+      }
+    });
+
+    this.input.keyboard.once('keydown-ESC', () => {
+      this.scene.start('LevelSelectScene');
+    });
+
+    this.input.once('pointerdown', () => {
+      if (this.currentLevel + 1 < levels.length) {
+        this.scene.restart({ currentLevel: this.currentLevel + 1 });
+      } else {
+        this.scene.restart({ currentLevel: 0, gameComplete: true });
+      }
+    });
+  }
+
+  update() {
+    if (!this.gameStarted || this.gameOver || this.levelComplete) return;
+
+    // Clear graphics
+    this.hookGraphics.clear();
+    this.highlightGraphics.clear();
+    this.playerTrail.clear();
+
+    // Draw pendulum chains
+    if (this.pendulumGraphics) {
+      this.pendulumGraphics.clear();
+      this.pendulumGraphics.lineStyle(2, 0x888888, 1);
+
+      for (let hazard of this.hazards) {
+        if (hazard.texture && hazard.texture.key === 'spikes' && !hazard.isStatic) {
+          // Find the constraint connected to this hazard
+          const constraints = this.matter.world.engine.world.constraints;
+          for (const constraint of constraints) {
+            if (constraint.bodyB === hazard.body) {
+              const anchorX = constraint.pointA.x + constraint.bodyA.position.x;
+              const anchorY = constraint.pointA.y + constraint.bodyA.position.y;
+
+              this.pendulumGraphics.beginPath();
+              this.pendulumGraphics.moveTo(anchorX, anchorY);
+              this.pendulumGraphics.lineTo(hazard.x, hazard.y - 16);
+              this.pendulumGraphics.strokePath();
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    // Find and highlight nearest anchor
+    let candidate = this.findNearestAnchorAbove();
+    if (candidate) {
+      this.highlightGraphics.lineStyle(2, 0xffff00, 1);
+      let radius = 20;
+      for (let angle = 0; angle < 360; angle += 20) {
+        let startAngle = Phaser.Math.DegToRad(angle);
+        let endAngle = Phaser.Math.DegToRad(angle+10);
+        this.highlightGraphics.beginPath();
+        this.highlightGraphics.arc(candidate.x, candidate.y, radius, startAngle, endAngle, false);
+        this.highlightGraphics.strokePath();
+      }
+    }
+
+    // Draw rope when hooked
+    if (this.hookConstraint && this.currentAnchor) {
+      this.hookGraphics.lineStyle(3, 0x00ff00, 1.0);
+      this.hookGraphics.beginPath();
+      this.hookGraphics.moveTo(this.player.x, this.player.y);
+      this.hookGraphics.lineTo(this.currentAnchor.x, this.currentAnchor.y);
+      this.hookGraphics.strokePath();
+    }
+
+    // Player trail effect
+    if (Math.abs(this.player.body.velocity.x) > 3 || Math.abs(this.player.body.velocity.y) > 3) {
+      this.trailPoints.push({
+        x: this.player.x,
+        y: this.player.y,
+        alpha: 1
+      });
+
+      if (this.trailPoints.length > this.trailMaxPoints) {
+        this.trailPoints.shift();
+      }
+
+      // Draw trail
+      this.playerTrail.fillStyle(0x00ffff, 0.5);
+      for (let i = 0; i < this.trailPoints.length; i++) {
+        const point = this.trailPoints[i];
+        point.alpha -= 0.1;
+
+        if (point.alpha > 0) {
+          const size = 16 * (i / this.trailPoints.length);
+          this.playerTrail.fillCircle(point.x, point.y, size);
+        }
+      }
+    }
+
+    // Mid-air control
+    if (!this.hookConstraint && !this.player.body.isSensor) {
+      const controlForce = 0.001;
+
+      if ((this.leftKey.isDown || this.aKey.isDown) && this.player.body.velocity.x > -5) {
+        this.matter.body.applyForce(
+          this.player.body,
+          { x: this.player.x, y: this.player.y },
+          { x: -controlForce, y: 0 }
+        );
+      }
+
+      if ((this.rightKey.isDown || this.dKey.isDown) && this.player.body.velocity.x < 5) {
+        this.matter.body.applyForce(
+          this.player.body,
+          { x: this.player.x, y: this.player.y },
+          { x: controlForce, y: 0 }
+        );
+      }
+    }
+
+    // Animate water
+    for (let waterTile of this.waterTiles) {
+      waterTile.y = waterTile.y + Math.sin(this.time.now / 500 + waterTile.x) * 0.5;
+    }
+  }
+}
+
+const config = {
+  type: Phaser.AUTO,
+  backgroundColor: '#1a1a1a',
+  parent: 'gameCanvas',
+  physics: {
+    default: 'matter',
+    matter: {
+      gravity: {y: 1},
+      debug: false
+    }
+  },
+  scale: {
+    mode: Phaser.Scale.RESIZE,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+    width: window.innerWidth,
+    height: window.innerHeight
+  },
+  scene: [TitleScene, LevelSelectScene, MainScene]
+};
+
+new Phaser.Game({
+    ...config,
+    preserveDrawingBuffer: true
+});
+</script>
+</body>
+</html>

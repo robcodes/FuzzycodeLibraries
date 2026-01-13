@@ -1,0 +1,1618 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carrot Cruncher Math Adventure</title>
+    <style>
+        @import url('https://cdn.fuzzycode.dev/resolve?url=https://fonts.googleapis.com/css2?family=Bubblegum+Sans&family=Nunito:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #8bc34a;
+            background-image: url('https://images.fuzzycode.dev/fast_ai?search=cute%20cartoon%20garden%20background%20with%20carrots%20growing&resize=1200x800');
+            background-size: cover;
+            background-position: center;
+            color: #3e2723;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-container {
+            position: relative;
+            width: 600px;
+            max-width: 95vw;
+            background-color: #dcedc8;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 4px solid #8d6e63;
+            transition: all 0.5s ease;
+        }
+
+        #game-title {
+            font-family: 'Bubblegum Sans', cursive;
+            text-align: center;
+            font-size: 42px;
+            color: #ff6f00;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3), 0 0 10px rgba(255, 255, 255, 0.8);
+            margin-bottom: 10px;
+            transform: rotate(-2deg);
+        }
+
+        #game-subtitle {
+            font-family: 'Nunito', sans-serif;
+            text-align: center;
+            font-size: 18px;
+            color: #5d4037;
+            margin-bottom: 15px;
+        }
+
+        #score-display {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 18px;
+            color: #3e2723;
+            font-weight: bold;
+        }
+
+        #mission {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 20px;
+            color: #ff5722;
+            font-weight: bold;
+        }
+
+        #game-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .grid-cell {
+            width: 100%;
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #aed581;
+            background-image: url('https://images.fuzzycode.dev/fast_ai?search=muted%20brown%20cartoon%20dirt%20texture&resize=100x100');
+            background-size: cover;
+            border-radius: 5px;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+            position: relative;
+            overflow: hidden;
+            color: #3e2723;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.7);
+            box-shadow: 0 3px 5px rgba(0,0,0,0.2);
+            transform-origin: center;
+        }
+
+        .grid-cell:hover {
+            background-color: #9ccc65;
+            background-image: url('https://images.fuzzycode.dev/fast_ai?search=muted%20brown%20cartoon%20dirt%20texture%20lighter&resize=100x100');
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        @keyframes bunnyBounce {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+            100% { transform: translateY(0); }
+        }
+
+        @keyframes foxSneaking {
+            0% { transform: rotate(-3deg) translateX(0); }
+            50% { transform: rotate(3deg) translateX(0); }
+            100% { transform: rotate(-3deg) translateX(0); }
+        }
+
+        .bunny {
+            position: absolute;
+            width: 80%;
+            height: 80%;
+            z-index: 10;
+            pointer-events: none;
+            animation: bunnyBounce 2s infinite ease-in-out;
+            transition: all 0.3s ease;
+        }
+
+        .fox {
+            position: absolute;
+            width: 80%;
+            height: 80%;
+            z-index: 20;
+            pointer-events: none;
+            animation: foxSneaking 1.5s infinite ease-in-out;
+            transition: all 0.3s ease;
+        }
+
+        @keyframes correctPulse {
+            0% { transform: scale(1); background-color: #ffeb3b; background-image: url('https://images.fuzzycode.dev/fast_ai?search=muted%20yellow%20dirt%20texture%20cartoon&resize=100x100'); }
+            50% { transform: scale(1.2); background-color: #ffeb3b; background-image: url('https://images.fuzzycode.dev/fast_ai?search=muted%20yellow%20dirt%20texture%20cartoon&resize=100x100'); }
+            100% { transform: scale(1); background-color: #ffeb3b; background-image: url('https://images.fuzzycode.dev/fast_ai?search=muted%20yellow%20dirt%20texture%20cartoon&resize=100x100'); }
+        }
+
+        @keyframes wrongShake {
+            0% { transform: translateX(0); background-color: #ff5722; background-image: url('https://images.fuzzycode.dev/fast_ai?search=muted%20reddish%20dirt%20texture%20cartoon&resize=100x100'); }
+            25% { transform: translateX(-5px); background-color: #ff5722; background-image: url('https://images.fuzzycode.dev/fast_ai?search=muted%20reddish%20dirt%20texture%20cartoon&resize=100x100'); }
+            50% { transform: translateX(5px); background-color: #ff5722; background-image: url('https://images.fuzzycode.dev/fast_ai?search=muted%20reddish%20dirt%20texture%20cartoon&resize=100x100'); }
+            75% { transform: translateX(-5px); background-color: #ff5722; background-image: url('https://images.fuzzycode.dev/fast_ai?search=muted%20reddish%20dirt%20texture%20cartoon&resize=100x100'); }
+            100% { transform: translateX(0); background-color: #ff5722; background-image: url('https://images.fuzzycode.dev/fast_ai?search=muted%20reddish%20dirt%20texture%20cartoon&resize=100x100'); }
+        }
+
+        @keyframes carrotCollected {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -100%) scale(0.5); opacity: 0; }
+        }
+
+        @keyframes dirtPuff {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0.7; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.5; }
+            100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+        }
+
+        .correct {
+            background-color: #ffeb3b;
+            animation: correctPulse 0.5s ease;
+        }
+
+        .wrong {
+            background-color: #ff5722;
+            animation: wrongShake 0.5s ease;
+        }
+
+        #game-over, #level-complete, #difficulty-select, #intro-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(62, 39, 35, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            border-radius: 15px;
+            display: none;
+            color: #fff;
+            text-align: center;
+            padding: 20px;
+            backdrop-filter: blur(5px);
+        }
+
+        #intro-screen {
+            background-color: rgba(139, 195, 74, 0.9);
+            background-image: url('https://images.fuzzycode.dev/fast_ai?search=cute%20cartoon%20bunny%20with%20carrots%20math%20background&resize=800x600');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+        }
+
+        #intro-content {
+            background-color: rgba(255, 255, 255, 0.85);
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 80%;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        #intro-title {
+            font-family: 'Bubblegum Sans', cursive;
+            font-size: 48px;
+            color: #ff6f00;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            margin-bottom: 15px;
+            animation: bounce 2s infinite ease-in-out;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        #intro-description {
+            font-size: 18px;
+            margin-bottom: 25px;
+            color: #3e2723;
+            line-height: 1.5;
+        }
+
+        .screen-title {
+            font-family: 'Bubblegum Sans', cursive;
+            font-size: 36px;
+            margin-bottom: 15px;
+            color: #ffeb3b;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 12px 24px;
+            font-size: 18px;
+            font-family: 'Nunito', sans-serif;
+            font-weight: bold;
+            background-color: #ff9800;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 0 #e65100;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button:hover {
+            background-color: #f57c00;
+            transform: translateY(-3px);
+            box-shadow: 0 7px 0 #e65100;
+        }
+
+        button:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #e65100;
+        }
+
+        button::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 5px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.5);
+            opacity: 0;
+            border-radius: 100%;
+            transform: scale(1, 1) translate(-50%);
+            transform-origin: 50% 50%;
+        }
+
+        button:focus:not(:active)::after {
+            animation: ripple 1s ease-out;
+        }
+
+        @keyframes ripple {
+            0% {
+                transform: scale(0, 0);
+                opacity: 0.5;
+            }
+            20% {
+                transform: scale(25, 25);
+                opacity: 0.3;
+            }
+            100% {
+                opacity: 0;
+                transform: scale(40, 40);
+            }
+        }
+
+        #lives-display {
+            display: flex;
+            align-items: center;
+        }
+
+        .life {
+            width: 20px;
+            height: 20px;
+            margin-left: 5px;
+            background-color: #ff5722;
+            border-radius: 50%;
+        }
+
+        #controls-info {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+            color: #5d4037;
+        }
+
+        .difficulty-btn {
+            margin: 10px;
+            padding: 15px 30px;
+            font-size: 20px;
+            width: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .difficulty-btn.easy {
+            background-color: #4CAF50;
+            box-shadow: 0 4px 0 #2E7D32;
+        }
+
+        .difficulty-btn.easy:hover {
+            background-color: #43A047;
+        }
+
+        .difficulty-btn.medium {
+            background-color: #ff9800;
+            box-shadow: 0 4px 0 #E65100;
+            color: #fff;
+        }
+
+        .difficulty-btn.medium:hover {
+            background-color: #F57C00;
+        }
+
+        .difficulty-btn.hard {
+            background-color: #f44336;
+            box-shadow: 0 4px 0 #B71C1C;
+        }
+
+        .difficulty-btn.hard:hover {
+            background-color: #E53935;
+        }
+
+        #difficulty-title {
+            font-family: 'Bubblegum Sans', cursive;
+            font-size: 32px;
+            margin-bottom: 20px;
+            color: #ffeb3b;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .difficulty-icon {
+            margin-right: 10px;
+            font-size: 24px;
+        }
+
+        #music-controls {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 8px;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            z-index: 200;
+        }
+
+        #music-toggle {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            margin: 0;
+            padding: 0;
+            color: #5d4037;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: none;
+        }
+
+        #music-toggle:hover {
+            color: #ff6f00;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .achievement {
+            position: fixed;
+            top: 30px;
+            right: -300px;
+            background-color: rgba(255, 235, 59, 0.9);
+            color: #3e2723;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            transition: right 0.5s ease;
+            font-weight: bold;
+        }
+
+        .achievement-icon {
+            margin-right: 10px;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <h1 id="game-title">Carrot Cruncher</h1>
+        <h2 id="game-subtitle">Math Adventure</h2>
+        <div id="score-display">
+            <div>Carrots: <span id="score">0</span> 🥕</div>
+            <div>Level: <span id="level">1</span></div>
+            <div id="lives-display">Lives: </div>
+        </div>
+        <div id="mission"></div>
+        <div id="game-grid"></div>
+        <div id="controls-info">
+            Use arrow keys to move. Press SPACE to munch a carrot.
+        </div>
+
+        <div id="game-over">
+            <h2>Game Over!</h2>
+            <p>Carrots collected: <span id="final-score">0</span> 🥕</p>
+            <button id="restart-game">Play Again</button>
+        </div>
+
+        <div id="level-complete">
+            <h2>Level Complete!</h2>
+            <p>Get ready for the next level</p>
+            <button id="next-level">Continue</button>
+        </div>
+
+        <div id="intro-screen">
+            <div id="intro-content">
+                <h1 id="intro-title">Carrot Cruncher</h1>
+                <p id="intro-description">
+                    Help Bunny munch on the correct carrots based on math challenges! 
+                    Move around the garden using arrow keys and press SPACE to eat carrots.
+                    Beware of the sneaky foxes! They'll try to catch you, so be quick and smart.
+                    Complete math challenges to level up and become the best carrot cruncher!
+                </p>
+                <button id="start-game-btn">Start Adventure!</button>
+            </div>
+        </div>
+
+        <div id="difficulty-select">
+            <h2 id="difficulty-title">Choose Difficulty</h2>
+            <button class="difficulty-btn easy" data-difficulty="easy"><span class="difficulty-icon">🥕</span>Easy</button>
+            <button class="difficulty-btn medium" data-difficulty="medium"><span class="difficulty-icon">🥕🥕</span>Medium</button>
+            <button class="difficulty-btn hard" data-difficulty="hard"><span class="difficulty-icon">🥕🥕🥕</span>Hard</button>
+        </div>
+
+        <div id="music-controls">
+            <button id="music-toggle">🔊</button>
+        </div>
+    </div>
+
+    <script>
+        // Background music and sound effects
+        const backgroundMusic = new Audio('https://sounds.fuzzycode.dev/music?prompt=cheerful%20playful%20game%20music%20for%20kids%20with%20happy%20melody&duration=30&ext=.mp3');
+        backgroundMusic.loop = true;
+        backgroundMusic.volume = 0.5;
+
+        // Game configuration
+        const config = {
+            gridSize: 5,
+            initialLives: 3,
+            missionTypes: [
+                { type: 'multiples', text: 'Munch carrots with multiples of {number}' },
+                { type: 'factors', text: 'Munch carrots with factors of {number}' },
+                { type: 'primes', text: 'Munch carrots with prime numbers' },
+                { type: 'even', text: 'Munch carrots with even numbers' },
+                { type: 'odd', text: 'Munch carrots with odd numbers' }
+            ],
+            pointsPerCorrect: 10,
+            levelGoal: 5, // Number of correct answers to complete level
+            maxNumber: 50,
+            troggleSpeed: 1000, // Time in ms between fox moves
+            troggleSpawnRate: 5000, // Time in ms between fox spawns
+            difficulty: 'medium' // Default difficulty
+        };
+
+        // Difficulty settings
+        const difficultySettings = {
+            easy: {
+                initialLives: 5,
+                levelGoal: 3,
+                troggleSpeed: 1500,
+                troggleSpawnRate: 8000,
+                maxTroggles: 2,
+                maxNumber: 20, // Easier numbers
+                missionTypes: [
+                    { type: 'multiples', text: 'Munch carrots with multiples of {number}', numberRange: [2, 5] },
+                    { type: 'even', text: 'Munch carrots with even numbers' },
+                    { type: 'odd', text: 'Munch carrots with odd numbers' }
+                ]
+            },
+            medium: {
+                initialLives: 3,
+                levelGoal: 5,
+                troggleSpeed: 1000,
+                troggleSpawnRate: 5000,
+                maxTroggles: 3,
+                maxNumber: 50,
+                missionTypes: [
+                    { type: 'multiples', text: 'Munch carrots with multiples of {number}', numberRange: [2, 10] },
+                    { type: 'factors', text: 'Munch carrots with factors of {number}', numberRange: [10, 50] },
+                    { type: 'primes', text: 'Munch carrots with prime numbers' },
+                    { type: 'even', text: 'Munch carrots with even numbers' },
+                    { type: 'odd', text: 'Munch carrots with odd numbers' }
+                ]
+            },
+            hard: {
+                initialLives: 2,
+                levelGoal: 7,
+                troggleSpeed: 700,
+                troggleSpawnRate: 3000,
+                maxTroggles: 4,
+                maxNumber: 100, // Harder numbers
+                missionTypes: [
+                    { type: 'multiples', text: 'Munch carrots with multiples of {number}', numberRange: [7, 19] },
+                    { type: 'factors', text: 'Munch carrots with factors of {number}', numberRange: [50, 100] },
+                    { type: 'primes', text: 'Munch carrots with prime numbers' },
+                    { type: 'even', text: 'Munch carrots with even numbers' },
+                    { type: 'odd', text: 'Munch carrots with odd numbers' },
+                    { type: 'squares', text: 'Munch carrots with perfect square numbers' },
+                    { type: 'cubes', text: 'Munch carrots with perfect cube numbers' }
+                ]
+            }
+        };
+
+        // Game state
+        let state = {
+            score: 0,
+            level: 1,
+            lives: config.initialLives,
+            currentMission: null,
+            correctAnswers: 0,
+            muncherPosition: { row: 2, col: 2 },
+            troggles: [],
+            grid: [],
+            gameOver: false,
+            levelComplete: false,
+            troggleSpawner: null
+        };
+
+        // DOM elements
+        const gridElement = document.getElementById('game-grid');
+        const scoreElement = document.getElementById('score');
+        const levelElement = document.getElementById('level');
+        const missionElement = document.getElementById('mission');
+        const livesDisplay = document.getElementById('lives-display');
+        const gameOverElement = document.getElementById('game-over');
+        const levelCompleteElement = document.getElementById('level-complete');
+        const difficultySelectElement = document.getElementById('difficulty-select');
+        const finalScoreElement = document.getElementById('final-score');
+        const restartButton = document.getElementById('restart-game');
+        const nextLevelButton = document.getElementById('next-level');
+        const difficultyButtons = document.querySelectorAll('.difficulty-btn');
+
+        // Sound effects
+        const sounds = {
+            chomp: new Audio('https://aws.fuzzycode.dev/generated_sound_effects/bunny-chomping-on-carrot.wav'),
+            wrong: new Audio('https://aws.fuzzycode.dev/generated_sound_effects/wrong-move-video-game-sound-effect.wav'),
+            levelUp: new Audio('https://sounds.fuzzycode.dev/sound_effect?prompt=level_complete_happy_jingle&duration=1&ext=.mp3'),
+            gameOver: new Audio('https://sounds.fuzzycode.dev/sound_effect?prompt=sad_game_over&duration=1&ext=.mp3'),
+            pop: new Audio('https://sounds.fuzzycode.dev/sound_effect?prompt=pop_bubble_cute&duration=0.5&ext=.mp3'),
+            foxAppear: new Audio('https://sounds.fuzzycode.dev/sound_effect?prompt=sneaky_fox_appears&duration=0.5&ext=.mp3'),
+            achievement: new Audio('https://sounds.fuzzycode.dev/sound_effect?prompt=achievement_unlocked_happy_chime&duration=1&ext=.mp3'),
+            buttonClick: new Audio('https://sounds.fuzzycode.dev/sound_effect?prompt=button_click_cute&duration=0.5&ext=.mp3')
+        };
+
+        // Initialize the game
+        function initGame() {
+            // Show intro screen first
+            document.getElementById('intro-screen').style.display = 'flex';
+
+            // Set up intro screen button
+            document.getElementById('start-game-btn').addEventListener('click', () => {
+                sounds.buttonClick.currentTime = 0;
+                sounds.buttonClick.play();
+                document.getElementById('intro-screen').style.display = 'none';
+                difficultySelectElement.style.display = 'flex';
+            });
+
+            // Set up music toggle
+            const musicToggle = document.getElementById('music-toggle');
+            musicToggle.addEventListener('click', toggleMusic);
+
+            // Set up difficulty selection handlers
+            difficultyButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const difficulty = button.dataset.difficulty;
+                    setDifficulty(difficulty);
+                    difficultySelectElement.style.display = 'none';
+                    startGame();
+                });
+            });
+
+            // Set up other event listeners
+            restartButton.addEventListener('click', restartGame);
+            nextLevelButton.addEventListener('click', nextLevel);
+        }
+
+        // Toggle background music
+        function toggleMusic() {
+            const musicToggle = document.getElementById('music-toggle');
+            if (backgroundMusic.paused) {
+                backgroundMusic.play();
+                musicToggle.textContent = '🔊';
+            } else {
+                backgroundMusic.pause();
+                musicToggle.textContent = '🔇';
+            }
+        }
+
+        // Show achievement notification
+        function showAchievement(message) {
+            const achievementElement = document.createElement('div');
+            achievementElement.className = 'achievement';
+            achievementElement.innerHTML = `<span class="achievement-icon">🏆</span>${message}`;
+            document.body.appendChild(achievementElement);
+
+            sounds.achievement.currentTime = 0;
+            sounds.achievement.play();
+
+            // Animate in
+            setTimeout(() => {
+                achievementElement.style.right = '20px';
+            }, 100);
+
+            // Animate out and remove
+            setTimeout(() => {
+                achievementElement.style.right = '-300px';
+                setTimeout(() => {
+                    document.body.removeChild(achievementElement);
+                }, 500);
+            }, 3000);
+        }
+
+        // Set difficulty
+        function setDifficulty(difficulty) {
+            sounds.buttonClick.currentTime = 0;
+            sounds.buttonClick.play();
+
+            config.difficulty = difficulty;
+
+            // Apply difficulty settings
+            const settings = difficultySettings[difficulty];
+            config.initialLives = settings.initialLives;
+            config.levelGoal = settings.levelGoal;
+            config.troggleSpeed = settings.troggleSpeed;
+            config.troggleSpawnRate = settings.troggleSpawnRate;
+            config.maxTroggles = settings.maxTroggles;
+            config.maxNumber = settings.maxNumber;
+            config.missionTypes = settings.missionTypes;
+
+            // Update state
+            state.lives = config.initialLives;
+
+            // Clean up any existing game elements
+            clearAllFoxes();
+
+            // Start playing background music
+            try {
+                backgroundMusic.play().catch(e => console.log("Auto-play prevented:", e));
+            } catch (e) {
+                console.log("Music play error:", e);
+            }
+        }
+
+        // Clear all foxes and their intervals
+        function clearAllFoxes() {
+            // Clear fox spawner interval
+            if (state.troggleSpawner) {
+                clearInterval(state.troggleSpawner);
+                state.troggleSpawner = null;
+            }
+
+            // Clear all fox move intervals and remove elements
+            state.troggles.forEach(fox => {
+                if (fox.moveInterval) {
+                    clearInterval(fox.moveInterval);
+                }
+            });
+
+            // Clear troggles array
+            state.troggles = [];
+
+            // Remove all fox elements
+            document.querySelectorAll('.fox').forEach(el => el.remove());
+        }
+
+        // Start the game after difficulty selection
+        function startGame() {
+            // Create grid cells
+            gridElement.innerHTML = '';
+            for (let row = 0; row < config.gridSize; row++) {
+                for (let col = 0; col < config.gridSize; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'grid-cell';
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+                    cell.addEventListener('click', () => handleCellClick(row, col));
+                    gridElement.appendChild(cell);
+                }
+            }
+
+            // Initialize lives display
+            updateLivesDisplay();
+
+            // Generate mission
+            generateMission();
+
+            // Generate grid values
+            generateGridValues();
+
+            // Place bunny
+            placeBunny(state.muncherPosition.row, state.muncherPosition.col);
+
+            // Start spawning foxes
+            startFoxSpawner();
+
+            // Set up keyboard event listeners
+            document.addEventListener('keydown', handleKeyPress);
+        }
+
+        // Generate a random mission
+        function generateMission() {
+            const missionIndex = Math.floor(Math.random() * config.missionTypes.length);
+            state.currentMission = { ...config.missionTypes[missionIndex] };
+
+            // Set mission parameter if needed
+            if (state.currentMission.type === 'multiples') {
+                const range = state.currentMission.numberRange || [2, 10];
+                state.currentMission.number = Math.floor(Math.random() * (range[1] - range[0] + 1)) + range[0];
+            } else if (state.currentMission.type === 'factors') {
+                const range = state.currentMission.numberRange || [10, 50];
+                state.currentMission.number = (Math.floor(Math.random() * (range[1] - range[0] + 1)) + range[0]);
+                // Make sure it has multiple factors
+                if (isPrime(state.currentMission.number)) {
+                    state.currentMission.number *= 2;
+                }
+            }
+
+            // Update mission text
+            let missionText = state.currentMission.text;
+            if (state.currentMission.number) {
+                missionText = missionText.replace('{number}', state.currentMission.number);
+            }
+            missionElement.textContent = missionText;
+        }
+
+        // Generate values for the grid
+        function generateGridValues() {
+            state.grid = [];
+
+            // Calculate how many correct answers to place
+            const totalCells = config.gridSize * config.gridSize;
+            const correctCells = Math.floor(totalCells * 0.4) + Math.min(state.level, 5);
+
+            // Generate array of indices for placing correct answers
+            const indices = Array.from({ length: totalCells }, (_, i) => i);
+            shuffleArray(indices);
+            const correctIndices = indices.slice(0, correctCells);
+
+            // Generate the grid
+            for (let i = 0; i < totalCells; i++) {
+                const isCorrect = correctIndices.includes(i);
+                let value;
+
+                if (isCorrect) {
+                    value = generateCorrectValue();
+                } else {
+                    value = generateIncorrectValue();
+                }
+
+                const row = Math.floor(i / config.gridSize);
+                const col = i % config.gridSize;
+
+                if (!state.grid[row]) {
+                    state.grid[row] = [];
+                }
+
+                state.grid[row][col] = {
+                    value,
+                    isCorrect
+                };
+            }
+
+            // Update the DOM with new values
+            updateGridDisplay();
+        }
+
+        // Generate a correct value based on current mission
+        function generateCorrectValue() {
+            switch (state.currentMission.type) {
+                case 'multiples':
+                    // Adjust multiplier range based on difficulty
+                    let max = config.difficulty === 'easy' ? 5 : (config.difficulty === 'medium' ? 10 : 15);
+                    return state.currentMission.number * (Math.floor(Math.random() * max) + 1);
+                case 'factors':
+                    const factors = getFactors(state.currentMission.number);
+                    return factors[Math.floor(Math.random() * factors.length)];
+                case 'primes':
+                    // Different prime ranges for different difficulties
+                    let primes;
+                    if (config.difficulty === 'easy') {
+                        primes = [2, 3, 5, 7, 11, 13];
+                    } else if (config.difficulty === 'medium') {
+                        primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47];
+                    } else {
+                        primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97];
+                    }
+                    return primes[Math.floor(Math.random() * primes.length)];
+                case 'even':
+                    return (Math.floor(Math.random() * (config.maxNumber / 2)) + 1) * 2;
+                case 'odd':
+                    return Math.floor(Math.random() * (config.maxNumber / 2)) * 2 + 1;
+                case 'squares':
+                    // Perfect squares up to maxNumber
+                    const maxSqrt = Math.floor(Math.sqrt(config.maxNumber));
+                    const n = Math.floor(Math.random() * maxSqrt) + 1;
+                    return n * n;
+                case 'cubes':
+                    // Perfect cubes up to maxNumber
+                    const maxCubeRoot = Math.floor(Math.cbrt(config.maxNumber));
+                    const m = Math.floor(Math.random() * maxCubeRoot) + 1;
+                    return m * m * m;
+                default:
+                    return Math.floor(Math.random() * config.maxNumber) + 1;
+            }
+        }
+
+        // Generate an incorrect value based on current mission
+        function generateIncorrectValue() {
+            let value;
+            let isIncorrect = false;
+            let attempts = 0;
+
+            while (!isIncorrect && attempts < 50) {
+                attempts++;
+                value = Math.floor(Math.random() * config.maxNumber) + 1;
+
+                switch (state.currentMission.type) {
+                    case 'multiples':
+                        isIncorrect = value % state.currentMission.number !== 0;
+                        break;
+                    case 'factors':
+                        isIncorrect = !getFactors(state.currentMission.number).includes(value);
+                        break;
+                    case 'primes':
+                        isIncorrect = !isPrime(value);
+                        break;
+                    case 'even':
+                        isIncorrect = value % 2 !== 0;
+                        break;
+                    case 'odd':
+                        isIncorrect = value % 2 === 0;
+                        break;
+                    case 'squares':
+                        isIncorrect = !isPerfectSquare(value);
+                        break;
+                    case 'cubes':
+                        isIncorrect = !isPerfectCube(value);
+                        break;
+                    default:
+                        isIncorrect = true;
+                }
+            }
+
+            // If we couldn't find an incorrect value, generate a random one
+            if (!isIncorrect) {
+                value = Math.floor(Math.random() * config.maxNumber) + 1;
+            }
+
+            return value;
+        }
+
+        // Update the grid display with current values
+        function updateGridDisplay() {
+            const cells = document.querySelectorAll('.grid-cell');
+
+            cells.forEach(cell => {
+                const row = parseInt(cell.dataset.row);
+                const col = parseInt(cell.dataset.col);
+
+                // Clear previous content except for bunny/fox
+                const bunny = cell.querySelector('.bunny');
+                const fox = cell.querySelector('.fox');
+
+                cell.innerHTML = '';
+                cell.textContent = state.grid[row][col].value;
+
+                if (bunny) {
+                    cell.appendChild(bunny);
+                }
+
+                if (fox) {
+                    cell.appendChild(fox);
+                }
+
+                // Remove any previous correct/wrong classes
+                cell.classList.remove('correct', 'wrong');
+            });
+        }
+
+        // Handle keyboard input
+        function handleKeyPress(event) {
+            if (state.gameOver || state.levelComplete) return;
+
+            const key = event.key.toLowerCase();
+
+            if (key === 'arrowup' || key === 'w') {
+                moveBunny(state.muncherPosition.row - 1, state.muncherPosition.col);
+            } else if (key === 'arrowdown' || key === 's') {
+                moveBunny(state.muncherPosition.row + 1, state.muncherPosition.col);
+            } else if (key === 'arrowleft' || key === 'a') {
+                moveBunny(state.muncherPosition.row, state.muncherPosition.col - 1);
+            } else if (key === 'arrowright' || key === 'd') {
+                moveBunny(state.muncherPosition.row, state.muncherPosition.col + 1);
+            } else if (key === ' ' || key === 'enter') {
+                // Munch the current carrot
+                munchCarrot();
+            }
+        }
+
+        // Handle cell click
+        function handleCellClick(row, col) {
+            if (state.gameOver || state.levelComplete) return;
+
+            moveBunny(row, col);
+            munchCarrot();
+        }
+
+        // Move the bunny to a new position
+        function moveBunny(row, col) {
+            // Check bounds
+            if (row < 0 || row >= config.gridSize || col < 0 || col >= config.gridSize) {
+                return;
+            }
+
+            // Remove bunny from current position
+            const currentCell = document.querySelector(`.grid-cell[data-row="${state.muncherPosition.row}"][data-col="${state.muncherPosition.col}"]`);
+            const bunnyElement = currentCell.querySelector('.bunny');
+
+            if (bunnyElement) {
+                currentCell.removeChild(bunnyElement);
+            }
+
+            // Update position
+            state.muncherPosition = { row, col };
+
+            // Place bunny in new position
+            placeBunny(row, col);
+
+            // Check if there's a fox at the new position
+            checkFoxCollision();
+        }
+
+        // Place the bunny at a specific position
+        function placeBunny(row, col) {
+            const cell = document.querySelector(`.grid-cell[data-row="${row}"][data-col="${col}"]`);
+
+            // Create bunny element if it doesn't exist
+            let bunnyElement = cell.querySelector('.bunny');
+
+            if (!bunnyElement) {
+                bunnyElement = document.createElement('img');
+                bunnyElement.className = 'bunny';
+                bunnyElement.src = 'https://aws.fuzzycode.dev/image_buddy_365day_cache/uploads/650d0284-66ef-4e44-ba51-28913dea877c/cartoon bunny rabbit!resize_80x80.png';
+                cell.appendChild(bunnyElement);
+            }
+        }
+
+        // Munch the current carrot
+        function munchCarrot() {
+            if (state.gameOver || state.levelComplete) return;
+
+            const { row, col } = state.muncherPosition;
+            const cell = document.querySelector(`.grid-cell[data-row="${row}"][data-col="${col}"]`);
+            const gridItem = state.grid[row][col];
+            const bunnyElement = cell.querySelector('.bunny');
+
+            if (gridItem.isCorrect) {
+                // Correct answer
+                sounds.chomp.currentTime = 0;
+                sounds.chomp.play();
+
+                // Animate bunny eating
+                if (bunnyElement) {
+                    bunnyElement.style.animation = 'none';
+                    bunnyElement.style.transform = 'scale(1.2)';
+                    setTimeout(() => {
+                        bunnyElement.style.animation = 'bunnyBounce 2s infinite ease-in-out';
+                        bunnyElement.style.transform = '';
+                    }, 300);
+                }
+
+                cell.classList.add('correct');
+
+                // Create carrot accumulation animation
+                const carrot = document.createElement('img');
+                carrot.src = 'https://images.fuzzycode.dev/fast_ai?search=cartoon%20carrot&resize=50x50&transparency=true';
+                carrot.classList.add('carrot-collected');
+                carrot.style.position = 'absolute';
+                carrot.style.top = '50%';
+                carrot.style.left = '50%';
+                carrot.style.transform = 'translate(-50%, -50%)';
+                carrot.style.zIndex = '50';
+                carrot.style.pointerEvents = 'none';
+                cell.appendChild(carrot);
+
+                // Animate carrot flying to score
+                const scorePos = scoreElement.getBoundingClientRect();
+                const cellPos = cell.getBoundingClientRect();
+
+                setTimeout(() => {
+                    carrot.style.transition = 'all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1)';
+                    carrot.style.top = (scorePos.top - cellPos.top) + 'px';
+                    carrot.style.left = (scorePos.left - cellPos.left) + 'px';
+                    carrot.style.transform = 'translate(0, 0) scale(0.5)';
+                    carrot.style.opacity = '0.8';
+
+                    // Play carrot collection sound
+                    const collectSound = new Audio('https://sounds.fuzzycode.dev/sound_effect?prompt=carrot_collected_ding&duration=0.5&ext=.mp3');
+                    collectSound.volume = 0.6;
+                    collectSound.play();
+
+                    // Remove carrot after animation
+                    setTimeout(() => {
+                        // Check if carrot is still a child of cell before removing
+                        if (carrot.parentNode === cell) {
+                            cell.removeChild(carrot);
+                        }
+                    }, 500);
+                }, 100);
+
+                // Animate score increase (carrots collected)
+                const oldScore = state.score;
+                state.score += config.pointsPerCorrect;
+                animateCountUp(scoreElement, oldScore, state.score, 300);
+
+                state.correctAnswers++;
+
+                // Generate a new value for this cell
+                state.grid[row][col] = {
+                    value: generateIncorrectValue(),
+                    isCorrect: false
+                };
+
+                // Update after a brief delay to show the correct feedback
+                setTimeout(() => {
+                    updateGridDisplay();
+
+                    // Check if level is complete
+                    if (state.correctAnswers >= config.levelGoal) {
+                        levelComplete();
+                    }
+                }, 600);
+            } else {
+                // Incorrect answer - bunny dug up something dangerous
+                sounds.wrong.currentTime = 0;
+                sounds.wrong.play();
+
+                // Create dangerous item animation
+                const dangerItems = [
+                    { name: 'rock', img: 'https://images.fuzzycode.dev/fast_ai?search=cartoon%20rock&resize=50x50&transparency=true' },
+                    { name: 'mole', img: 'https://images.fuzzycode.dev/fast_ai?search=cartoon%20mole&resize=50x50&transparency=true' },
+                    { name: 'thorn', img: 'https://aws.fuzzycode.dev/image_buddy_365day_cache/uploads/650d0284-66ef-4e44-ba51-28913dea877c/cartoon thorny plant!resize_50x50.png' }
+                ];
+
+                const randomDanger = dangerItems[Math.floor(Math.random() * dangerItems.length)];
+
+                // Add digging sound
+                const digSound = new Audio('https://sounds.fuzzycode.dev/sound_effect?prompt=rabbit_digging_dirt&duration=0.5&ext=.mp3');
+                digSound.volume = 0.7;
+                digSound.play();
+
+                // Create dirt puff animation
+                const dirtPuff = document.createElement('div');
+                dirtPuff.classList.add('dirt-puff');
+                dirtPuff.style.position = 'absolute';
+                dirtPuff.style.top = '50%';
+                dirtPuff.style.left = '50%';
+                dirtPuff.style.width = '60px';
+                dirtPuff.style.height = '60px';
+                dirtPuff.style.backgroundColor = '#8d6e63';
+                dirtPuff.style.borderRadius = '50%';
+                dirtPuff.style.transform = 'translate(-50%, -50%) scale(0)';
+                dirtPuff.style.opacity = '0.7';
+                dirtPuff.style.zIndex = '40';
+                dirtPuff.style.pointerEvents = 'none';
+                cell.appendChild(dirtPuff);
+
+                // Animate dirt puff
+                setTimeout(() => {
+                    dirtPuff.style.transition = 'all 0.3s ease-out';
+                    dirtPuff.style.transform = 'translate(-50%, -50%) scale(1)';
+
+                    // Show the dangerous item after dirt puff
+                    setTimeout(() => {
+                        const dangerItem = document.createElement('img');
+                        dangerItem.src = randomDanger.img;
+                        dangerItem.classList.add('danger-item');
+                        dangerItem.style.position = 'absolute';
+                        dangerItem.style.top = '50%';
+                        dangerItem.style.left = '50%';
+                        dangerItem.style.transform = 'translate(-50%, -50%) scale(0)';
+                        dangerItem.style.zIndex = '45';
+                        dangerItem.style.pointerEvents = 'none';
+                        cell.appendChild(dangerItem);
+
+                        // Animate danger item appearing
+                        setTimeout(() => {
+                            dangerItem.style.transition = 'all 0.2s ease-out';
+                            dangerItem.style.transform = 'translate(-50%, -50%) scale(1.2)';
+
+                            // Animate bunny reaction
+                            if (bunnyElement) {
+                                bunnyElement.style.animation = 'none';
+                                bunnyElement.style.transform = 'translateY(-10px)';
+                                setTimeout(() => {
+                                    bunnyElement.style.animation = 'bunnyBounce 2s infinite ease-in-out';
+                                    bunnyElement.style.transform = '';
+                                }, 300);
+                            }
+
+                            // Remove the elements after animation
+                            setTimeout(() => {
+                                cell.removeChild(dirtPuff);
+                                cell.removeChild(dangerItem);
+                            }, 400);
+                        }, 100);
+                    }, 200);
+                }, 50);
+
+                cell.classList.add('wrong');
+
+                // Lose a life
+                state.lives--;
+                updateLivesDisplay();
+
+                // Check if game over
+                if (state.lives <= 0) {
+                    gameOver();
+                    return;
+                }
+
+                // Reset after a brief delay
+                setTimeout(() => {
+                    cell.classList.remove('wrong');
+                }, 700);
+            }
+        }
+
+        // Animate count up for score
+        function animateCountUp(element, start, end, duration) {
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                const value = Math.floor(progress * (end - start) + start);
+                element.textContent = value;
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        // Update the lives display
+        function updateLivesDisplay() {
+            // Clear previous lives
+            while (livesDisplay.children.length > 1) {
+                livesDisplay.removeChild(livesDisplay.lastChild);
+            }
+
+            // Add current lives
+            for (let i = 0; i < state.lives; i++) {
+                const lifeElement = document.createElement('div');
+                lifeElement.className = 'life';
+                livesDisplay.appendChild(lifeElement);
+            }
+        }
+
+        // Start spawning foxes
+        function startFoxSpawner() {
+            // Clear any existing foxes
+            state.troggles = [];
+            document.querySelectorAll('.fox').forEach(el => el.remove());
+
+            // Clear any existing spawner
+            if (state.troggleSpawner) {
+                clearInterval(state.troggleSpawner);
+            }
+
+            // Start the spawner interval
+            state.troggleSpawner = setInterval(() => {
+                if (state.gameOver || state.levelComplete) {
+                    clearInterval(state.troggleSpawner);
+                    return;
+                }
+
+                spawnFox();
+            }, config.troggleSpawnRate);
+        }
+
+        // Spawn a fox at a random position
+        function spawnFox() {
+            // Limit number of foxes based on difficulty and level
+            const maxFoxes = Math.min(config.maxTroggles, Math.floor(state.level / 2) + 1);
+            if (state.troggles.length >= maxFoxes) {
+                return;
+            }
+
+            // Play fox appear sound
+            sounds.foxAppear.currentTime = 0;
+            sounds.foxAppear.play();
+
+            // Find a position that doesn't have the bunny or another fox
+            let row, col;
+            let validPosition = false;
+
+            while (!validPosition) {
+                row = Math.floor(Math.random() * config.gridSize);
+                col = Math.floor(Math.random() * config.gridSize);
+
+                // Check if position is valid
+                validPosition = !(row === state.muncherPosition.row && col === state.muncherPosition.col);
+
+                // Check if there's already a fox at this position
+                for (const fox of state.troggles) {
+                    if (fox.row === row && fox.col === col) {
+                        validPosition = false;
+                        break;
+                    }
+                }
+            }
+
+            // Create fox
+            const fox = {
+                id: Date.now(),
+                row,
+                col,
+                moveInterval: null
+            };
+
+            // Add to state
+            state.troggles.push(fox);
+
+            // Place fox on grid
+            placeFox(fox);
+
+            // Start moving the fox
+            fox.moveInterval = setInterval(() => {
+                moveFox(fox);
+            }, config.troggleSpeed - (state.level * 30)); // Speed increases with level
+        }
+
+        // Place a fox at its position
+        function placeFox(fox) {
+            const cell = document.querySelector(`.grid-cell[data-row="${fox.row}"][data-col="${fox.col}"]`);
+
+            const foxElement = document.createElement('img');
+            foxElement.className = 'fox';
+            foxElement.dataset.id = fox.id;
+            foxElement.src = 'https://aws.fuzzycode.dev/image_buddy_365day_cache/uploads/650d0284-66ef-4e44-ba51-28913dea877c/cartoon orange fox!resize_80x80.png';
+
+            cell.appendChild(foxElement);
+
+            // Check if placed on bunny
+            checkFoxCollision();
+        }
+
+        // Move a fox
+        function moveFox(fox) {
+            if (state.gameOver || state.levelComplete) {
+                clearInterval(fox.moveInterval);
+                return;
+            }
+
+            // Remove from current position
+            const currentCell = document.querySelector(`.grid-cell[data-row="${fox.row}"][data-col="${fox.col}"]`);
+            const foxElement = currentCell.querySelector(`.fox[data-id="${fox.id}"]`);
+
+            if (foxElement) {
+                currentCell.removeChild(foxElement);
+            }
+
+            // Decide new position - move toward bunny
+            let newRow = fox.row;
+            let newCol = fox.col;
+
+            // Adjust difficulty of fox movement based on difficulty setting
+            let chaseChance;
+            switch(config.difficulty) {
+                case 'easy': chaseChance = 0.6; break;
+                case 'medium': chaseChance = 0.8; break;
+                case 'hard': chaseChance = 0.9; break;
+                default: chaseChance = 0.8;
+            }
+
+            if (Math.random() < chaseChance) {
+                if (state.muncherPosition.row < fox.row) {
+                    newRow--;
+                } else if (state.muncherPosition.row > fox.row) {
+                    newRow++;
+                } else if (state.muncherPosition.col < fox.col) {
+                    newCol--;
+                } else if (state.muncherPosition.col > fox.col) {
+                    newCol++;
+                }
+            } else {
+                // Random move
+                const directions = [
+                    { row: -1, col: 0 },
+                    { row: 1, col: 0 },
+                    { row: 0, col: -1 },
+                    { row: 0, col: 1 }
+                ];
+
+                const direction = directions[Math.floor(Math.random() * directions.length)];
+                newRow = fox.row + direction.row;
+                newCol = fox.col + direction.col;
+            }
+
+            // Check bounds
+            if (newRow < 0 || newRow >= config.gridSize || newCol < 0 || newCol >= config.gridSize) {
+                // If out of bounds, try to place back in original position
+                placeFox(fox);
+                return;
+            }
+
+            // Update fox position
+            fox.row = newRow;
+            fox.col = newCol;
+
+            // Place in new position
+            placeFox(fox);
+        }
+
+        // Check if a fox has collided with the bunny
+        function checkFoxCollision() {
+            for (const fox of state.troggles) {
+                if (fox.row === state.muncherPosition.row && fox.col === state.muncherPosition.col) {
+                    // Collision! Lose a life
+                    sounds.wrong.currentTime = 0;
+                    sounds.wrong.play();
+
+                    state.lives--;
+                    updateLivesDisplay();
+
+                    // Remove the fox
+                    removeFox(fox);
+
+                    // Check if game over
+                    if (state.lives <= 0) {
+                        gameOver();
+                        return;
+                    }
+
+                    // Flash the bunny
+                    const cell = document.querySelector(`.grid-cell[data-row="${state.muncherPosition.row}"][data-col="${state.muncherPosition.col}"]`);
+                    cell.classList.add('wrong');
+
+                    setTimeout(() => {
+                        cell.classList.remove('wrong');
+                    }, 300);
+                }
+            }
+        }
+
+        // Remove a fox
+        function removeFox(fox) {
+            // Clear the move interval
+            clearInterval(fox.moveInterval);
+
+            // Remove from the DOM
+            const foxElement = document.querySelector(`.fox[data-id="${fox.id}"]`);
+            if (foxElement) {
+                foxElement.parentNode.removeChild(foxElement);
+            }
+
+            // Remove from state
+            state.troggles = state.troggles.filter(t => t.id !== fox.id);
+        }
+
+        // Game over
+        function gameOver() {
+            state.gameOver = true;
+
+            // Stop fox spawner
+            if (state.troggleSpawner) {
+                clearInterval(state.troggleSpawner);
+            }
+
+            // Stop all foxes
+            state.troggles.forEach(fox => {
+                clearInterval(fox.moveInterval);
+            });
+
+            // Play game over sound
+            sounds.gameOver.currentTime = 0;
+            sounds.gameOver.play();
+
+            // Show game over screen
+            finalScoreElement.textContent = state.score;
+            gameOverElement.style.display = 'flex';
+        }
+
+        // Level complete
+        function levelComplete() {
+            state.levelComplete = true;
+
+            // Stop fox spawner
+            if (state.troggleSpawner) {
+                clearInterval(state.troggleSpawner);
+            }
+
+            // Stop all foxes
+            state.troggles.forEach(fox => {
+                clearInterval(fox.moveInterval);
+            });
+
+            // Play level complete sound
+            sounds.levelUp.currentTime = 0;
+            sounds.levelUp.play();
+
+            // Animate cells before showing level complete
+            const cells = document.querySelectorAll('.grid-cell');
+            cells.forEach((cell, index) => {
+                setTimeout(() => {
+                    cell.style.transform = 'scale(0)';
+                    cell.style.opacity = '0';
+                }, index * 30);
+            });
+
+            // Show level complete screen after animation
+            setTimeout(() => {
+                levelCompleteElement.style.display = 'flex';
+                levelCompleteElement.style.opacity = '0';
+                levelCompleteElement.style.transform = 'scale(0.8)';
+
+                // Fade in animation
+                setTimeout(() => {
+                    levelCompleteElement.style.transition = 'all 0.5s ease-out';
+                    levelCompleteElement.style.opacity = '1';
+                    levelCompleteElement.style.transform = 'scale(1)';
+                }, 50);
+            }, cells.length * 30 + 200);
+        }
+
+        // Next level
+        function nextLevel() {
+            sounds.buttonClick.currentTime = 0;
+            sounds.buttonClick.play();
+
+            // Check for achievements
+            if (state.level === 3) {
+                showAchievement("Math Explorer: Reached Level 3!");
+            } else if (state.level === 5) {
+                showAchievement("Math Master: Reached Level 5!");
+            } else if (state.level === 10) {
+                showAchievement("Math Champion: Reached Level 10!");
+            }
+
+            // Fade out level complete screen
+            levelCompleteElement.style.opacity = '0';
+            levelCompleteElement.style.transform = 'scale(1.2)';
+
+            setTimeout(() => {
+                levelCompleteElement.style.display = 'none';
+
+                state.level++;
+                state.correctAnswers = 0;
+                state.levelComplete = false;
+                state.troggles = [];
+
+                // Update level display with animation
+                const oldLevel = parseInt(levelElement.textContent);
+                const newLevel = state.level;
+                animateCountUp(levelElement, oldLevel, newLevel, 500);
+
+                // Generate new mission
+                generateMission();
+
+                // Reset grid cells for animation
+                const cells = document.querySelectorAll('.grid-cell');
+                cells.forEach(cell => {
+                    cell.style.transform = 'scale(0)';
+                    cell.style.opacity = '0';
+                });
+
+                // Generate new grid values
+                generateGridValues();
+
+                // Clear any foxes
+                document.querySelectorAll('.fox').forEach(el => el.remove());
+
+                // Animate grid cells appearing
+                setTimeout(() => {
+                    cells.forEach((cell, index) => {
+                        setTimeout(() => {
+                            cell.style.transition = 'all 0.3s ease-out';
+                            cell.style.transform = 'scale(1)';
+                            cell.style.opacity = '1';
+                        }, index * 30);
+                    });
+                }, 200);
+
+                // Start spawning foxes again after animation
+                setTimeout(() => {
+                    startFoxSpawner();
+                }, cells.length * 30 + 300);
+
+            }, 500);
+        }
+
+        // Restart game
+        function restartGame() {
+            sounds.buttonClick.currentTime = 0;
+            sounds.buttonClick.play();
+
+            // Reset game state
+            state = {
+                score: 0,
+                level: 1,
+                lives: config.initialLives,
+                currentMission: null,
+                correctAnswers: 0,
+                muncherPosition: { row: 2, col: 2 },
+                troggles: [],
+                grid: [],
+                gameOver: false,
+                levelComplete: false,
+                troggleSpawner: null
+            };
+
+            // Remove existing event listeners to prevent duplicates
+            document.removeEventListener('keydown', handleKeyPress);
+
+            // Show difficulty selection
+            gameOverElement.style.display = 'none';
+            difficultySelectElement.style.display = 'flex';
+        }
+
+        // Utility functions
+        function getFactors(num) {
+            const factors = [];
+            for (let i = 1; i <= num; i++) {
+                if (num % i === 0) {
+                    factors.push(i);
+                }
+            }
+            return factors;
+        }
+
+        function isPrime(num) {
+            if (num <= 1) return false;
+            if (num <= 3) return true;
+            if (num % 2 === 0 || num % 3 === 0) return false;
+
+            let i = 5;
+            while (i * i <= num) {
+                if (num % i === 0 || num % (i + 2) === 0) return false;
+                i += 6;
+            }
+            return true;
+        }
+
+        function isPerfectSquare(num) {
+            const sqrt = Math.sqrt(num);
+            return sqrt === Math.floor(sqrt);
+        }
+
+        function isPerfectCube(num) {
+            const cbrt = Math.cbrt(num);
+            return Math.abs(Math.round(cbrt) - cbrt) < 1e-10;
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Start the game when the page loads
+        window.addEventListener('load', initGame);
+    </script>
+</body>
+</html>

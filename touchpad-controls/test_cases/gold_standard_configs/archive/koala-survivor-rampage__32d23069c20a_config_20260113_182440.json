@@ -1,0 +1,36 @@
+{
+  "layout": "auto",
+  "bindings": {
+    "jump": "ArrowUp",
+    "primary": "Space",
+    "move": {
+      "left": "ArrowLeft",
+      "right": "ArrowRight"
+    }
+  },
+  "action_meta": {
+    "jump": {
+      "behavior": "discrete",
+      "interaction": "tap",
+      "simultaneous": true,
+      "kind": "button"
+    },
+    "primary": {
+      "behavior": "discrete",
+      "interaction": "tap",
+      "simultaneous": true,
+      "kind": "button"
+    },
+    "move": {
+      "behavior": "continuous",
+      "interaction": "hold",
+      "simultaneous": true,
+      "control_space": "rate",
+      "activation": "hold",
+      "direction_mode": "cardinal",
+      "granularity": "fine",
+      "kind": "axis"
+    }
+  },
+  "source_output": "test_cases/outputs/top_voted/koala-survivor-rampage__32d23069c20a_touch_embedded.html"
+}

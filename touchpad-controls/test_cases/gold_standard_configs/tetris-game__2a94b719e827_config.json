@@ -1,0 +1,47 @@
+{
+  "layout": "auto",
+  "bindings": {
+    "primary": "ArrowDown",
+    "secondary": "KeyQ",
+    "tertiary": "KeyW",
+    "move": {
+      "left": "ArrowLeft",
+      "right": "ArrowRight"
+    }
+  },
+  "action_meta": {
+    "primary": {
+      "behavior": "continuous",
+      "interaction": "hold",
+      "simultaneous": true,
+      "kind": "button"
+    },
+    "secondary": {
+      "behavior": "discrete",
+      "interaction": "tap",
+      "simultaneous": false,
+      "pair_id": "rotate",
+      "pair_position": "left",
+      "kind": "button"
+    },
+    "tertiary": {
+      "behavior": "discrete",
+      "interaction": "tap",
+      "simultaneous": false,
+      "pair_id": "rotate",
+      "pair_position": "right",
+      "kind": "button"
+    },
+    "move": {
+      "behavior": "discrete",
+      "interaction": "hold",
+      "simultaneous": false,
+      "control_space": "vector",
+      "activation": "hold",
+      "direction_mode": "cardinal",
+      "granularity": "coarse",
+      "kind": "axis"
+    }
+  },
+  "source_output": "test_cases/outputs/top_voted/tetris-game__2a94b719e827_touch_embedded.html"
+}

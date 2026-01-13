@@ -1,0 +1,4293 @@
+{
+  "generated_at": "2026-01-13T18:47:50.435Z",
+  "source_dir": "test_cases/outputs/top_voted",
+  "viewports": [
+    {
+      "name": "phone-portrait",
+      "width": 390,
+      "height": 844,
+      "safeArea": {
+        "top": 47,
+        "right": 0,
+        "bottom": 34,
+        "left": 0
+      }
+    },
+    {
+      "name": "phone-landscape",
+      "width": 844,
+      "height": 390,
+      "safeArea": {
+        "top": 0,
+        "right": 47,
+        "bottom": 21,
+        "left": 47
+      }
+    },
+    {
+      "name": "small-phone",
+      "width": 360,
+      "height": 640,
+      "safeArea": {
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      }
+    },
+    {
+      "name": "tablet-portrait",
+      "width": 810,
+      "height": 1080,
+      "safeArea": {
+        "top": 24,
+        "right": 0,
+        "bottom": 20,
+        "left": 0
+      }
+    },
+    {
+      "name": "tablet-landscape",
+      "width": 1024,
+      "height": 768,
+      "safeArea": {
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      }
+    }
+  ],
+  "games": {
+    "asteroid-blaster-with-boss-battles__2ab6ef807a32": {
+      "file": "test_cases/outputs/top_voted/asteroid-blaster-with-boss-battles__2ab6ef807a32_touch_embedded.html",
+      "layout": "auto",
+      "bindings": {
+        "primary": "Space",
+        "pause": "KeyP",
+        "magnitude": "ArrowUp",
+        "move": {
+          "left": "ArrowLeft",
+          "right": "ArrowRight"
+        }
+      },
+      "actionMeta": {
+        "primary": {
+          "behavior": "discrete",
+          "interaction": "tap",
+          "simultaneous": true,
+          "kind": "button"
+        },
+        "pause": {
+          "behavior": "discrete",
+          "interaction": "tap",
+          "simultaneous": false,
+          "kind": "button"
+        },
+        "magnitude": {
+          "behavior": "continuous",
+          "interaction": "hold",
+          "simultaneous": true,
+          "control_space": "magnitude",
+          "activation": "hold",
+          "direction_mode": "cardinal",
+          "granularity": "fine",
+          "kind": "button"
+        },
+        "move": {
+          "behavior": "continuous",
+          "interaction": "hold",
+          "simultaneous": true,
+          "control_space": "rate",
+          "activation": "hold",
+          "direction_mode": "cardinal",
+          "granularity": "fine",
+          "kind": "axis"
+        }
+      },
+      "layouts": {
+        "phone-portrait": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null
+                },
+                "x": 52.7,
+                "y": 741.8,
+                "size": 66.3
+              },
+              {
+                "id": "magnitude",
+                "role": "magnitude",
+                "type": "button",
+                "keys": "ArrowUp",
+                "x": 337.4,
+                "y": 741.8,
+                "size": 56
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 337.4,
+                "y": 678.1,
+                "size": 48
+              }
+            ]
+          },
+          "metrics": {
+            "width": 390,
+            "height": 844,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 47,
+              "right": 0,
+              "bottom": 34,
+              "left": 0
+            },
+            "minDim": 390,
+            "baseSize": 66.3,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 11.7,
+            "edgePadding": 19.5,
+            "verticalOffset": 15.6,
+            "bottomY": 790.5
+          }
+        },
+        "phone-landscape": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null
+                },
+                "x": 99.7,
+                "y": 308.6,
+                "size": 66.3
+              },
+              {
+                "id": "magnitude",
+                "role": "magnitude",
+                "type": "button",
+                "keys": "ArrowUp",
+                "x": 744.4,
+                "y": 308.6,
+                "size": 56
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 744.4,
+                "y": 244.9,
+                "size": 48
+              }
+            ]
+          },
+          "metrics": {
+            "width": 844,
+            "height": 390,
+            "orientation": "landscape",
+            "safeArea": {
+              "top": 0,
+              "right": 47,
+              "bottom": 21,
+              "left": 47
+            },
+            "minDim": 390,
+            "baseSize": 66.3,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 11.7,
+            "edgePadding": 19.5,
+            "verticalOffset": 7.8,
+            "bottomY": 349.5
+          }
+        },
+        "small-phone": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null
+                },
+                "x": 50,
+                "y": 575.6,
+                "size": 64
+              },
+              {
+                "id": "magnitude",
+                "role": "magnitude",
+                "type": "button",
+                "keys": "ArrowUp",
+                "x": 310,
+                "y": 575.6,
+                "size": 56
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 310,
+                "y": 512.8,
+                "size": 48
+              }
+            ]
+          },
+          "metrics": {
+            "width": 360,
+            "height": 640,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            },
+            "minDim": 360,
+            "baseSize": 64,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 10.8,
+            "edgePadding": 18,
+            "verticalOffset": 14.4,
+            "bottomY": 622
+          }
+        },
+        "tablet-portrait": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null
+                },
+                "x": 88,
+                "y": 956,
+                "size": 112
+              },
+              {
+                "id": "magnitude",
+                "role": "magnitude",
+                "type": "button",
+                "keys": "ArrowUp",
+                "x": 722,
+                "y": 956,
+                "size": 96
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 722,
+                "y": 848,
+                "size": 80
+              }
+            ]
+          },
+          "metrics": {
+            "width": 810,
+            "height": 1080,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 24,
+              "right": 0,
+              "bottom": 20,
+              "left": 0
+            },
+            "minDim": 810,
+            "baseSize": 112,
+            "actionSize": 96,
+            "smallActionSize": 80,
+            "miniActionSize": 72,
+            "spacing": 20,
+            "edgePadding": 32,
+            "verticalOffset": 16,
+            "bottomY": 1028
+          }
+        },
+        "tablet-landscape": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null
+                },
+                "x": 88,
+                "y": 668,
+                "size": 112
+              },
+              {
+                "id": "magnitude",
+                "role": "magnitude",
+                "type": "button",
+                "keys": "ArrowUp",
+                "x": 936,
+                "y": 668,
+                "size": 96
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 936,
+                "y": 560,
+                "size": 80
+              }
+            ]
+          },
+          "metrics": {
+            "width": 1024,
+            "height": 768,
+            "orientation": "landscape",
+            "safeArea": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            },
+            "minDim": 768,
+            "baseSize": 112,
+            "actionSize": 96,
+            "smallActionSize": 80,
+            "miniActionSize": 72,
+            "spacing": 20,
+            "edgePadding": 32,
+            "verticalOffset": 12,
+            "bottomY": 736
+          }
+        }
+      }
+    },
+    "bodysuit-jumper-platformer__3b637562d778": {
+      "file": "test_cases/outputs/top_voted/bodysuit-jumper-platformer__3b637562d778_touch_embedded.html",
+      "layout": "auto",
+      "bindings": {
+        "jump": "Space",
+        "move": {
+          "left": "ArrowLeft",
+          "right": "ArrowRight"
+        }
+      },
+      "actionMeta": {
+        "jump": {
+          "behavior": "discrete",
+          "interaction": "tap",
+          "simultaneous": true,
+          "kind": "button"
+        },
+        "move": {
+          "behavior": "continuous",
+          "interaction": "hold",
+          "simultaneous": false,
+          "control_space": "vector",
+          "activation": "hold",
+          "direction_mode": "cardinal",
+          "granularity": "fine",
+          "kind": "axis"
+        }
+      },
+      "layouts": {
+        "phone-portrait": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 52.7,
+                "y": 741.8,
+                "size": 66.3
+              },
+              {
+                "id": "jump",
+                "role": "jump",
+                "type": "button",
+                "keys": "Space",
+                "x": 337.4,
+                "y": 741.8,
+                "size": 56
+              }
+            ]
+          },
+          "metrics": {
+            "width": 390,
+            "height": 844,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 47,
+              "right": 0,
+              "bottom": 34,
+              "left": 0
+            },
+            "minDim": 390,
+            "baseSize": 66.3,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 11.7,
+            "edgePadding": 19.5,
+            "verticalOffset": 15.6,
+            "bottomY": 790.5
+          }
+        },
+        "phone-landscape": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 99.7,
+                "y": 308.6,
+                "size": 66.3
+              },
+              {
+                "id": "jump",
+                "role": "jump",
+                "type": "button",
+                "keys": "Space",
+                "x": 744.4,
+                "y": 308.6,
+                "size": 56
+              }
+            ]
+          },
+          "metrics": {
+            "width": 844,
+            "height": 390,
+            "orientation": "landscape",
+            "safeArea": {
+              "top": 0,
+              "right": 47,
+              "bottom": 21,
+              "left": 47
+            },
+            "minDim": 390,
+            "baseSize": 66.3,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 11.7,
+            "edgePadding": 19.5,
+            "verticalOffset": 7.8,
+            "bottomY": 349.5
+          }
+        },
+        "small-phone": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 50,
+                "y": 575.6,
+                "size": 64
+              },
+              {
+                "id": "jump",
+                "role": "jump",
+                "type": "button",
+                "keys": "Space",
+                "x": 310,
+                "y": 575.6,
+                "size": 56
+              }
+            ]
+          },
+          "metrics": {
+            "width": 360,
+            "height": 640,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            },
+            "minDim": 360,
+            "baseSize": 64,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 10.8,
+            "edgePadding": 18,
+            "verticalOffset": 14.4,
+            "bottomY": 622
+          }
+        },
+        "tablet-portrait": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 88,
+                "y": 956,
+                "size": 112
+              },
+              {
+                "id": "jump",
+                "role": "jump",
+                "type": "button",
+                "keys": "Space",
+                "x": 722,
+                "y": 956,
+                "size": 96
+              }
+            ]
+          },
+          "metrics": {
+            "width": 810,
+            "height": 1080,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 24,
+              "right": 0,
+              "bottom": 20,
+              "left": 0
+            },
+            "minDim": 810,
+            "baseSize": 112,
+            "actionSize": 96,
+            "smallActionSize": 80,
+            "miniActionSize": 72,
+            "spacing": 20,
+            "edgePadding": 32,
+            "verticalOffset": 16,
+            "bottomY": 1028
+          }
+        },
+        "tablet-landscape": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 88,
+                "y": 668,
+                "size": 112
+              },
+              {
+                "id": "jump",
+                "role": "jump",
+                "type": "button",
+                "keys": "Space",
+                "x": 936,
+                "y": 668,
+                "size": 96
+              }
+            ]
+          },
+          "metrics": {
+            "width": 1024,
+            "height": 768,
+            "orientation": "landscape",
+            "safeArea": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            },
+            "minDim": 768,
+            "baseSize": 112,
+            "actionSize": 96,
+            "smallActionSize": 80,
+            "miniActionSize": 72,
+            "spacing": 20,
+            "edgePadding": 32,
+            "verticalOffset": 12,
+            "bottomY": 736
+          }
+        }
+      }
+    },
+    "bounce-quest-to-the-top__363f80e33d70": {
+      "file": "test_cases/outputs/top_voted/bounce-quest-to-the-top__363f80e33d70_touch_embedded.html",
+      "layout": "auto",
+      "bindings": {
+        "move": {
+          "left": "ArrowLeft",
+          "right": "ArrowRight"
+        }
+      },
+      "actionMeta": {
+        "move": {
+          "behavior": "continuous",
+          "interaction": "hold",
+          "simultaneous": false,
+          "control_space": "vector",
+          "activation": "hold",
+          "direction_mode": "cardinal",
+          "granularity": "fine",
+          "kind": "axis"
+        }
+      },
+      "layouts": {
+        "phone-portrait": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 52.7,
+                "y": 741.8,
+                "size": 66.3
+              }
+            ]
+          },
+          "metrics": {
+            "width": 390,
+            "height": 844,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 47,
+              "right": 0,
+              "bottom": 34,
+              "left": 0
+            },
+            "minDim": 390,
+            "baseSize": 66.3,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 11.7,
+            "edgePadding": 19.5,
+            "verticalOffset": 15.6,
+            "bottomY": 790.5
+          }
+        },
+        "phone-landscape": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 99.7,
+                "y": 308.6,
+                "size": 66.3
+              }
+            ]
+          },
+          "metrics": {
+            "width": 844,
+            "height": 390,
+            "orientation": "landscape",
+            "safeArea": {
+              "top": 0,
+              "right": 47,
+              "bottom": 21,
+              "left": 47
+            },
+            "minDim": 390,
+            "baseSize": 66.3,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 11.7,
+            "edgePadding": 19.5,
+            "verticalOffset": 7.8,
+            "bottomY": 349.5
+          }
+        },
+        "small-phone": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 50,
+                "y": 575.6,
+                "size": 64
+              }
+            ]
+          },
+          "metrics": {
+            "width": 360,
+            "height": 640,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            },
+            "minDim": 360,
+            "baseSize": 64,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 10.8,
+            "edgePadding": 18,
+            "verticalOffset": 14.4,
+            "bottomY": 622
+          }
+        },
+        "tablet-portrait": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 88,
+                "y": 956,
+                "size": 112
+              }
+            ]
+          },
+          "metrics": {
+            "width": 810,
+            "height": 1080,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 24,
+              "right": 0,
+              "bottom": 20,
+              "left": 0
+            },
+            "minDim": 810,
+            "baseSize": 112,
+            "actionSize": 96,
+            "smallActionSize": 80,
+            "miniActionSize": 72,
+            "spacing": 20,
+            "edgePadding": 32,
+            "verticalOffset": 16,
+            "bottomY": 1028
+          }
+        },
+        "tablet-landscape": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 88,
+                "y": 668,
+                "size": 112
+              }
+            ]
+          },
+          "metrics": {
+            "width": 1024,
+            "height": 768,
+            "orientation": "landscape",
+            "safeArea": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            },
+            "minDim": 768,
+            "baseSize": 112,
+            "actionSize": 96,
+            "smallActionSize": 80,
+            "miniActionSize": 72,
+            "spacing": 20,
+            "edgePadding": 32,
+            "verticalOffset": 12,
+            "bottomY": 736
+          }
+        }
+      }
+    },
+    "bubblebound-1shotted-v2__3b5d636d7f22": {
+      "file": "test_cases/outputs/top_voted/bubblebound-1shotted-v2__3b5d636d7f22_touch_embedded.html",
+      "layout": "auto",
+      "bindings": {
+        "jump": "Space",
+        "modifier": "KeyZ",
+        "pause": "KeyP",
+        "move": {
+          "left": "ArrowLeft",
+          "right": "ArrowRight"
+        }
+      },
+      "actionMeta": {
+        "jump": {
+          "behavior": "discrete",
+          "interaction": "tap",
+          "simultaneous": true,
+          "kind": "button"
+        },
+        "modifier": {
+          "behavior": "discrete",
+          "interaction": "tap",
+          "simultaneous": true,
+          "kind": "button"
+        },
+        "pause": {
+          "behavior": "discrete",
+          "interaction": "tap",
+          "simultaneous": false,
+          "kind": "button"
+        },
+        "move": {
+          "behavior": "continuous",
+          "interaction": "hold",
+          "simultaneous": false,
+          "control_space": "vector",
+          "activation": "hold",
+          "direction_mode": "cardinal",
+          "granularity": "fine",
+          "kind": "axis"
+        }
+      },
+      "layouts": {
+        "phone-portrait": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 52.7,
+                "y": 741.8,
+                "size": 66.3
+              },
+              {
+                "id": "jump",
+                "role": "jump",
+                "type": "button",
+                "keys": "Space",
+                "x": 337.4,
+                "y": 741.8,
+                "size": 56
+              },
+              {
+                "id": "modifier",
+                "role": "modifier",
+                "type": "button",
+                "keys": "KeyZ",
+                "x": 337.4,
+                "y": 678.1,
+                "size": 48
+              }
+            ]
+          },
+          "metrics": {
+            "width": 390,
+            "height": 844,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 47,
+              "right": 0,
+              "bottom": 34,
+              "left": 0
+            },
+            "minDim": 390,
+            "baseSize": 66.3,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 11.7,
+            "edgePadding": 19.5,
+            "verticalOffset": 15.6,
+            "bottomY": 790.5
+          }
+        },
+        "phone-landscape": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 99.7,
+                "y": 308.6,
+                "size": 66.3
+              },
+              {
+                "id": "jump",
+                "role": "jump",
+                "type": "button",
+                "keys": "Space",
+                "x": 744.4,
+                "y": 308.6,
+                "size": 56
+              },
+              {
+                "id": "modifier",
+                "role": "modifier",
+                "type": "button",
+                "keys": "KeyZ",
+                "x": 744.4,
+                "y": 244.9,
+                "size": 48
+              }
+            ]
+          },
+          "metrics": {
+            "width": 844,
+            "height": 390,
+            "orientation": "landscape",
+            "safeArea": {
+              "top": 0,
+              "right": 47,
+              "bottom": 21,
+              "left": 47
+            },
+            "minDim": 390,
+            "baseSize": 66.3,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 11.7,
+            "edgePadding": 19.5,
+            "verticalOffset": 7.8,
+            "bottomY": 349.5
+          }
+        },
+        "small-phone": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 50,
+                "y": 575.6,
+                "size": 64
+              },
+              {
+                "id": "jump",
+                "role": "jump",
+                "type": "button",
+                "keys": "Space",
+                "x": 310,
+                "y": 575.6,
+                "size": 56
+              },
+              {
+                "id": "modifier",
+                "role": "modifier",
+                "type": "button",
+                "keys": "KeyZ",
+                "x": 310,
+                "y": 512.8,
+                "size": 48
+              }
+            ]
+          },
+          "metrics": {
+            "width": 360,
+            "height": 640,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            },
+            "minDim": 360,
+            "baseSize": 64,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 10.8,
+            "edgePadding": 18,
+            "verticalOffset": 14.4,
+            "bottomY": 622
+          }
+        },
+        "tablet-portrait": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 88,
+                "y": 956,
+                "size": 112
+              },
+              {
+                "id": "jump",
+                "role": "jump",
+                "type": "button",
+                "keys": "Space",
+                "x": 722,
+                "y": 956,
+                "size": 96
+              },
+              {
+                "id": "modifier",
+                "role": "modifier",
+                "type": "button",
+                "keys": "KeyZ",
+                "x": 722,
+                "y": 848,
+                "size": 80
+              }
+            ]
+          },
+          "metrics": {
+            "width": 810,
+            "height": 1080,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 24,
+              "right": 0,
+              "bottom": 20,
+              "left": 0
+            },
+            "minDim": 810,
+            "baseSize": 112,
+            "actionSize": 96,
+            "smallActionSize": 80,
+            "miniActionSize": 72,
+            "spacing": 20,
+            "edgePadding": 32,
+            "verticalOffset": 16,
+            "bottomY": 1028
+          }
+        },
+        "tablet-landscape": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 88,
+                "y": 668,
+                "size": 112
+              },
+              {
+                "id": "jump",
+                "role": "jump",
+                "type": "button",
+                "keys": "Space",
+                "x": 936,
+                "y": 668,
+                "size": 96
+              },
+              {
+                "id": "modifier",
+                "role": "modifier",
+                "type": "button",
+                "keys": "KeyZ",
+                "x": 936,
+                "y": 560,
+                "size": 80
+              }
+            ]
+          },
+          "metrics": {
+            "width": 1024,
+            "height": 768,
+            "orientation": "landscape",
+            "safeArea": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            },
+            "minDim": 768,
+            "baseSize": 112,
+            "actionSize": 96,
+            "smallActionSize": 80,
+            "miniActionSize": 72,
+            "spacing": 20,
+            "edgePadding": 32,
+            "verticalOffset": 12,
+            "bottomY": 736
+          }
+        }
+      }
+    },
+    "dance-fever-boss-battle__ba3c2373e25c": {
+      "file": "test_cases/outputs/top_voted/dance-fever-boss-battle__ba3c2373e25c_touch_embedded.html",
+      "layout": "auto",
+      "bindings": {
+        "primary": "Space",
+        "modifier": "ArrowUp",
+        "move": {
+          "left": "ArrowLeft",
+          "right": "ArrowRight"
+        }
+      },
+      "actionMeta": {
+        "primary": {
+          "behavior": "discrete",
+          "interaction": "tap",
+          "simultaneous": true,
+          "kind": "button"
+        },
+        "modifier": {
+          "behavior": "discrete",
+          "interaction": "tap",
+          "simultaneous": true,
+          "kind": "button"
+        },
+        "move": {
+          "behavior": "continuous",
+          "interaction": "hold",
+          "simultaneous": false,
+          "control_space": "vector",
+          "activation": "hold",
+          "direction_mode": "cardinal",
+          "granularity": "fine",
+          "kind": "axis"
+        }
+      },
+      "layouts": {
+        "phone-portrait": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 52.7,
+                "y": 741.8,
+                "size": 66.3
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 337.4,
+                "y": 741.8,
+                "size": 56
+              },
+              {
+                "id": "modifier",
+                "role": "modifier",
+                "type": "button",
+                "keys": "ArrowUp",
+                "x": 337.4,
+                "y": 678.1,
+                "size": 48
+              }
+            ]
+          },
+          "metrics": {
+            "width": 390,
+            "height": 844,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 47,
+              "right": 0,
+              "bottom": 34,
+              "left": 0
+            },
+            "minDim": 390,
+            "baseSize": 66.3,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 11.7,
+            "edgePadding": 19.5,
+            "verticalOffset": 15.6,
+            "bottomY": 790.5
+          }
+        },
+        "phone-landscape": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 99.7,
+                "y": 308.6,
+                "size": 66.3
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 744.4,
+                "y": 308.6,
+                "size": 56
+              },
+              {
+                "id": "modifier",
+                "role": "modifier",
+                "type": "button",
+                "keys": "ArrowUp",
+                "x": 744.4,
+                "y": 244.9,
+                "size": 48
+              }
+            ]
+          },
+          "metrics": {
+            "width": 844,
+            "height": 390,
+            "orientation": "landscape",
+            "safeArea": {
+              "top": 0,
+              "right": 47,
+              "bottom": 21,
+              "left": 47
+            },
+            "minDim": 390,
+            "baseSize": 66.3,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 11.7,
+            "edgePadding": 19.5,
+            "verticalOffset": 7.8,
+            "bottomY": 349.5
+          }
+        },
+        "small-phone": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 50,
+                "y": 575.6,
+                "size": 64
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 310,
+                "y": 575.6,
+                "size": 56
+              },
+              {
+                "id": "modifier",
+                "role": "modifier",
+                "type": "button",
+                "keys": "ArrowUp",
+                "x": 310,
+                "y": 512.8,
+                "size": 48
+              }
+            ]
+          },
+          "metrics": {
+            "width": 360,
+            "height": 640,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            },
+            "minDim": 360,
+            "baseSize": 64,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 10.8,
+            "edgePadding": 18,
+            "verticalOffset": 14.4,
+            "bottomY": 622
+          }
+        },
+        "tablet-portrait": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 88,
+                "y": 956,
+                "size": 112
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 722,
+                "y": 956,
+                "size": 96
+              },
+              {
+                "id": "modifier",
+                "role": "modifier",
+                "type": "button",
+                "keys": "ArrowUp",
+                "x": 722,
+                "y": 848,
+                "size": 80
+              }
+            ]
+          },
+          "metrics": {
+            "width": 810,
+            "height": 1080,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 24,
+              "right": 0,
+              "bottom": 20,
+              "left": 0
+            },
+            "minDim": 810,
+            "baseSize": 112,
+            "actionSize": 96,
+            "smallActionSize": 80,
+            "miniActionSize": 72,
+            "spacing": 20,
+            "edgePadding": 32,
+            "verticalOffset": 16,
+            "bottomY": 1028
+          }
+        },
+        "tablet-landscape": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 88,
+                "y": 668,
+                "size": 112
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 936,
+                "y": 668,
+                "size": 96
+              },
+              {
+                "id": "modifier",
+                "role": "modifier",
+                "type": "button",
+                "keys": "ArrowUp",
+                "x": 936,
+                "y": 560,
+                "size": 80
+              }
+            ]
+          },
+          "metrics": {
+            "width": 1024,
+            "height": 768,
+            "orientation": "landscape",
+            "safeArea": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            },
+            "minDim": 768,
+            "baseSize": 112,
+            "actionSize": 96,
+            "smallActionSize": 80,
+            "miniActionSize": 72,
+            "spacing": 20,
+            "edgePadding": 32,
+            "verticalOffset": 12,
+            "bottomY": 736
+          }
+        }
+      }
+    },
+    "educational-game-carrot-cruncher-math-adventure__5b0307aeb311": {
+      "file": "test_cases/outputs/top_voted/educational-game-carrot-cruncher-math-adventure__5b0307aeb311_touch_embedded.html",
+      "layout": "auto",
+      "bindings": {
+        "primary": "Space",
+        "move": {
+          "left": "ArrowLeft",
+          "right": "ArrowRight",
+          "up": "ArrowUp",
+          "down": "ArrowDown"
+        }
+      },
+      "actionMeta": {
+        "primary": {
+          "behavior": "discrete",
+          "interaction": "tap",
+          "simultaneous": true,
+          "kind": "button"
+        },
+        "move": {
+          "behavior": "discrete",
+          "interaction": "hold",
+          "simultaneous": false,
+          "control_space": "vector",
+          "activation": "hold",
+          "direction_mode": "cardinal",
+          "granularity": "coarse",
+          "kind": "axis"
+        }
+      },
+      "layouts": {
+        "phone-portrait": {
+          "summary": {
+            "layout": "digital-dpad",
+            "buttons": [
+              {
+                "id": "move-up",
+                "role": "move",
+                "type": "button",
+                "keys": "ArrowUp",
+                "x": 101.1,
+                "y": 651.3,
+                "size": 48
+              },
+              {
+                "id": "move-down",
+                "role": "move",
+                "type": "button",
+                "keys": "ArrowDown",
+                "x": 101.1,
+                "y": 766.5,
+                "size": 48
+              },
+              {
+                "id": "move-left",
+                "role": "move",
+                "type": "button",
+                "keys": "ArrowLeft",
+                "x": 43.5,
+                "y": 708.9,
+                "size": 48
+              },
+              {
+                "id": "move-right",
+                "role": "move",
+                "type": "button",
+                "keys": "ArrowRight",
+                "x": 158.7,
+                "y": 708.9,
+                "size": 48
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 337.4,
+                "y": 741.8,
+                "size": 56
+              }
+            ]
+          },
+          "metrics": {
+            "width": 390,
+            "height": 844,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 47,
+              "right": 0,
+              "bottom": 34,
+              "left": 0
+            },
+            "minDim": 390,
+            "baseSize": 66.3,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 11.7,
+            "edgePadding": 19.5,
+            "verticalOffset": 15.6,
+            "bottomY": 790.5
+          }
+        },
+        "phone-landscape": {
+          "summary": {
+            "layout": "digital-dpad",
+            "buttons": [
+              {
+                "id": "move-up",
+                "role": "move",
+                "type": "button",
+                "keys": "ArrowUp",
+                "x": 148.1,
+                "y": 210.3,
+                "size": 48
+              },
+              {
+                "id": "move-down",
+                "role": "move",
+                "type": "button",
+                "keys": "ArrowDown",
+                "x": 148.1,
+                "y": 325.5,
+                "size": 48
+              },
+              {
+                "id": "move-left",
+                "role": "move",
+                "type": "button",
+                "keys": "ArrowLeft",
+                "x": 90.5,
+                "y": 267.9,
+                "size": 48
+              },
+              {
+                "id": "move-right",
+                "role": "move",
+                "type": "button",
+                "keys": "ArrowRight",
+                "x": 205.7,
+                "y": 267.9,
+                "size": 48
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 744.4,
+                "y": 308.6,
+                "size": 56
+              }
+            ]
+          },
+          "metrics": {
+            "width": 844,
+            "height": 390,
+            "orientation": "landscape",
+            "safeArea": {
+              "top": 0,
+              "right": 47,
+              "bottom": 21,
+              "left": 47
+            },
+            "minDim": 390,
+            "baseSize": 66.3,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 11.7,
+            "edgePadding": 19.5,
+            "verticalOffset": 7.8,
+            "bottomY": 349.5
+          }
+        },
+        "small-phone": {
+          "summary": {
+            "layout": "digital-dpad",
+            "buttons": [
+              {
+                "id": "move-up",
+                "role": "move",
+                "type": "button",
+                "keys": "ArrowUp",
+                "x": 99.6,
+                "y": 482.8,
+                "size": 48
+              },
+              {
+                "id": "move-down",
+                "role": "move",
+                "type": "button",
+                "keys": "ArrowDown",
+                "x": 99.6,
+                "y": 598,
+                "size": 48
+              },
+              {
+                "id": "move-left",
+                "role": "move",
+                "type": "button",
+                "keys": "ArrowLeft",
+                "x": 42,
+                "y": 540.4,
+                "size": 48
+              },
+              {
+                "id": "move-right",
+                "role": "move",
+                "type": "button",
+                "keys": "ArrowRight",
+                "x": 157.2,
+                "y": 540.4,
+                "size": 48
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 310,
+                "y": 575.6,
+                "size": 56
+              }
+            ]
+          },
+          "metrics": {
+            "width": 360,
+            "height": 640,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            },
+            "minDim": 360,
+            "baseSize": 64,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 10.8,
+            "edgePadding": 18,
+            "verticalOffset": 14.4,
+            "bottomY": 622
+          }
+        },
+        "tablet-portrait": {
+          "summary": {
+            "layout": "digital-dpad",
+            "buttons": [
+              {
+                "id": "move-up",
+                "role": "move",
+                "type": "button",
+                "keys": "ArrowUp",
+                "x": 127.2,
+                "y": 865.6,
+                "size": 56
+              },
+              {
+                "id": "move-down",
+                "role": "move",
+                "type": "button",
+                "keys": "ArrowDown",
+                "x": 127.2,
+                "y": 1000,
+                "size": 56
+              },
+              {
+                "id": "move-left",
+                "role": "move",
+                "type": "button",
+                "keys": "ArrowLeft",
+                "x": 60,
+                "y": 932.8,
+                "size": 56
+              },
+              {
+                "id": "move-right",
+                "role": "move",
+                "type": "button",
+                "keys": "ArrowRight",
+                "x": 194.4,
+                "y": 932.8,
+                "size": 56
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 722,
+                "y": 956,
+                "size": 96
+              }
+            ]
+          },
+          "metrics": {
+            "width": 810,
+            "height": 1080,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 24,
+              "right": 0,
+              "bottom": 20,
+              "left": 0
+            },
+            "minDim": 810,
+            "baseSize": 112,
+            "actionSize": 96,
+            "smallActionSize": 80,
+            "miniActionSize": 72,
+            "spacing": 20,
+            "edgePadding": 32,
+            "verticalOffset": 16,
+            "bottomY": 1028
+          }
+        },
+        "tablet-landscape": {
+          "summary": {
+            "layout": "digital-dpad",
+            "buttons": [
+              {
+                "id": "move-up",
+                "role": "move",
+                "type": "button",
+                "keys": "ArrowUp",
+                "x": 127.2,
+                "y": 573.6,
+                "size": 56
+              },
+              {
+                "id": "move-down",
+                "role": "move",
+                "type": "button",
+                "keys": "ArrowDown",
+                "x": 127.2,
+                "y": 708,
+                "size": 56
+              },
+              {
+                "id": "move-left",
+                "role": "move",
+                "type": "button",
+                "keys": "ArrowLeft",
+                "x": 60,
+                "y": 640.8,
+                "size": 56
+              },
+              {
+                "id": "move-right",
+                "role": "move",
+                "type": "button",
+                "keys": "ArrowRight",
+                "x": 194.4,
+                "y": 640.8,
+                "size": 56
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 936,
+                "y": 668,
+                "size": 96
+              }
+            ]
+          },
+          "metrics": {
+            "width": 1024,
+            "height": 768,
+            "orientation": "landscape",
+            "safeArea": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            },
+            "minDim": 768,
+            "baseSize": 112,
+            "actionSize": 96,
+            "smallActionSize": 80,
+            "miniActionSize": 72,
+            "spacing": 20,
+            "edgePadding": 32,
+            "verticalOffset": 12,
+            "bottomY": 736
+          }
+        }
+      }
+    },
+    "fluffy-rope-swinger-fullscreen-pendulum__8f092763260d": {
+      "file": "test_cases/outputs/top_voted/fluffy-rope-swinger-fullscreen-pendulum__8f092763260d_touch_embedded.html",
+      "layout": "auto",
+      "bindings": {
+        "primary": "Space",
+        "secondary": "KeyR",
+        "pause": "Escape",
+        "move": {
+          "left": "ArrowLeft",
+          "right": "ArrowRight"
+        }
+      },
+      "actionMeta": {
+        "primary": {
+          "behavior": "continuous",
+          "interaction": "hold",
+          "simultaneous": true,
+          "kind": "button"
+        },
+        "secondary": {
+          "behavior": "discrete",
+          "interaction": "tap",
+          "simultaneous": false,
+          "kind": "button"
+        },
+        "pause": {
+          "behavior": "discrete",
+          "interaction": "tap",
+          "simultaneous": false,
+          "kind": "button"
+        },
+        "move": {
+          "behavior": "continuous",
+          "interaction": "hold",
+          "simultaneous": false,
+          "control_space": "rate",
+          "activation": "hold",
+          "direction_mode": "cardinal",
+          "granularity": "fine",
+          "kind": "axis"
+        }
+      },
+      "layouts": {
+        "phone-portrait": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null
+                },
+                "x": 52.7,
+                "y": 741.8,
+                "size": 66.3
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 337.4,
+                "y": 741.8,
+                "size": 56
+              },
+              {
+                "id": "secondary",
+                "role": "secondary",
+                "type": "button",
+                "keys": "KeyR",
+                "x": 337.4,
+                "y": 678.1,
+                "size": 48
+              }
+            ]
+          },
+          "metrics": {
+            "width": 390,
+            "height": 844,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 47,
+              "right": 0,
+              "bottom": 34,
+              "left": 0
+            },
+            "minDim": 390,
+            "baseSize": 66.3,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 11.7,
+            "edgePadding": 19.5,
+            "verticalOffset": 15.6,
+            "bottomY": 790.5
+          }
+        },
+        "phone-landscape": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null
+                },
+                "x": 99.7,
+                "y": 308.6,
+                "size": 66.3
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 744.4,
+                "y": 308.6,
+                "size": 56
+              },
+              {
+                "id": "secondary",
+                "role": "secondary",
+                "type": "button",
+                "keys": "KeyR",
+                "x": 744.4,
+                "y": 244.9,
+                "size": 48
+              }
+            ]
+          },
+          "metrics": {
+            "width": 844,
+            "height": 390,
+            "orientation": "landscape",
+            "safeArea": {
+              "top": 0,
+              "right": 47,
+              "bottom": 21,
+              "left": 47
+            },
+            "minDim": 390,
+            "baseSize": 66.3,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 11.7,
+            "edgePadding": 19.5,
+            "verticalOffset": 7.8,
+            "bottomY": 349.5
+          }
+        },
+        "small-phone": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null
+                },
+                "x": 50,
+                "y": 575.6,
+                "size": 64
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 310,
+                "y": 575.6,
+                "size": 56
+              },
+              {
+                "id": "secondary",
+                "role": "secondary",
+                "type": "button",
+                "keys": "KeyR",
+                "x": 310,
+                "y": 512.8,
+                "size": 48
+              }
+            ]
+          },
+          "metrics": {
+            "width": 360,
+            "height": 640,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            },
+            "minDim": 360,
+            "baseSize": 64,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 10.8,
+            "edgePadding": 18,
+            "verticalOffset": 14.4,
+            "bottomY": 622
+          }
+        },
+        "tablet-portrait": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null
+                },
+                "x": 88,
+                "y": 956,
+                "size": 112
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 722,
+                "y": 956,
+                "size": 96
+              },
+              {
+                "id": "secondary",
+                "role": "secondary",
+                "type": "button",
+                "keys": "KeyR",
+                "x": 722,
+                "y": 848,
+                "size": 80
+              }
+            ]
+          },
+          "metrics": {
+            "width": 810,
+            "height": 1080,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 24,
+              "right": 0,
+              "bottom": 20,
+              "left": 0
+            },
+            "minDim": 810,
+            "baseSize": 112,
+            "actionSize": 96,
+            "smallActionSize": 80,
+            "miniActionSize": 72,
+            "spacing": 20,
+            "edgePadding": 32,
+            "verticalOffset": 16,
+            "bottomY": 1028
+          }
+        },
+        "tablet-landscape": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null
+                },
+                "x": 88,
+                "y": 668,
+                "size": 112
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 936,
+                "y": 668,
+                "size": 96
+              },
+              {
+                "id": "secondary",
+                "role": "secondary",
+                "type": "button",
+                "keys": "KeyR",
+                "x": 936,
+                "y": 560,
+                "size": 80
+              }
+            ]
+          },
+          "metrics": {
+            "width": 1024,
+            "height": 768,
+            "orientation": "landscape",
+            "safeArea": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            },
+            "minDim": 768,
+            "baseSize": 112,
+            "actionSize": 96,
+            "smallActionSize": 80,
+            "miniActionSize": 72,
+            "spacing": 20,
+            "edgePadding": 32,
+            "verticalOffset": 12,
+            "bottomY": 736
+          }
+        }
+      }
+    },
+    "googly-boomerang-quest-portal-panic__7d6b4c125c07": {
+      "file": "test_cases/outputs/top_voted/googly-boomerang-quest-portal-panic__7d6b4c125c07_touch_embedded.html",
+      "layout": "auto",
+      "bindings": {
+        "jump": "ArrowUp",
+        "primary": "Space",
+        "move": {
+          "left": "ArrowLeft",
+          "right": "ArrowRight"
+        }
+      },
+      "actionMeta": {
+        "jump": {
+          "behavior": "discrete",
+          "interaction": "tap",
+          "simultaneous": false,
+          "kind": "button"
+        },
+        "primary": {
+          "behavior": "discrete",
+          "interaction": "tap",
+          "simultaneous": false,
+          "kind": "button"
+        },
+        "move": {
+          "behavior": "continuous",
+          "interaction": "hold",
+          "simultaneous": false,
+          "control_space": "vector",
+          "activation": "hold",
+          "direction_mode": "cardinal",
+          "granularity": "fine",
+          "kind": "axis"
+        }
+      },
+      "layouts": {
+        "phone-portrait": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 52.7,
+                "y": 741.8,
+                "size": 66.3
+              },
+              {
+                "id": "jump",
+                "role": "jump",
+                "type": "button",
+                "keys": "ArrowUp",
+                "x": 337.4,
+                "y": 741.8,
+                "size": 56
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 337.4,
+                "y": 678.1,
+                "size": 48
+              }
+            ]
+          },
+          "metrics": {
+            "width": 390,
+            "height": 844,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 47,
+              "right": 0,
+              "bottom": 34,
+              "left": 0
+            },
+            "minDim": 390,
+            "baseSize": 66.3,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 11.7,
+            "edgePadding": 19.5,
+            "verticalOffset": 15.6,
+            "bottomY": 790.5
+          }
+        },
+        "phone-landscape": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 99.7,
+                "y": 308.6,
+                "size": 66.3
+              },
+              {
+                "id": "jump",
+                "role": "jump",
+                "type": "button",
+                "keys": "ArrowUp",
+                "x": 744.4,
+                "y": 308.6,
+                "size": 56
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 744.4,
+                "y": 244.9,
+                "size": 48
+              }
+            ]
+          },
+          "metrics": {
+            "width": 844,
+            "height": 390,
+            "orientation": "landscape",
+            "safeArea": {
+              "top": 0,
+              "right": 47,
+              "bottom": 21,
+              "left": 47
+            },
+            "minDim": 390,
+            "baseSize": 66.3,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 11.7,
+            "edgePadding": 19.5,
+            "verticalOffset": 7.8,
+            "bottomY": 349.5
+          }
+        },
+        "small-phone": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 50,
+                "y": 575.6,
+                "size": 64
+              },
+              {
+                "id": "jump",
+                "role": "jump",
+                "type": "button",
+                "keys": "ArrowUp",
+                "x": 310,
+                "y": 575.6,
+                "size": 56
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 310,
+                "y": 512.8,
+                "size": 48
+              }
+            ]
+          },
+          "metrics": {
+            "width": 360,
+            "height": 640,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            },
+            "minDim": 360,
+            "baseSize": 64,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 10.8,
+            "edgePadding": 18,
+            "verticalOffset": 14.4,
+            "bottomY": 622
+          }
+        },
+        "tablet-portrait": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 88,
+                "y": 956,
+                "size": 112
+              },
+              {
+                "id": "jump",
+                "role": "jump",
+                "type": "button",
+                "keys": "ArrowUp",
+                "x": 722,
+                "y": 956,
+                "size": 96
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 722,
+                "y": 848,
+                "size": 80
+              }
+            ]
+          },
+          "metrics": {
+            "width": 810,
+            "height": 1080,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 24,
+              "right": 0,
+              "bottom": 20,
+              "left": 0
+            },
+            "minDim": 810,
+            "baseSize": 112,
+            "actionSize": 96,
+            "smallActionSize": 80,
+            "miniActionSize": 72,
+            "spacing": 20,
+            "edgePadding": 32,
+            "verticalOffset": 16,
+            "bottomY": 1028
+          }
+        },
+        "tablet-landscape": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 88,
+                "y": 668,
+                "size": 112
+              },
+              {
+                "id": "jump",
+                "role": "jump",
+                "type": "button",
+                "keys": "ArrowUp",
+                "x": 936,
+                "y": 668,
+                "size": 96
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 936,
+                "y": 560,
+                "size": 80
+              }
+            ]
+          },
+          "metrics": {
+            "width": 1024,
+            "height": 768,
+            "orientation": "landscape",
+            "safeArea": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            },
+            "minDim": 768,
+            "baseSize": 112,
+            "actionSize": 96,
+            "smallActionSize": 80,
+            "miniActionSize": 72,
+            "spacing": 20,
+            "edgePadding": 32,
+            "verticalOffset": 12,
+            "bottomY": 736
+          }
+        }
+      }
+    },
+    "koala-survivor-rampage__32d23069c20a": {
+      "file": "test_cases/outputs/top_voted/koala-survivor-rampage__32d23069c20a_touch_embedded.html",
+      "layout": "auto",
+      "bindings": {
+        "jump": "ArrowUp",
+        "primary": "Space",
+        "move": {
+          "left": "ArrowLeft",
+          "right": "ArrowRight"
+        }
+      },
+      "actionMeta": {
+        "jump": {
+          "behavior": "discrete",
+          "interaction": "tap",
+          "simultaneous": true,
+          "kind": "button"
+        },
+        "primary": {
+          "behavior": "discrete",
+          "interaction": "tap",
+          "simultaneous": true,
+          "kind": "button"
+        },
+        "move": {
+          "behavior": "continuous",
+          "interaction": "hold",
+          "simultaneous": false,
+          "control_space": "vector",
+          "activation": "hold",
+          "direction_mode": "cardinal",
+          "granularity": "fine",
+          "kind": "axis"
+        }
+      },
+      "layouts": {
+        "phone-portrait": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 52.7,
+                "y": 741.8,
+                "size": 66.3
+              },
+              {
+                "id": "jump",
+                "role": "jump",
+                "type": "button",
+                "keys": "ArrowUp",
+                "x": 337.4,
+                "y": 741.8,
+                "size": 56
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 337.4,
+                "y": 678.1,
+                "size": 48
+              }
+            ]
+          },
+          "metrics": {
+            "width": 390,
+            "height": 844,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 47,
+              "right": 0,
+              "bottom": 34,
+              "left": 0
+            },
+            "minDim": 390,
+            "baseSize": 66.3,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 11.7,
+            "edgePadding": 19.5,
+            "verticalOffset": 15.6,
+            "bottomY": 790.5
+          }
+        },
+        "phone-landscape": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 99.7,
+                "y": 308.6,
+                "size": 66.3
+              },
+              {
+                "id": "jump",
+                "role": "jump",
+                "type": "button",
+                "keys": "ArrowUp",
+                "x": 744.4,
+                "y": 308.6,
+                "size": 56
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 744.4,
+                "y": 244.9,
+                "size": 48
+              }
+            ]
+          },
+          "metrics": {
+            "width": 844,
+            "height": 390,
+            "orientation": "landscape",
+            "safeArea": {
+              "top": 0,
+              "right": 47,
+              "bottom": 21,
+              "left": 47
+            },
+            "minDim": 390,
+            "baseSize": 66.3,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 11.7,
+            "edgePadding": 19.5,
+            "verticalOffset": 7.8,
+            "bottomY": 349.5
+          }
+        },
+        "small-phone": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 50,
+                "y": 575.6,
+                "size": 64
+              },
+              {
+                "id": "jump",
+                "role": "jump",
+                "type": "button",
+                "keys": "ArrowUp",
+                "x": 310,
+                "y": 575.6,
+                "size": 56
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 310,
+                "y": 512.8,
+                "size": 48
+              }
+            ]
+          },
+          "metrics": {
+            "width": 360,
+            "height": 640,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            },
+            "minDim": 360,
+            "baseSize": 64,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 10.8,
+            "edgePadding": 18,
+            "verticalOffset": 14.4,
+            "bottomY": 622
+          }
+        },
+        "tablet-portrait": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 88,
+                "y": 956,
+                "size": 112
+              },
+              {
+                "id": "jump",
+                "role": "jump",
+                "type": "button",
+                "keys": "ArrowUp",
+                "x": 722,
+                "y": 956,
+                "size": 96
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 722,
+                "y": 848,
+                "size": 80
+              }
+            ]
+          },
+          "metrics": {
+            "width": 810,
+            "height": 1080,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 24,
+              "right": 0,
+              "bottom": 20,
+              "left": 0
+            },
+            "minDim": 810,
+            "baseSize": 112,
+            "actionSize": 96,
+            "smallActionSize": 80,
+            "miniActionSize": 72,
+            "spacing": 20,
+            "edgePadding": 32,
+            "verticalOffset": 16,
+            "bottomY": 1028
+          }
+        },
+        "tablet-landscape": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 88,
+                "y": 668,
+                "size": 112
+              },
+              {
+                "id": "jump",
+                "role": "jump",
+                "type": "button",
+                "keys": "ArrowUp",
+                "x": 936,
+                "y": 668,
+                "size": 96
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 936,
+                "y": 560,
+                "size": 80
+              }
+            ]
+          },
+          "metrics": {
+            "width": 1024,
+            "height": 768,
+            "orientation": "landscape",
+            "safeArea": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            },
+            "minDim": 768,
+            "baseSize": 112,
+            "actionSize": 96,
+            "smallActionSize": 80,
+            "miniActionSize": 72,
+            "spacing": 20,
+            "edgePadding": 32,
+            "verticalOffset": 12,
+            "bottomY": 736
+          }
+        }
+      }
+    },
+    "simba-s-bug-adventure-v2__82289e92f1c2": {
+      "file": "test_cases/outputs/top_voted/simba-s-bug-adventure-v2__82289e92f1c2_touch_embedded.html",
+      "layout": "auto",
+      "bindings": {
+        "jump": "Space",
+        "move": {
+          "left": "ArrowLeft",
+          "right": "ArrowRight"
+        }
+      },
+      "actionMeta": {
+        "jump": {
+          "behavior": "discrete",
+          "interaction": "tap",
+          "simultaneous": true,
+          "kind": "button"
+        },
+        "move": {
+          "behavior": "continuous",
+          "interaction": "hold",
+          "simultaneous": false,
+          "control_space": "vector",
+          "activation": "hold",
+          "direction_mode": "cardinal",
+          "granularity": "fine",
+          "kind": "axis"
+        }
+      },
+      "layouts": {
+        "phone-portrait": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 52.7,
+                "y": 741.8,
+                "size": 66.3
+              },
+              {
+                "id": "jump",
+                "role": "jump",
+                "type": "button",
+                "keys": "Space",
+                "x": 337.4,
+                "y": 741.8,
+                "size": 56
+              }
+            ]
+          },
+          "metrics": {
+            "width": 390,
+            "height": 844,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 47,
+              "right": 0,
+              "bottom": 34,
+              "left": 0
+            },
+            "minDim": 390,
+            "baseSize": 66.3,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 11.7,
+            "edgePadding": 19.5,
+            "verticalOffset": 15.6,
+            "bottomY": 790.5
+          }
+        },
+        "phone-landscape": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 99.7,
+                "y": 308.6,
+                "size": 66.3
+              },
+              {
+                "id": "jump",
+                "role": "jump",
+                "type": "button",
+                "keys": "Space",
+                "x": 744.4,
+                "y": 308.6,
+                "size": 56
+              }
+            ]
+          },
+          "metrics": {
+            "width": 844,
+            "height": 390,
+            "orientation": "landscape",
+            "safeArea": {
+              "top": 0,
+              "right": 47,
+              "bottom": 21,
+              "left": 47
+            },
+            "minDim": 390,
+            "baseSize": 66.3,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 11.7,
+            "edgePadding": 19.5,
+            "verticalOffset": 7.8,
+            "bottomY": 349.5
+          }
+        },
+        "small-phone": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 50,
+                "y": 575.6,
+                "size": 64
+              },
+              {
+                "id": "jump",
+                "role": "jump",
+                "type": "button",
+                "keys": "Space",
+                "x": 310,
+                "y": 575.6,
+                "size": 56
+              }
+            ]
+          },
+          "metrics": {
+            "width": 360,
+            "height": 640,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            },
+            "minDim": 360,
+            "baseSize": 64,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 10.8,
+            "edgePadding": 18,
+            "verticalOffset": 14.4,
+            "bottomY": 622
+          }
+        },
+        "tablet-portrait": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 88,
+                "y": 956,
+                "size": 112
+              },
+              {
+                "id": "jump",
+                "role": "jump",
+                "type": "button",
+                "keys": "Space",
+                "x": 722,
+                "y": 956,
+                "size": 96
+              }
+            ]
+          },
+          "metrics": {
+            "width": 810,
+            "height": 1080,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 24,
+              "right": 0,
+              "bottom": 20,
+              "left": 0
+            },
+            "minDim": 810,
+            "baseSize": 112,
+            "actionSize": 96,
+            "smallActionSize": 80,
+            "miniActionSize": 72,
+            "spacing": 20,
+            "edgePadding": 32,
+            "verticalOffset": 16,
+            "bottomY": 1028
+          }
+        },
+        "tablet-landscape": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 88,
+                "y": 668,
+                "size": 112
+              },
+              {
+                "id": "jump",
+                "role": "jump",
+                "type": "button",
+                "keys": "Space",
+                "x": 936,
+                "y": 668,
+                "size": 96
+              }
+            ]
+          },
+          "metrics": {
+            "width": 1024,
+            "height": 768,
+            "orientation": "landscape",
+            "safeArea": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            },
+            "minDim": 768,
+            "baseSize": 112,
+            "actionSize": 96,
+            "smallActionSize": 80,
+            "miniActionSize": 72,
+            "spacing": 20,
+            "edgePadding": 32,
+            "verticalOffset": 12,
+            "bottomY": 736
+          }
+        }
+      }
+    },
+    "space-invaders-with-powerups__0504eaffda94": {
+      "file": "test_cases/outputs/top_voted/space-invaders-with-powerups__0504eaffda94_touch_embedded.html",
+      "layout": "auto",
+      "bindings": {
+        "primary": "Space",
+        "move": {
+          "left": "ArrowLeft",
+          "right": "ArrowRight"
+        }
+      },
+      "actionMeta": {
+        "primary": {
+          "behavior": "discrete",
+          "interaction": "tap",
+          "simultaneous": true,
+          "kind": "button"
+        },
+        "move": {
+          "behavior": "continuous",
+          "interaction": "hold",
+          "simultaneous": false,
+          "control_space": "vector",
+          "activation": "hold",
+          "direction_mode": "cardinal",
+          "granularity": "fine",
+          "kind": "axis"
+        }
+      },
+      "layouts": {
+        "phone-portrait": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 52.7,
+                "y": 741.8,
+                "size": 66.3
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 337.4,
+                "y": 741.8,
+                "size": 56
+              }
+            ]
+          },
+          "metrics": {
+            "width": 390,
+            "height": 844,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 47,
+              "right": 0,
+              "bottom": 34,
+              "left": 0
+            },
+            "minDim": 390,
+            "baseSize": 66.3,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 11.7,
+            "edgePadding": 19.5,
+            "verticalOffset": 15.6,
+            "bottomY": 790.5
+          }
+        },
+        "phone-landscape": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 99.7,
+                "y": 308.6,
+                "size": 66.3
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 744.4,
+                "y": 308.6,
+                "size": 56
+              }
+            ]
+          },
+          "metrics": {
+            "width": 844,
+            "height": 390,
+            "orientation": "landscape",
+            "safeArea": {
+              "top": 0,
+              "right": 47,
+              "bottom": 21,
+              "left": 47
+            },
+            "minDim": 390,
+            "baseSize": 66.3,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 11.7,
+            "edgePadding": 19.5,
+            "verticalOffset": 7.8,
+            "bottomY": 349.5
+          }
+        },
+        "small-phone": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 50,
+                "y": 575.6,
+                "size": 64
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 310,
+                "y": 575.6,
+                "size": 56
+              }
+            ]
+          },
+          "metrics": {
+            "width": 360,
+            "height": 640,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            },
+            "minDim": 360,
+            "baseSize": 64,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 10.8,
+            "edgePadding": 18,
+            "verticalOffset": 14.4,
+            "bottomY": 622
+          }
+        },
+        "tablet-portrait": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 88,
+                "y": 956,
+                "size": 112
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 722,
+                "y": 956,
+                "size": 96
+              }
+            ]
+          },
+          "metrics": {
+            "width": 810,
+            "height": 1080,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 24,
+              "right": 0,
+              "bottom": 20,
+              "left": 0
+            },
+            "minDim": 810,
+            "baseSize": 112,
+            "actionSize": 96,
+            "smallActionSize": 80,
+            "miniActionSize": 72,
+            "spacing": 20,
+            "edgePadding": 32,
+            "verticalOffset": 16,
+            "bottomY": 1028
+          }
+        },
+        "tablet-landscape": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 88,
+                "y": 668,
+                "size": 112
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 936,
+                "y": 668,
+                "size": 96
+              }
+            ]
+          },
+          "metrics": {
+            "width": 1024,
+            "height": 768,
+            "orientation": "landscape",
+            "safeArea": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            },
+            "minDim": 768,
+            "baseSize": 112,
+            "actionSize": 96,
+            "smallActionSize": 80,
+            "miniActionSize": 72,
+            "spacing": 20,
+            "edgePadding": 32,
+            "verticalOffset": 12,
+            "bottomY": 736
+          }
+        }
+      }
+    },
+    "superhero-kid-vs-ninja-animals__34cc59f54c99": {
+      "file": "test_cases/outputs/top_voted/superhero-kid-vs-ninja-animals__34cc59f54c99_touch_embedded.html",
+      "layout": "auto",
+      "bindings": {
+        "shoot": "Space",
+        "restart": "KeyR",
+        "move": {
+          "left": "ArrowLeft",
+          "right": "ArrowRight"
+        }
+      },
+      "actionMeta": {
+        "shoot": {
+          "behavior": "continuous",
+          "interaction": "hold",
+          "simultaneous": true,
+          "kind": "button"
+        },
+        "restart": {
+          "behavior": "discrete",
+          "interaction": "tap",
+          "simultaneous": false,
+          "kind": "button"
+        },
+        "move": {
+          "behavior": "continuous",
+          "interaction": "hold",
+          "simultaneous": true,
+          "control_space": "vector",
+          "activation": "hold",
+          "direction_mode": "cardinal",
+          "granularity": "fine",
+          "kind": "axis"
+        }
+      },
+      "layouts": {
+        "phone-portrait": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 52.7,
+                "y": 741.8,
+                "size": 66.3
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 337.4,
+                "y": 741.8,
+                "size": 56
+              }
+            ]
+          },
+          "metrics": {
+            "width": 390,
+            "height": 844,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 47,
+              "right": 0,
+              "bottom": 34,
+              "left": 0
+            },
+            "minDim": 390,
+            "baseSize": 66.3,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 11.7,
+            "edgePadding": 19.5,
+            "verticalOffset": 15.6,
+            "bottomY": 790.5
+          }
+        },
+        "phone-landscape": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 99.7,
+                "y": 308.6,
+                "size": 66.3
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 744.4,
+                "y": 308.6,
+                "size": 56
+              }
+            ]
+          },
+          "metrics": {
+            "width": 844,
+            "height": 390,
+            "orientation": "landscape",
+            "safeArea": {
+              "top": 0,
+              "right": 47,
+              "bottom": 21,
+              "left": 47
+            },
+            "minDim": 390,
+            "baseSize": 66.3,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 11.7,
+            "edgePadding": 19.5,
+            "verticalOffset": 7.8,
+            "bottomY": 349.5
+          }
+        },
+        "small-phone": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 50,
+                "y": 575.6,
+                "size": 64
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 310,
+                "y": 575.6,
+                "size": 56
+              }
+            ]
+          },
+          "metrics": {
+            "width": 360,
+            "height": 640,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            },
+            "minDim": 360,
+            "baseSize": 64,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 10.8,
+            "edgePadding": 18,
+            "verticalOffset": 14.4,
+            "bottomY": 622
+          }
+        },
+        "tablet-portrait": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 88,
+                "y": 956,
+                "size": 112
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 722,
+                "y": 956,
+                "size": 96
+              }
+            ]
+          },
+          "metrics": {
+            "width": 810,
+            "height": 1080,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 24,
+              "right": 0,
+              "bottom": 20,
+              "left": 0
+            },
+            "minDim": 810,
+            "baseSize": 112,
+            "actionSize": 96,
+            "smallActionSize": 80,
+            "miniActionSize": 72,
+            "spacing": 20,
+            "edgePadding": 32,
+            "verticalOffset": 16,
+            "bottomY": 1028
+          }
+        },
+        "tablet-landscape": {
+          "summary": {
+            "layout": "safe-platformer",
+            "buttons": [
+              {
+                "id": "move",
+                "role": "move",
+                "type": "joystick",
+                "keys": {
+                  "left": "ArrowLeft",
+                  "right": "ArrowRight",
+                  "up": null,
+                  "down": null,
+                  "key": null
+                },
+                "x": 88,
+                "y": 668,
+                "size": 112
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "Space",
+                "x": 936,
+                "y": 668,
+                "size": 96
+              }
+            ]
+          },
+          "metrics": {
+            "width": 1024,
+            "height": 768,
+            "orientation": "landscape",
+            "safeArea": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            },
+            "minDim": 768,
+            "baseSize": 112,
+            "actionSize": 96,
+            "smallActionSize": 80,
+            "miniActionSize": 72,
+            "spacing": 20,
+            "edgePadding": 32,
+            "verticalOffset": 12,
+            "bottomY": 736
+          }
+        }
+      }
+    },
+    "tetris-game__2a94b719e827": {
+      "file": "test_cases/outputs/top_voted/tetris-game__2a94b719e827_touch_embedded.html",
+      "layout": "auto",
+      "bindings": {
+        "primary": "ArrowDown",
+        "secondary": "KeyQ",
+        "tertiary": "KeyW",
+        "move": {
+          "left": "ArrowLeft",
+          "right": "ArrowRight"
+        }
+      },
+      "actionMeta": {
+        "primary": {
+          "behavior": "continuous",
+          "interaction": "hold",
+          "simultaneous": true,
+          "kind": "button"
+        },
+        "secondary": {
+          "behavior": "discrete",
+          "interaction": "tap",
+          "simultaneous": false,
+          "pair_id": "rotate",
+          "pair_position": "left",
+          "kind": "button"
+        },
+        "tertiary": {
+          "behavior": "discrete",
+          "interaction": "tap",
+          "simultaneous": false,
+          "pair_id": "rotate",
+          "pair_position": "right",
+          "kind": "button"
+        },
+        "move": {
+          "behavior": "discrete",
+          "interaction": "hold",
+          "simultaneous": false,
+          "control_space": "vector",
+          "activation": "hold",
+          "direction_mode": "cardinal",
+          "granularity": "coarse",
+          "kind": "axis"
+        }
+      },
+      "layouts": {
+        "phone-portrait": {
+          "summary": {
+            "layout": "digital-dpad",
+            "buttons": [
+              {
+                "id": "move-left",
+                "role": "move",
+                "type": "button",
+                "keys": "ArrowLeft",
+                "x": 43.5,
+                "y": 708.9,
+                "size": 48
+              },
+              {
+                "id": "move-right",
+                "role": "move",
+                "type": "button",
+                "keys": "ArrowRight",
+                "x": 158.7,
+                "y": 708.9,
+                "size": 48
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "ArrowDown",
+                "x": 316.7,
+                "y": 741.8,
+                "size": 56
+              },
+              {
+                "id": "secondary",
+                "role": "secondary",
+                "type": "button",
+                "keys": "KeyQ",
+                "x": 286.8,
+                "y": 678.1,
+                "size": 48
+              },
+              {
+                "id": "tertiary",
+                "role": "tertiary",
+                "type": "button",
+                "keys": "KeyW",
+                "x": 346.5,
+                "y": 678.1,
+                "size": 48
+              }
+            ]
+          },
+          "metrics": {
+            "width": 390,
+            "height": 844,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 47,
+              "right": 0,
+              "bottom": 34,
+              "left": 0
+            },
+            "minDim": 390,
+            "baseSize": 66.3,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 11.7,
+            "edgePadding": 19.5,
+            "verticalOffset": 15.6,
+            "bottomY": 790.5
+          }
+        },
+        "phone-landscape": {
+          "summary": {
+            "layout": "digital-dpad",
+            "buttons": [
+              {
+                "id": "move-left",
+                "role": "move",
+                "type": "button",
+                "keys": "ArrowLeft",
+                "x": 90.5,
+                "y": 267.9,
+                "size": 48
+              },
+              {
+                "id": "move-right",
+                "role": "move",
+                "type": "button",
+                "keys": "ArrowRight",
+                "x": 205.7,
+                "y": 267.9,
+                "size": 48
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "ArrowDown",
+                "x": 723.7,
+                "y": 308.6,
+                "size": 56
+              },
+              {
+                "id": "secondary",
+                "role": "secondary",
+                "type": "button",
+                "keys": "KeyQ",
+                "x": 693.8,
+                "y": 244.9,
+                "size": 48
+              },
+              {
+                "id": "tertiary",
+                "role": "tertiary",
+                "type": "button",
+                "keys": "KeyW",
+                "x": 753.5,
+                "y": 244.9,
+                "size": 48
+              }
+            ]
+          },
+          "metrics": {
+            "width": 844,
+            "height": 390,
+            "orientation": "landscape",
+            "safeArea": {
+              "top": 0,
+              "right": 47,
+              "bottom": 21,
+              "left": 47
+            },
+            "minDim": 390,
+            "baseSize": 66.3,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 11.7,
+            "edgePadding": 19.5,
+            "verticalOffset": 7.8,
+            "bottomY": 349.5
+          }
+        },
+        "small-phone": {
+          "summary": {
+            "layout": "digital-dpad",
+            "buttons": [
+              {
+                "id": "move-left",
+                "role": "move",
+                "type": "button",
+                "keys": "ArrowLeft",
+                "x": 42,
+                "y": 540.4,
+                "size": 48
+              },
+              {
+                "id": "move-right",
+                "role": "move",
+                "type": "button",
+                "keys": "ArrowRight",
+                "x": 157.2,
+                "y": 540.4,
+                "size": 48
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "ArrowDown",
+                "x": 288.6,
+                "y": 575.6,
+                "size": 56
+              },
+              {
+                "id": "secondary",
+                "role": "secondary",
+                "type": "button",
+                "keys": "KeyQ",
+                "x": 259.2,
+                "y": 512.8,
+                "size": 48
+              },
+              {
+                "id": "tertiary",
+                "role": "tertiary",
+                "type": "button",
+                "keys": "KeyW",
+                "x": 318,
+                "y": 512.8,
+                "size": 48
+              }
+            ]
+          },
+          "metrics": {
+            "width": 360,
+            "height": 640,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            },
+            "minDim": 360,
+            "baseSize": 64,
+            "actionSize": 56,
+            "smallActionSize": 48,
+            "miniActionSize": 48,
+            "spacing": 10.8,
+            "edgePadding": 18,
+            "verticalOffset": 14.4,
+            "bottomY": 622
+          }
+        },
+        "tablet-portrait": {
+          "summary": {
+            "layout": "digital-dpad",
+            "buttons": [
+              {
+                "id": "move-left",
+                "role": "move",
+                "type": "button",
+                "keys": "ArrowLeft",
+                "x": 60,
+                "y": 932.8,
+                "size": 56
+              },
+              {
+                "id": "move-right",
+                "role": "move",
+                "type": "button",
+                "keys": "ArrowRight",
+                "x": 194.4,
+                "y": 932.8,
+                "size": 56
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "ArrowDown",
+                "x": 688,
+                "y": 956,
+                "size": 96
+              },
+              {
+                "id": "secondary",
+                "role": "secondary",
+                "type": "button",
+                "keys": "KeyQ",
+                "x": 638,
+                "y": 848,
+                "size": 80
+              },
+              {
+                "id": "tertiary",
+                "role": "tertiary",
+                "type": "button",
+                "keys": "KeyW",
+                "x": 738,
+                "y": 848,
+                "size": 80
+              }
+            ]
+          },
+          "metrics": {
+            "width": 810,
+            "height": 1080,
+            "orientation": "portrait",
+            "safeArea": {
+              "top": 24,
+              "right": 0,
+              "bottom": 20,
+              "left": 0
+            },
+            "minDim": 810,
+            "baseSize": 112,
+            "actionSize": 96,
+            "smallActionSize": 80,
+            "miniActionSize": 72,
+            "spacing": 20,
+            "edgePadding": 32,
+            "verticalOffset": 16,
+            "bottomY": 1028
+          }
+        },
+        "tablet-landscape": {
+          "summary": {
+            "layout": "digital-dpad",
+            "buttons": [
+              {
+                "id": "move-left",
+                "role": "move",
+                "type": "button",
+                "keys": "ArrowLeft",
+                "x": 60,
+                "y": 640.8,
+                "size": 56
+              },
+              {
+                "id": "move-right",
+                "role": "move",
+                "type": "button",
+                "keys": "ArrowRight",
+                "x": 194.4,
+                "y": 640.8,
+                "size": 56
+              },
+              {
+                "id": "primary",
+                "role": "primary",
+                "type": "button",
+                "keys": "ArrowDown",
+                "x": 902,
+                "y": 668,
+                "size": 96
+              },
+              {
+                "id": "secondary",
+                "role": "secondary",
+                "type": "button",
+                "keys": "KeyQ",
+                "x": 852,
+                "y": 560,
+                "size": 80
+              },
+              {
+                "id": "tertiary",
+                "role": "tertiary",
+                "type": "button",
+                "keys": "KeyW",
+                "x": 952,
+                "y": 560,
+                "size": 80
+              }
+            ]
+          },
+          "metrics": {
+            "width": 1024,
+            "height": 768,
+            "orientation": "landscape",
+            "safeArea": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            },
+            "minDim": 768,
+            "baseSize": 112,
+            "actionSize": 96,
+            "smallActionSize": 80,
+            "miniActionSize": 72,
+            "spacing": 20,
+            "edgePadding": 32,
+            "verticalOffset": 12,
+            "bottomY": 736
+          }
+        }
+      }
+    }
+  }
+}

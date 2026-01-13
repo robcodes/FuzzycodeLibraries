@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Astro Drift (Keyboard Only)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background: #0b0f17;
+            color: #d1d5db;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            overflow: hidden;
+        }
+
+        #gameRoot {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        canvas {
+            width: min(960px, 96vw);
+            height: min(540px, 72vh);
+            border: 2px solid #1f2937;
+            background: radial-gradient(circle at 30% 20%, #1f2937, #020617);
+        }
+
+        #hud {
+            margin-top: 12px;
+            font-size: 13px;
+            color: #9ca3af;
+            text-align: center;
+            max-width: 90vw;
+        }
+
+        #hud strong {
+            color: #f8fafc;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameRoot">
+        <canvas id="game" width="960" height="540"></canvas>
+        <div id="hud">
+            <div><strong>Controls:</strong> WASD move, Arrow keys aim, Space fire, Esc pause</div>
+            <div id="status">Status: running</div>
+            <div id="pressed">Pressed: (none)</div>
+        </div>
+    </div>
+
+    <script>
+        const CONTROLS = {
+            move: { up: "KeyW", down: "KeyS", left: "KeyA", right: "KeyD" },
+            aim: { up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight" },
+            fire: "Space",
+            pause: "Escape"
+        };
+
+        const canvas = document.getElementById("game");
+        const ctx = canvas.getContext("2d");
+        const statusEl = document.getElementById("status");
+        const pressedEl = document.getElementById("pressed");
+
+        const state = {
+            pressed: new Set(),
+            paused: false,
+            ship: { x: canvas.width / 2, y: canvas.height / 2, size: 20 },
+            aim: { x: 1, y: 0 },
+            bullets: [],
+            cooldown: 0
+        };
+
+        const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+
+        const updatePressedHud = () => {
+            const codes = Array.from(state.pressed.values());
+            pressedEl.textContent = "Pressed: " + (codes.length ? codes.join(", ") : "(none)");
+        };
+
+        const getAxis = (negativeCode, positiveCode) => {
+            const neg = state.pressed.has(negativeCode);
+            const pos = state.pressed.has(positiveCode);
+            if (neg && !pos) return -1;
+            if (pos && !neg) return 1;
+            return 0;
+        };
+
+        const updateAim = () => {
+            const ax = getAxis(CONTROLS.aim.left, CONTROLS.aim.right);
+            const ay = getAxis(CONTROLS.aim.up, CONTROLS.aim.down);
+            if (ax !== 0 || ay !== 0) {
+                const len = Math.hypot(ax, ay) || 1;
+                state.aim.x = ax / len;
+                state.aim.y = ay / len;
+            }
+        };
+
+        const spawnBullet = () => {
+            if (state.cooldown > 0) return;
+            state.cooldown = 10;
+            const speed = 6;
+            state.bullets.push({
+                x: state.ship.x,
+                y: state.ship.y,
+                vx: state.aim.x * speed,
+                vy: state.aim.y * speed,
+                life: 120
+            });
+        };
+
+        document.addEventListener("keydown", (event) => {
+            if (event.code === CONTROLS.pause) {
+                state.paused = !state.paused;
+                statusEl.textContent = "Status: " + (state.paused ? "paused" : "running");
+                return;
+            }
+
+            state.pressed.add(event.code);
+            if (event.code === CONTROLS.fire) {
+                event.preventDefault();
+                spawnBullet();
+            }
+            updatePressedHud();
+        });
+
+        document.addEventListener("keyup", (event) => {
+            state.pressed.delete(event.code);
+            updatePressedHud();
+        });
+
+        const resizeCanvas = () => {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = Math.max(480, Math.round(rect.width));
+            canvas.height = Math.max(270, Math.round(rect.height));
+        };
+
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+
+        const update = () => {
+            if (!state.paused) {
+                const speed = 2.6;
+                const mx = getAxis(CONTROLS.move.left, CONTROLS.move.right) * speed;
+                const my = getAxis(CONTROLS.move.up, CONTROLS.move.down) * speed;
+                state.ship.x = clamp(state.ship.x + mx, state.ship.size, canvas.width - state.ship.size);
+                state.ship.y = clamp(state.ship.y + my, state.ship.size, canvas.height - state.ship.size);
+
+                updateAim();
+
+                if (state.pressed.has(CONTROLS.fire)) {
+                    spawnBullet();
+                }
+
+                if (state.cooldown > 0) state.cooldown -= 1;
+
+                state.bullets.forEach((bullet) => {
+                    bullet.x += bullet.vx;
+                    bullet.y += bullet.vy;
+                    bullet.life -= 1;
+                });
+
+                state.bullets = state.bullets.filter((bullet) => (
+                    bullet.life > 0 &&
+                    bullet.x > -20 &&
+                    bullet.x < canvas.width + 20 &&
+                    bullet.y > -20 &&
+                    bullet.y < canvas.height + 20
+                ));
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.strokeStyle = "#1f2937";
+            ctx.lineWidth = 1;
+            for (let i = 0; i < 40; i += 1) {
+                const x = (i * 37) % canvas.width;
+                const y = (i * 73) % canvas.height;
+                ctx.beginPath();
+                ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            ctx.fillStyle = "#38bdf8";
+            ctx.beginPath();
+            ctx.arc(state.ship.x, state.ship.y, state.ship.size, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = "#f8fafc";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(state.ship.x, state.ship.y);
+            ctx.lineTo(
+                state.ship.x + state.aim.x * state.ship.size * 1.6,
+                state.ship.y + state.aim.y * state.ship.size * 1.6
+            );
+            ctx.stroke();
+
+            ctx.fillStyle = "#f97316";
+            state.bullets.forEach((bullet) => {
+                ctx.beginPath();
+                ctx.arc(bullet.x, bullet.y, 4, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            requestAnimationFrame(update);
+        };
+
+        update();
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/nipplejs@0.10.2/dist/nipplejs.js" crossorigin="anonymous"></script>
+    <script>
+(function (root, factory) {
+    if (typeof module === "object" && module.exports) {
+        module.exports = factory();
+    } else {
+        root.TouchpadControls = factory();
+        root.touchpadControls = root.TouchpadControls;
+    }
+}(typeof self !== "undefined" ? self : this, function () {
+    "use strict";
+
+    const sections = {
+        CENTER_LEFT: { top: "50%", left: "130px", transform: "translate(-50%, -50%)" },
+        CENTER_TOP: { top: "130px", left: "50%", transform: "translate(-50%, -50%)" },
+        CENTER_RIGHT: { top: "50%", left: "calc(100% - 130px)", transform: "translate(-50%, -50%)" },
+        CENTER_BOTTOM: { top: "calc(100% - 130px)", left: "50%", transform: "translate(-50%, -50%)" }
+    };
+
+    const buttonPositions = {
+        CENTER_LEFT: { top: "0", left: "-50px" },
+        CENTER_TOP: { top: "-50px", left: "0" },
+        CENTER_RIGHT: { top: "0", left: "50px" },
+        CENTER_BOTTOM: { top: "50px", left: "0" }
+    };
+
+    const STYLE_ID = "touchpad-controls-style";
+    const MIN_TOUCH_TARGET = 48;
+
+    const injectTouchpadStyles = () => {
+        if (typeof document === "undefined") return;
+        if (document.getElementById(STYLE_ID)) return;
+
+        const style = document.createElement("style");
+        style.id = STYLE_ID;
+        style.textContent = `
+            :root {
+                --touchpad-size: 72px;
+                --touchpad-radius: 50%;
+                --touchpad-bg: radial-gradient(135% 135% at 25% 20%, rgba(255,255,255,0.15), rgba(0,0,0,0.6));
+                --touchpad-border: 1px solid rgba(255,255,255,0.12);
+                --touchpad-shadow: 0 12px 40px rgba(0,0,0,0.7), inset 0 1px 1px rgba(255,255,255,0.1);
+                --touchpad-shadow-active: 0 4px 15px rgba(0,0,0,0.9), inset 0 1px 0 rgba(0,0,0,0.3);
+            }
+
+            .touchpad {
+                position: absolute;
+                width: var(--touchpad-size);
+                height: var(--touchpad-size);
+                padding: 0;
+                box-sizing: border-box;
+                border-radius: var(--touchpad-radius);
+                background: var(--touchpad-bg);
+                border: var(--touchpad-border);
+                box-shadow: var(--touchpad-shadow);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                touch-action: none;
+                user-select: none;
+                -webkit-user-select: none;
+                -ms-user-select: none;
+                font-size: 0;
+                color: transparent;
+                z-index: 9999;
+                overflow: visible;
+                backdrop-filter: blur(12px) saturate(180%);
+                -webkit-backdrop-filter: blur(12px) saturate(180%);
+                transition:
+                    transform 120ms cubic-bezier(0.2, 0, 0, 1),
+                    box-shadow 150ms ease,
+                    background 200ms ease,
+                    filter 150ms linear;
+                background-position: center;
+                background-repeat: no-repeat;
+                background-size: 45%;
+            }
+
+            .touchpad.is-active {
+                transform: scale(0.94) translate3d(0, 1px, 0);
+                box-shadow: var(--touchpad-shadow-active);
+            }
+
+            .touchpad:hover {
+                box-shadow: 0 12px 32px rgba(0,0,0,0.95);
+            }
+
+            .touchpad--button {
+                font-size: 18px;
+            }
+
+            .touchpad--joystick {
+                font-size: 14px;
+            }
+
+            .touchpad .nipple,
+            .touchpad .nipple * {
+                overflow: visible;
+            }
+
+            .touchpad .nipple .back {
+                box-shadow:
+                    0 0 0 1px rgba(15,23,42,0.85),
+                    0 0 0 6px rgba(148,163,184,0.12),
+                    0 10px 30px rgba(15,23,42,0.85);
+            }
+
+            .touchpad .nipple .front {
+                box-shadow:
+                    0 0 0 1px rgba(148,163,184,0.9),
+                    0 8px 18px rgba(15,23,42,0.9);
+            }
+        `;
+        document.head.appendChild(style);
+    };
+
+    const safeEntries = (obj) => {
+        if (!obj || typeof obj !== "object") return [];
+        return Object.entries(obj);
+    };
+
+    const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+
+    const formatCssValue = (value) => {
+        if (typeof value === "number" && Number.isFinite(value)) {
+            return `${value}px`;
+        }
+        return value;
+    };
+
+    const resolveKeyDescriptor = (rawKey) => {
+        const key = String(rawKey);
+        let keyCode;
+        let code;
+        let keyValue = key;
+
+        switch (key) {
+            case "ArrowLeft":
+            case "Left":
+                keyCode = 37;
+                code = "ArrowLeft";
+                keyValue = "ArrowLeft";
+                break;
+            case "ArrowRight":
+            case "Right":
+                keyCode = 39;
+                code = "ArrowRight";
+                keyValue = "ArrowRight";
+                break;
+            case "ArrowUp":
+            case "Up":
+                keyCode = 38;
+                code = "ArrowUp";
+                keyValue = "ArrowUp";
+                break;
+            case "ArrowDown":
+            case "Down":
+                keyCode = 40;
+                code = "ArrowDown";
+                keyValue = "ArrowDown";
+                break;
+            case " ":
+            case "Space":
+            case "space":
+                keyCode = 32;
+                code = "Space";
+                keyValue = " ";
+                break;
+            case "Enter":
+            case "Return":
+                keyCode = 13;
+                code = "Enter";
+                keyValue = "Enter";
+                break;
+            case "Tab":
+                keyCode = 9;
+                code = "Tab";
+                keyValue = "Tab";
+                break;
+            case "Escape":
+            case "Esc":
+                keyCode = 27;
+                code = "Escape";
+                keyValue = "Escape";
+                break;
+            default:
+                break;
+        }
+
+        if (keyCode == null) {
+            if (/^Key[a-zA-Z]$/.test(key)) {
+                const letter = key.charAt(3).toUpperCase();
+                keyCode = letter.charCodeAt(0);
+                code = key;
+                keyValue = letter.toLowerCase();
+            } else if (/^Digit[0-9]$/.test(key)) {
+                const digit = key.charAt(5);
+                keyCode = 48 + parseInt(digit, 10);
+                code = key;
+                keyValue = digit;
+            } else if (key.length === 1) {
+                const upper = key.toUpperCase();
+                keyCode = upper.charCodeAt(0);
+                code = upper;
+                keyValue = key;
+            } else {
+                const upper = key.toUpperCase();
+                keyCode = upper.charCodeAt(0);
+                code = upper;
+                keyValue = key;
+            }
+        }
+
+        return { key: keyValue, code, keyCode };
+    };
+
+    const simulateKeyEvent = (key, type) => {
+        const { key: keyValue, code, keyCode } = resolveKeyDescriptor(key);
+
+        if (typeof KeyboardEvent === "undefined") return;
+
+        const event = new KeyboardEvent(type, {
+            key: keyValue,
+            code: code,
+            keyCode: keyCode,
+            which: keyCode,
+            bubbles: true,
+            cancelable: true
+        });
+
+        const canvas = typeof document !== "undefined" ? document.querySelector("canvas") : null;
+        if (canvas && typeof canvas.focus === "function") {
+            canvas.focus();
+            canvas.dispatchEvent(event);
+        } else if (typeof document !== "undefined") {
+            document.dispatchEvent(event);
+        }
+    };
+
+    const parseKeys = (keys) => {
+        let keyMap = { left: null, right: null, up: null, down: null, key: null };
+
+        if (Array.isArray(keys)) {
+            if (keys.length === 2) {
+                keyMap.left = keys[0] || null;
+                keyMap.right = keys[1] || null;
+            } else if (keys.length === 1) {
+                keyMap.key = keys[0];
+            } else {
+                keyMap.left = keys[0] || null;
+                keyMap.right = keys[1] || null;
+                keyMap.up = keys[2] || null;
+                keyMap.down = keys[3] || null;
+            }
+        } else if (keys && typeof keys === "object") {
+            keyMap.left = keys.left || null;
+            keyMap.right = keys.right || null;
+            keyMap.up = keys.up || null;
+            keyMap.down = keys.down || null;
+            if (keys.key) keyMap.key = keys.key;
+        } else if (typeof keys === "string") {
+            keyMap.key = keys;
+        }
+
+        return keyMap;
+    };
+
+    const createNipple = (element, keys) => {
+        if (typeof nipplejs === "undefined") {
+            throw new Error(
+                "[touchpad_controls] nipplejs is required to create joystick controls. " +
+                "Include nipplejs before touchpad-controls.js."
+            );
+        }
+
+        const options = {
+            zone: element,
+            mode: "static",
+            position: { top: "50%", left: "50%" },
+            color: "gray",
+            size: 120,
+            threshold: 0.25
+        };
+
+        const keyMap = parseKeys(keys);
+
+        const hasLeft = keyMap.left != null;
+        const hasRight = keyMap.right != null;
+        const hasUp = keyMap.up != null;
+        const hasDown = keyMap.down != null;
+        const hasSingleKey = keyMap.key != null;
+
+        if ((hasLeft || hasRight) && !(hasUp || hasDown)) {
+            options.lockX = true;
+        } else if ((hasUp || hasDown) && !(hasLeft || hasRight)) {
+            options.lockY = true;
+        } else if (hasSingleKey) {
+            options.lockX = true;
+            options.lockY = true;
+        } else {
+            options.lockX = false;
+            options.lockY = false;
+        }
+
+        const manager = nipplejs.create(options);
+
+        const activeKeys = {};
+        const activeDirections = new Set();
+
+        const getDirections = (direction) => {
+            if (!direction) return [];
+            const directions = [];
+            if (direction.x === "left" || direction.x === "right") {
+                directions.push(direction.x);
+            }
+            if (direction.y === "up" || direction.y === "down") {
+                directions.push(direction.y);
+            }
+            return directions;
+        };
+
+        manager.on("start", () => {
+            element.classList.add("is-active");
+        });
+
+        manager.on("dir", (evt, data) => {
+            const directions = getDirections(data && data.direction);
+            if (!directions.length) return;
+
+            directions.forEach((direction) => {
+                const key = keyMap[direction];
+                if (!key) return;
+
+                if (!activeKeys[key]) {
+                    simulateKeyEvent(key, "keydown");
+                    activeKeys[key] = true;
+                    activeDirections.add(direction);
+                }
+            });
+        });
+
+        const releaseAllKeys = () => {
+            Object.keys(activeKeys).forEach((key) => {
+                if (activeKeys[key]) {
+                    simulateKeyEvent(key, "keyup");
+                    activeKeys[key] = false;
+                }
+            });
+            activeDirections.clear();
+        };
+
+        manager.on("move", (evt, data) => {
+            if (!data || !data.direction) {
+                releaseAllKeys();
+                return;
+            }
+
+            const currentDirections = new Set();
+            if (data.direction.x) currentDirections.add(data.direction.x);
+            if (data.direction.y) currentDirections.add(data.direction.y);
+
+            const toRelease = [];
+            activeDirections.forEach((direction) => {
+                if (!currentDirections.has(direction)) {
+                    toRelease.push(direction);
+                }
+            });
+
+            toRelease.forEach((direction) => {
+                const key = keyMap[direction];
+                if (key && activeKeys[key]) {
+                    simulateKeyEvent(key, "keyup");
+                    activeKeys[key] = false;
+                    activeDirections.delete(direction);
+                }
+            });
+        });
+
+        manager.on("end", () => {
+            releaseAllKeys();
+            element.classList.remove("is-active");
+        });
+
+        return manager;
+    };
+
+    const createButton = (element, key) => {
+        const keys = Array.isArray(key) ? key.filter((k) => k != null) : [key];
+        if (!keys.length) return;
+
+        let isActive = false;
+
+        const press = (event) => {
+            if (event && typeof event.preventDefault === "function") {
+                event.preventDefault();
+            }
+            if (isActive) return;
+            isActive = true;
+            element.classList.add("is-active");
+            keys.forEach((k) => simulateKeyEvent(k, "keydown"));
+        };
+
+        const release = (event) => {
+            if (event && typeof event.preventDefault === "function") {
+                event.preventDefault();
+            }
+            if (!isActive) return;
+            isActive = false;
+            element.classList.remove("is-active");
+            keys.forEach((k) => simulateKeyEvent(k, "keyup"));
+        };
+
+        const handleMouseDown = (event) => {
+            press(event);
+            const handleMouseUp = (e) => {
+                release(e);
+                window.removeEventListener("mouseup", handleMouseUp);
+            };
+            window.addEventListener("mouseup", handleMouseUp);
+        };
+
+        const handleTouchStart = (event) => {
+            press(event);
+            const handleTouchEndOrCancel = (e) => {
+                release(e);
+                window.removeEventListener("touchend", handleTouchEndOrCancel);
+                window.removeEventListener("touchcancel", handleTouchEndOrCancel);
+            };
+            window.addEventListener("touchend", handleTouchEndOrCancel);
+            window.addEventListener("touchcancel", handleTouchEndOrCancel);
+        };
+
+        element.addEventListener("mousedown", handleMouseDown);
+        element.addEventListener("touchstart", handleTouchStart, {
+            passive: false
+        });
+
+        element.addEventListener("mouseup", release);
+        element.addEventListener("mouseleave", release);
+        element.addEventListener("touchend", release);
+        element.addEventListener("touchcancel", release);
+    };
+
+    const createTouchpadControls = (config = {}) => {
+        if (typeof document === "undefined") {
+            throw new Error("[touchpad_controls] document is required to render controls.");
+        }
+
+        injectTouchpadStyles();
+
+        const root = config.root || document.body || document.documentElement;
+        const buttons = Array.isArray(config.buttons) ? config.buttons : [];
+
+        const touchpads = [];
+        const nippleManagers = [];
+
+        buttons.forEach((btn) => {
+            if (!btn) return;
+
+            const touchpad = document.createElement("div");
+            touchpad.id = btn.id || "";
+            touchpad.className = "touchpad";
+
+            if (btn.className) {
+                touchpad.className += " " + btn.className;
+            }
+            if (Array.isArray(btn.classList)) {
+                btn.classList.forEach((cls) => {
+                    if (cls) touchpad.classList.add(cls);
+                });
+            }
+
+            touchpad.textContent = btn.label != null ? String(btn.label) : "";
+            if (btn.label != null) {
+                touchpad.setAttribute("aria-label", String(btn.label));
+            }
+
+            const sectionName = btn.section;
+            const section = sectionName && sections[sectionName] ? sections[sectionName] : null;
+
+            safeEntries(section).forEach(([key, value]) => {
+                touchpad.style[key] = value;
+            });
+
+            const posName = btn.position;
+            const buttonPosition =
+                posName && buttonPositions[posName]
+                    ? buttonPositions[posName]
+                    : null;
+
+            if (section && buttonPosition) {
+                safeEntries(buttonPosition).forEach(([key, value]) => {
+                    const base = section[key] || "0px";
+                    touchpad.style[key] = `calc(${base} + ${value})`;
+                });
+            }
+
+            if (btn.top != null) {
+                touchpad.style.top = formatCssValue(btn.top);
+            }
+            if (btn.left != null) {
+                touchpad.style.left = formatCssValue(btn.left);
+            }
+            if (btn.x != null) {
+                touchpad.style.left = formatCssValue(btn.x);
+            }
+            if (btn.y != null) {
+                touchpad.style.top = formatCssValue(btn.y);
+            }
+
+            safeEntries(btn.style).forEach(([key, value]) => {
+                if (value != null) {
+                    touchpad.style[key] = formatCssValue(value);
+                }
+            });
+
+            root.appendChild(touchpad);
+
+            let type = btn.type;
+            if (!type) {
+                if (
+                    (Array.isArray(btn.keys) && btn.keys.length > 1) ||
+                    (btn.keys && typeof btn.keys === "object" && !Array.isArray(btn.keys))
+                ) {
+                    type = "joystick";
+                } else {
+                    type = "button";
+                }
+            }
+
+            touchpad.dataset.touchpadType = type;
+            if (type === "joystick") {
+                touchpad.classList.add("touchpad--joystick");
+            } else {
+                touchpad.classList.add("touchpad--button");
+            }
+
+            const tp = { element: touchpad, keys: btn.keys, type: type };
+            touchpads.push(tp);
+        });
+
+        touchpads.forEach((tp) => {
+            if (tp.type === "joystick") {
+                const manager = createNipple(tp.element, tp.keys);
+                if (manager) nippleManagers.push(manager);
+            } else {
+                createButton(tp.element, tp.keys);
+            }
+        });
+
+        const destroy = () => {
+            nippleManagers.forEach((manager) => {
+                if (manager && typeof manager.destroy === "function") {
+                    manager.destroy();
+                }
+            });
+
+            touchpads.forEach((tp) => {
+                const el = tp.element;
+                if (el && el.parentNode) {
+                    el.parentNode.removeChild(el);
+                }
+            });
+        };
+
+        return { touchpads, destroy };
+    };
+
+    const getSafeAreaInsets = (viewport) => {
+        if (viewport && viewport.safeArea) {
+            return {
+                top: viewport.safeArea.top || 0,
+                right: viewport.safeArea.right || 0,
+                bottom: viewport.safeArea.bottom || 0,
+                left: viewport.safeArea.left || 0
+            };
+        }
+
+        if (typeof document === "undefined") {
+            return { top: 0, right: 0, bottom: 0, left: 0 };
+        }
+
+        const measure = document.createElement("div");
+        measure.style.cssText = [
+            "position: fixed",
+            "top: 0",
+            "left: 0",
+            "right: 0",
+            "bottom: 0",
+            "padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)",
+            "pointer-events: none",
+            "visibility: hidden"
+        ].join(";");
+
+        const root = document.body || document.documentElement;
+        root.appendChild(measure);
+        const style = window.getComputedStyle(measure);
+        const insets = {
+            top: parseFloat(style.paddingTop) || 0,
+            right: parseFloat(style.paddingRight) || 0,
+            bottom: parseFloat(style.paddingBottom) || 0,
+            left: parseFloat(style.paddingLeft) || 0
+        };
+        root.removeChild(measure);
+        return insets;
+    };
+
+    const normalizeBindings = (bindings = {}) => {
+        const move = parseKeys(bindings.move || bindings.movement || null);
+        const aim = parseKeys(bindings.aim || bindings.look || null);
+
+        const primary = bindings.primary || bindings.jump || bindings.shoot || bindings.fire || null;
+        const secondary = bindings.secondary || bindings.attack || null;
+        const tertiary = bindings.tertiary || (bindings.shoot && bindings.shoot !== primary ? bindings.shoot : null) || null;
+        const modifier = bindings.modifier || bindings.run || null;
+
+        return { move, aim, primary, secondary, tertiary, modifier };
+    };
+
+    const hasDirectionalKeys = (keyMap) => !!(keyMap && (keyMap.left || keyMap.right || keyMap.up || keyMap.down));
+
+    const chooseLayout = (bindings, preferredLayout) => {
+        if (preferredLayout && preferredLayout !== "auto") return preferredLayout;
+
+        const hasMove = hasDirectionalKeys(bindings.move);
+        const hasAim = hasDirectionalKeys(bindings.aim);
+
+        if (hasAim) return "dual-stick";
+        if (hasMove) {
+            if (bindings.move.up || bindings.move.down) return "fast-platformer";
+            return "safe-platformer";
+        }
+        return "runner";
+    };
+
+    const getLayoutMetrics = (viewport, options = {}) => {
+        const width = viewport && Number.isFinite(viewport.width)
+            ? viewport.width
+            : (typeof window !== "undefined" ? window.innerWidth : 0);
+        const height = viewport && Number.isFinite(viewport.height)
+            ? viewport.height
+            : (typeof window !== "undefined" ? window.innerHeight : 0);
+
+        const safeArea = getSafeAreaInsets(viewport);
+        const minDim = Math.max(1, Math.min(width, height));
+        const orientation = width >= height ? "landscape" : "portrait";
+
+        const baseSize = clamp(minDim * 0.17, 64, 112);
+        const actionSize = clamp(minDim * 0.14, 56, 96);
+        const smallActionSize = clamp(minDim * 0.12, MIN_TOUCH_TARGET, 80);
+        const miniActionSize = clamp(minDim * 0.1, MIN_TOUCH_TARGET, 72);
+        const spacing = clamp(minDim * 0.03, 10, 20);
+        const edgePadding = clamp(minDim * 0.05, 16, 32);
+        const verticalOffset = orientation === "portrait"
+            ? clamp(minDim * 0.04, 8, 16)
+            : clamp(minDim * 0.02, 6, 12);
+
+        const bottomY = height - safeArea.bottom - edgePadding;
+
+        return {
+            width,
+            height,
+            orientation,
+            safeArea,
+            minDim,
+            baseSize,
+            actionSize,
+            smallActionSize,
+            miniActionSize,
+            spacing,
+            edgePadding,
+            verticalOffset,
+            bottomY
+        };
+    };
+
+    const clampPosition = (pos, size, metrics) => {
+        const minX = metrics.safeArea.left + metrics.edgePadding + size / 2;
+        const maxX = metrics.width - metrics.safeArea.right - metrics.edgePadding - size / 2;
+        const minY = metrics.safeArea.top + metrics.edgePadding + size / 2;
+        const maxY = metrics.height - metrics.safeArea.bottom - metrics.edgePadding - size / 2;
+        return {
+            x: clamp(pos.x, minX, maxX),
+            y: clamp(pos.y, minY, maxY)
+        };
+    };
+
+    const makeButton = (spec) => {
+        const baseStyle = {
+            width: spec.size,
+            height: spec.size,
+            transform: "translate(-50%, -50%)"
+        };
+
+        return {
+            id: spec.id,
+            label: spec.label || "",
+            keys: spec.keys,
+            x: spec.x,
+            y: spec.y,
+            size: spec.size,
+            role: spec.role,
+            type: spec.type,
+            classList: spec.classList || [],
+            style: Object.assign(baseStyle, spec.style || {})
+        };
+    };
+
+    const buildActionCluster = (anchor, actions, sizes, metrics) => {
+        const buttons = [];
+        if (!actions.length) return buttons;
+
+        const primary = actions[0];
+        const primarySize = sizes.primary;
+        const primaryPos = clampPosition(anchor, primarySize, metrics);
+        buttons.push(makeButton({
+            id: primary.role,
+            keys: primary.keys,
+            role: primary.role,
+            x: primaryPos.x,
+            y: primaryPos.y,
+            size: primarySize,
+            classList: ["touchpad-role-" + primary.role]
+        }));
+
+        if (actions[1]) {
+            const secondary = actions[1];
+            const secondarySize = sizes.secondary;
+            const secondaryPos = clampPosition({
+                x: anchor.x,
+                y: anchor.y - (primarySize / 2 + metrics.spacing + secondarySize / 2)
+            }, secondarySize, metrics);
+            buttons.push(makeButton({
+                id: secondary.role,
+                keys: secondary.keys,
+                role: secondary.role,
+                x: secondaryPos.x,
+                y: secondaryPos.y,
+                size: secondarySize,
+                classList: ["touchpad-role-" + secondary.role]
+            }));
+        }
+
+        if (actions[2]) {
+            const tertiary = actions[2];
+            const tertiarySize = sizes.tertiary;
+            const tertiaryPos = clampPosition({
+                x: anchor.x - (primarySize / 2 + metrics.spacing + tertiarySize / 2),
+                y: anchor.y - primarySize * 0.2
+            }, tertiarySize, metrics);
+            buttons.push(makeButton({
+                id: tertiary.role,
+                keys: tertiary.keys,
+                role: tertiary.role,
+                x: tertiaryPos.x,
+                y: tertiaryPos.y,
+                size: tertiarySize,
+                classList: ["touchpad-role-" + tertiary.role]
+            }));
+        }
+
+        if (actions[3]) {
+            const modifier = actions[3];
+            const modifierSize = sizes.modifier;
+            const modifierPos = clampPosition({
+                x: anchor.x - (primarySize / 2 + metrics.spacing + modifierSize / 2),
+                y: anchor.y - (primarySize / 2 + metrics.spacing + modifierSize / 2)
+            }, modifierSize, metrics);
+            buttons.push(makeButton({
+                id: modifier.role,
+                keys: modifier.keys,
+                role: modifier.role,
+                x: modifierPos.x,
+                y: modifierPos.y,
+                size: modifierSize,
+                classList: ["touchpad-role-" + modifier.role]
+            }));
+        }
+
+        return buttons;
+    };
+
+    const buildButtonsForLayout = (layout, bindings, metrics) => {
+        const buttons = [];
+        const actions = [];
+
+        if (bindings.primary) actions.push({ role: "primary", keys: bindings.primary });
+        if (bindings.secondary) actions.push({ role: "secondary", keys: bindings.secondary });
+        if (bindings.tertiary) actions.push({ role: "tertiary", keys: bindings.tertiary });
+        if (bindings.modifier) actions.push({ role: "modifier", keys: bindings.modifier });
+
+        const leftAnchor = {
+            x: metrics.safeArea.left + metrics.edgePadding + metrics.baseSize / 2,
+            y: metrics.bottomY - metrics.baseSize / 2 - metrics.verticalOffset
+        };
+        const rightAnchor = {
+            x: metrics.width - metrics.safeArea.right - metrics.edgePadding - metrics.baseSize / 2,
+            y: metrics.bottomY - metrics.baseSize / 2 - metrics.verticalOffset
+        };
+
+        if (!actions.length && !hasDirectionalKeys(bindings.move) && !hasDirectionalKeys(bindings.aim)) {
+            return buttons;
+        }
+
+        if (layout === "safe-platformer" || layout === "fast-platformer") {
+            if (hasDirectionalKeys(bindings.move)) {
+                const moveSize = metrics.baseSize;
+                const movePos = clampPosition(leftAnchor, moveSize, metrics);
+                buttons.push(makeButton({
+                    id: "move",
+                    keys: bindings.move,
+                    role: "move",
+                    x: movePos.x,
+                    y: movePos.y,
+                    size: moveSize,
+                    classList: ["touchpad-role-move"]
+                }));
+            }
+
+            const clusterButtons = buildActionCluster(
+                rightAnchor,
+                actions,
+                {
+                    primary: metrics.actionSize,
+                    secondary: metrics.smallActionSize,
+                    tertiary: metrics.smallActionSize,
+                    modifier: metrics.miniActionSize
+                },
+                metrics
+            );
+            buttons.push(...clusterButtons);
+        } else if (layout === "dual-stick") {
+            const moveSize = clamp(metrics.baseSize * 1.05, 64, 120);
+            const aimSize = clamp(metrics.baseSize * 0.95, 60, 112);
+
+            if (hasDirectionalKeys(bindings.move)) {
+                const leftPos = clampPosition({
+                    x: metrics.safeArea.left + metrics.edgePadding + moveSize / 2,
+                    y: metrics.bottomY - moveSize / 2 - metrics.verticalOffset
+                }, moveSize, metrics);
+                buttons.push(makeButton({
+                    id: "move",
+                    keys: bindings.move,
+                    role: "move",
+                    x: leftPos.x,
+                    y: leftPos.y,
+                    size: moveSize,
+                    classList: ["touchpad-role-move"]
+                }));
+            }
+
+            if (hasDirectionalKeys(bindings.aim)) {
+                const rightPos = clampPosition({
+                    x: metrics.width - metrics.safeArea.right - metrics.edgePadding - aimSize / 2,
+                    y: metrics.bottomY - aimSize / 2 - metrics.verticalOffset
+                }, aimSize, metrics);
+                buttons.push(makeButton({
+                    id: "aim",
+                    keys: bindings.aim,
+                    role: "aim",
+                    x: rightPos.x,
+                    y: rightPos.y,
+                    size: aimSize,
+                    classList: ["touchpad-role-aim"]
+                }));
+
+                if (actions[0]) {
+                    const fireSize = metrics.actionSize;
+                    const firePos = clampPosition({
+                        x: rightPos.x,
+                        y: rightPos.y - (aimSize / 2 + metrics.spacing + fireSize / 2)
+                    }, fireSize, metrics);
+                    buttons.push(makeButton({
+                        id: actions[0].role,
+                        keys: actions[0].keys,
+                        role: actions[0].role,
+                        x: firePos.x,
+                        y: firePos.y,
+                        size: fireSize,
+                        classList: ["touchpad-role-" + actions[0].role]
+                    }));
+                }
+            }
+        } else if (layout === "runner") {
+            const actionCount = Math.min(actions.length || 1, 4);
+            const slots = actionCount === 1
+                ? [0.5]
+                : actionCount === 2
+                    ? [0.35, 0.65]
+                    : actionCount === 3
+                        ? [0.2, 0.5, 0.8]
+                        : [0.15, 0.4, 0.6, 0.85];
+
+            const size = metrics.actionSize;
+            const availableWidth = metrics.width - metrics.safeArea.left - metrics.safeArea.right - metrics.edgePadding * 2;
+            const bandY = metrics.bottomY - size / 2 - metrics.verticalOffset;
+
+            for (let i = 0; i < actionCount; i += 1) {
+                const action = actions[i] || actions[0] || { role: "primary", keys: bindings.primary };
+                const x = metrics.safeArea.left + metrics.edgePadding + availableWidth * slots[i];
+                const pos = clampPosition({ x, y: bandY }, size, metrics);
+                buttons.push(makeButton({
+                    id: action.role,
+                    keys: action.keys,
+                    role: action.role,
+                    x: pos.x,
+                    y: pos.y,
+                    size: size,
+                    classList: ["touchpad-role-" + action.role]
+                }));
+            }
+        }
+
+        return buttons;
+    };
+
+    const buildLayout = (config = {}) => {
+        const normalized = normalizeBindings(config.bindings || {});
+        const layout = chooseLayout(normalized, config.layout);
+        const metrics = getLayoutMetrics(config.viewport, config);
+        const buttons = buildButtonsForLayout(layout, normalized, metrics);
+        return { layout, buttons, metrics, bindings: normalized };
+    };
+
+    const createGesturePrevention = (options = {}) => {
+        if (typeof document === "undefined") return () => {};
+
+        const extraExclusions = Array.isArray(options.excludeSelectors) ? options.excludeSelectors : [];
+        const handler = (event) => {
+            if (!event || typeof event.preventDefault !== "function") return;
+            const target = event.target;
+            if (!target) {
+                event.preventDefault();
+                return;
+            }
+
+            const tagName = target.tagName;
+            const blockedTags = ["SELECT", "OPTION", "BUTTON", "INPUT", "TEXTAREA", "A"];
+            if (tagName && blockedTags.includes(tagName)) return;
+
+            if (extraExclusions.some((selector) => target.closest && target.closest(selector))) return;
+
+            event.preventDefault();
+        };
+
+        document.addEventListener("touchmove", handler, { passive: false });
+        document.addEventListener("touchstart", handler, { passive: false });
+        document.addEventListener("gesturestart", handler);
+        document.addEventListener("gesturechange", handler);
+        document.addEventListener("gestureend", handler);
+
+        return () => {
+            document.removeEventListener("touchmove", handler);
+            document.removeEventListener("touchstart", handler);
+            document.removeEventListener("gesturestart", handler);
+            document.removeEventListener("gesturechange", handler);
+            document.removeEventListener("gestureend", handler);
+        };
+    };
+
+    const create = (config = {}) => {
+        const layoutConfig = buildLayout(config);
+        const hasCustomButtons = Array.isArray(config.buttons) && config.buttons.length > 0;
+        const buttons = hasCustomButtons ? config.buttons : layoutConfig.buttons;
+        const root = config.root;
+
+        if (config.preventGestures !== false) {
+            const excludeSelectors = config.excludeSelectors || [];
+            var removeGesturePrevention = createGesturePrevention({ excludeSelectors });
+        }
+
+        let instance = createTouchpadControls({ root, buttons });
+        let resizeTimer = null;
+
+        const rebuild = () => {
+            if (instance && typeof instance.destroy === "function") {
+                instance.destroy();
+            }
+            const nextLayout = buildLayout(config);
+            const nextButtons = hasCustomButtons ? config.buttons : nextLayout.buttons;
+            instance = createTouchpadControls({ root, buttons: nextButtons });
+        };
+
+        const handleResize = () => {
+            if (resizeTimer) window.clearTimeout(resizeTimer);
+            resizeTimer = window.setTimeout(rebuild, 120);
+        };
+
+        if (config.responsive !== false && typeof window !== "undefined") {
+            window.addEventListener("resize", handleResize);
+        }
+
+        return {
+            layout: layoutConfig.layout,
+            buttons,
+            destroy: () => {
+                if (resizeTimer && typeof window !== "undefined") {
+                    window.clearTimeout(resizeTimer);
+                }
+                if (config.responsive !== false && typeof window !== "undefined") {
+                    window.removeEventListener("resize", handleResize);
+                }
+                if (instance && typeof instance.destroy === "function") {
+                    instance.destroy();
+                }
+                if (typeof removeGesturePrevention === "function") {
+                    removeGesturePrevention();
+                }
+            },
+            rebuild
+        };
+    };
+
+    return {
+        createTouchpadControls,
+        create,
+        buildLayout,
+        chooseLayout,
+        getLayoutMetrics,
+        parseKeys,
+        simulateKeyEvent,
+        resolveKeyDescriptor,
+        _internal: {
+            buildButtonsForLayout,
+            normalizeBindings,
+            clampPosition
+        }
+    };
+}));
+
+</script>
+    <script>
+        const touchBindings = {
+            move: { up: "KeyW", down: "KeyS", left: "KeyA", right: "KeyD" },
+            aim: { up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight" },
+            primary: "Space",
+            pause: "Escape"
+        };
+
+        TouchpadControls.create({
+            layout: "auto",
+            bindings: touchBindings
+        });
+    </script>
+</body>
+</html>

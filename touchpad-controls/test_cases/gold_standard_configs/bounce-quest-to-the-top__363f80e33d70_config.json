@@ -1,0 +1,22 @@
+{
+  "layout": "auto",
+  "bindings": {
+    "move": {
+      "left": "ArrowLeft",
+      "right": "ArrowRight"
+    }
+  },
+  "action_meta": {
+    "move": {
+      "behavior": "continuous",
+      "interaction": "hold",
+      "simultaneous": false,
+      "control_space": "vector",
+      "activation": "hold",
+      "direction_mode": "cardinal",
+      "granularity": "fine",
+      "kind": "axis"
+    }
+  },
+  "source_output": "test_cases/outputs/top_voted/bounce-quest-to-the-top__363f80e33d70_touch_embedded.html"
+}

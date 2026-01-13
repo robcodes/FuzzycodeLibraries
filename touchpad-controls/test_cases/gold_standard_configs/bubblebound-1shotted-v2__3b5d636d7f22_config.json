@@ -1,0 +1,43 @@
+{
+  "layout": "auto",
+  "bindings": {
+    "jump": "Space",
+    "modifier": "KeyZ",
+    "pause": "KeyP",
+    "move": {
+      "left": "ArrowLeft",
+      "right": "ArrowRight"
+    }
+  },
+  "action_meta": {
+    "jump": {
+      "behavior": "discrete",
+      "interaction": "tap",
+      "simultaneous": true,
+      "kind": "button"
+    },
+    "modifier": {
+      "behavior": "discrete",
+      "interaction": "tap",
+      "simultaneous": true,
+      "kind": "button"
+    },
+    "pause": {
+      "behavior": "discrete",
+      "interaction": "tap",
+      "simultaneous": false,
+      "kind": "button"
+    },
+    "move": {
+      "behavior": "continuous",
+      "interaction": "hold",
+      "simultaneous": false,
+      "control_space": "vector",
+      "activation": "hold",
+      "direction_mode": "cardinal",
+      "granularity": "fine",
+      "kind": "axis"
+    }
+  },
+  "source_output": "test_cases/outputs/top_voted/bubblebound-1shotted-v2__3b5d636d7f22_touch_embedded.html"
+}

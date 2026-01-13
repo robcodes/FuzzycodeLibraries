@@ -1,0 +1,31 @@
+{
+  "layout": "auto",
+  "bindings": {
+    "primary": "Space",
+    "move": {
+      "left": "ArrowLeft",
+      "right": "ArrowRight",
+      "up": "ArrowUp",
+      "down": "ArrowDown"
+    }
+  },
+  "action_meta": {
+    "primary": {
+      "behavior": "discrete",
+      "interaction": "tap",
+      "simultaneous": true,
+      "kind": "button"
+    },
+    "move": {
+      "behavior": "discrete",
+      "interaction": "hold",
+      "simultaneous": false,
+      "control_space": "vector",
+      "activation": "hold",
+      "direction_mode": "cardinal",
+      "granularity": "coarse",
+      "kind": "axis"
+    }
+  },
+  "source_output": "test_cases/outputs/top_voted/educational-game-carrot-cruncher-math-adventure__5b0307aeb311_touch_embedded.html"
+}

@@ -1,0 +1,360 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bible Typerunner</title>
+    <script src="https://fuzzycode.dev/@cdn/resolve?url=https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+
+        #game-container {
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .menu {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .menu button {
+            display: block;
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .menu select {
+            display: block;
+            margin: 20px auto;
+            padding: 10px;
+            font-size: 18px;
+        }
+
+        .level-display {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            color: black;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 5px 10px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="game-container"></div>
+    <div class="menu" id="menu">
+        <h1>Bible Typerunner</h1>
+        <p>Type the Bible verses that appear on the screen to progress.</p>
+        <select id="difficulty">
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+        </select>
+        <button id="start-game">Start Game</button>
+    </div>
+    <div class="level-display" id="level-display">Level: 1</div>
+
+    <script>
+        document.getElementById("start-game").addEventListener("click", () => {
+            document.getElementById("menu").style.display = "none";
+            startGame();
+        });
+
+        function startGame() {
+            const difficulty = document.getElementById("difficulty").value;
+            let playerSpeed = 75;
+            let level = 1;
+
+            switch (difficulty) {
+                case 'easy':
+                    playerSpeed = 50;
+                    break;
+                case 'medium':
+                    playerSpeed = 75;
+                    break;
+                case 'hard':
+                    playerSpeed = 100;
+                    break;
+            }
+
+            window.addEventListener('resize', () => {
+                if (game) {
+                    game.scale.resize(window.innerWidth, window.innerHeight);
+                }
+            });
+
+            const config = {
+                type: Phaser.AUTO,
+                width: window.innerWidth,
+                height: window.innerHeight,
+                parent: 'game-container',
+                physics: {
+                    default: 'arcade',
+                    arcade: {
+                        gravity: { y: 300 },
+                        debug: false
+                    }
+                },
+                scene: {
+                    preload: preload,
+                    create: create,
+                    update: update
+                },
+                scale: {
+                    mode: Phaser.Scale.FIT,
+                    autoCenter: Phaser.Scale.CENTER_BOTH
+                }
+            };
+
+            const game = new Phaser.Game({
+                ...config,
+                preserveDrawingBuffer: true
+            });
+
+            let player;
+            let platforms;
+            let cursors;
+            let text;
+            let textObjects = [];
+            let currentLetterIndex = 0;
+            let gameOver = false;
+            let spikes;
+            let goalFlag;
+            let restartButton;
+            let countdownText;
+            let countdown = 3;
+            let countdownEvent;
+            let background;
+            let parallaxBackground;
+            let sentences = [];
+            let messageText;
+            let jumpTimer;
+            let autoJumpEnabled = true;
+
+            function preload() {
+                this.load.image('sky', 'https://fuzzycode.dev/@aws/image_buddy_365day_cache/uploads/1c159ab3-db18-4cfe-847d-0342d6f3038c/sky!resize_1600x1200.png');
+                this.load.image('mountain', 'https://fuzzycode.dev/@aws/image_buddy_365day_cache/uploads/1c159ab3-db18-4cfe-847d-0342d6f3038c/mountain!resize_400x300.png');
+                this.load.aseprite('player', 'https://fuzzycode.dev/@aws/generated_sprites/ASE/dalle_teddy2.png', 'https://fuzzycode.dev/@aws/generated_sprites/ASE/dalle_teddy2.json');
+                this.load.image('spike', 'https://fuzzycode.dev/@aws/image_buddy_365day_cache/uploads/1c159ab3-db18-4cfe-847d-0342d6f3038c/spike!resize_32x32.png');
+                this.load.image('flag', 'https://fuzzycode.dev/@aws/image_buddy_365day_cache/uploads/1c159ab3-db18-4cfe-847d-0342d6f3038c/flag!resize_32x48_58a047cb0f.png');
+                this.load.json('bible_verses', 'https://cdn.jsdelivr.net/gh/wldeh/bible-api/bibles/en-asv/books/john/chapters/1.json');
+            }
+
+            function create() {
+                const bibleVerses = this.cache.json.get('bible_verses');
+                if (!bibleVerses || !bibleVerses.data) {
+                    console.error('Failed to load Bible verses');
+                    sentences = ['ERROR LOADING TEXT'];
+                } else {
+                    sentences = bibleVerses.data.map(verse => verse.text.toUpperCase());
+                }
+
+                background = this.add.image(0, 0, 'sky').setOrigin(0, 0);
+                this.cameras.main.setBackgroundColor('#000000');
+                background.displayWidth = this.sys.canvas.width;
+                background.displayHeight = this.sys.canvas.height;
+                background.scrollFactorX = 0;
+                background.scrollFactorY = 0;
+
+                platforms = this.physics.add.staticGroup();
+                platforms.create(200, 450, 'mountain').setScale(0.5).refreshBody();
+
+                player = this.physics.add.sprite(100, 300, 'player');
+                player.flipX = true; // Flip the character horizontally from the beginning
+                player.setBounce(0.2);
+                player.setCollideWorldBounds(true);
+                this.anims.createFromAseprite('player');
+
+                this.physics.add.collider(player, platforms);
+
+                cursors = this.input.keyboard.createCursorKeys();
+
+                spikes = this.physics.add.staticGroup();
+                for (let i = 0; i < 125; i++) {
+                    spikes.create(32 + i * 32, 584, 'spike');
+                }
+                this.physics.add.collider(player, spikes, gameOverHandler, null, this);
+
+                createText.call(this);
+
+                this.input.keyboard.on('keydown', handleKeyDown.bind(this));
+
+                countdownText = this.add.text(400, 300, countdown, { fontSize: '64px', fill: '#000' }).setOrigin(0.5);
+                countdownEvent = this.time.addEvent({
+                    delay: 1000,
+                    callback: updateCountdown,
+                    callbackScope: this,
+                    repeat: 2
+                });
+
+                this.cameras.main.setBounds(0, 0, 4000, 600);
+                this.physics.world.setBounds(0, 0, 4000, 600);
+                this.cameras.main.startFollow(player, true, 0.5, 0.5);
+
+                messageText = this.add.text(400, 200, '', { fontSize: '48px', fill: '#000' }).setOrigin(0.5);
+                messageText.setScrollFactor(0);
+            }
+
+            function createText() {
+                text = sentences[Math.floor(Math.random() * sentences.length)];
+                let startX = 250;
+                let startY = 370;
+                
+                const textGroup = this.add.group();
+                for (let i = 0; i < text.length; i++) {
+                    let letter = this.add.text(startX + i * 15, startY, text[i], { fontSize: '24px', fill: 'black' });
+                    textGroup.add(letter);
+                    textObjects.push(letter);
+
+                    let letterPlatform = platforms.create(startX + i * 15, startY + 20, 'mountain');
+                    letterPlatform.setScale(0.05, 0.1);
+                    letterPlatform.refreshBody();
+                    letterPlatform.alpha = 0;
+                    letterPlatform.body.checkCollision.none = true;
+
+                    this.physics.add.collider(player, letterPlatform, () => {
+                        if (letterPlatform.body.checkCollision.none) {
+                            gameOverHandler.call(this);
+                        }
+                    });
+                }
+
+                let textWidth = text.length * 15;
+                let secondMountainX = startX + textWidth + 100;
+                let flagX = secondMountainX + 50;
+
+                platforms.create(secondMountainX, 450, 'mountain').setScale(0.5).refreshBody();
+
+                goalFlag = this.physics.add.staticGroup();
+                goalFlag.create(flagX, 380, 'flag');
+                this.physics.add.overlap(player, goalFlag, winLevel, null, this);
+            }
+
+            function handleKeyDown(event) {
+                if (!gameOver && currentLetterIndex < text.length && event.key.toLowerCase() === text[currentLetterIndex].toLowerCase()) {
+                    textObjects[currentLetterIndex].setColor('white');
+                    textObjects[currentLetterIndex].setBackgroundColor('black');
+                    platforms.getChildren()[currentLetterIndex + 2].body.checkCollision.none = false;
+                    currentLetterIndex++;
+
+                    if (currentLetterIndex === text.length) {
+                        messageText.setText('Text Completed!');
+                        messageText.setColor('#00ff00');
+                    }
+                }
+            }
+
+            function update() {
+                if (gameOver || countdown > 0) {
+                    return;
+                }
+
+                player.setVelocityX(playerSpeed);
+                player.flipX = playerSpeed < 0; // Flip the character based on the movement direction
+                player.play('walk', true);
+
+                if (autoJumpEnabled && currentLetterIndex < Math.floor(text.length / 2)) {
+                    if (jumpTimer === undefined || jumpTimer <= 0) {
+                        jumpTimer = Phaser.Math.Between(1, 5) * 1000;
+                        player.setVelocityY(-330);
+                        player.play('jump', true);
+                    } else {
+                        jumpTimer -= 16.66;
+                    }
+                } else {
+                    autoJumpEnabled = false;
+                }
+
+                if (player.body.velocity.y > 0) {
+                    player.play('fall', true);
+                }
+
+                if (player.x > 4000) {
+                    player.x = 0;
+                }
+            }
+
+            function gameOverHandler() {
+                gameOver = true;
+                player.setTint(0xff0000);
+                player.setVelocityY(300);
+                messageText.setText('Game Over');
+                messageText.setColor('#ff0000');
+                createRestartButton.call(this);
+            }
+
+            function winLevel() {
+                gameOver = true;
+                player.setVelocityX(0);
+                player.x = 100;
+                messageText.setText('Level ' + level + ' Complete!');
+                messageText.setColor('#00ff00');
+                level++;
+                updateLevelDisplay(level);
+                this.time.delayedCall(3000, startNextLevel, [], this);
+            }
+
+            function createRestartButton() {
+                restartButton = this.add.text(400, 300, 'Restart Game', { fontSize: '32px', fill: '#0000ff' })
+                    .setOrigin(0.5)
+                    .setInteractive()
+                    .on('pointerdown', restartGame);
+                restartButton.setScrollFactor(0);
+            }
+
+            function restartGame() {
+                gameOver = false;
+                currentLetterIndex = 0;
+                textObjects.forEach(text => text.destroy());
+                textObjects = [];
+                countdown = 3;
+                updateLevelDisplay(1);
+                if (countdownEvent) countdownEvent.remove();
+                if (messageText) messageText.destroy();
+                game.scene.start('default');
+            }
+
+            function updateCountdown() {
+                countdown--;
+                countdownText.setText(countdown);
+                if (countdown === 0) {
+                    countdownText.destroy();
+                }
+            }
+
+            function startNextLevel() {
+                gameOver = false;
+                currentLetterIndex = 0;
+                textObjects = [];
+                countdown = 3;
+                player.x = 100;
+                game.scene.start('default');
+            }
+
+            function updateLevelDisplay(level) {
+                document.getElementById('level-display').innerText = 'Level: ' + level;
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="810" height="1080" viewBox="0 0 810 1080">
+<defs>
+<style>
+text { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+.label { fill: #E2E8F0; font-size: 12px; }
+.title { fill: #E2E8F0; font-size: 14px; font-weight: 600; }
+.safe { fill: none; stroke: #475569; stroke-width: 2; stroke-dasharray: 6 4; }
+.button { stroke: #0F172A; stroke-width: 2; }
+</style>
+</defs>
+<rect width="810" height="1080" fill="#0B1020" />
+<rect class="safe" x="0" y="24" width="810" height="1036" />
+<text class="title" x="12" y="22">tetris-game__2a94b719e827 - tablet-portrait (digital-dpad)</text>
+<g class="button-group"><title>move-left ArrowLeft</title><circle class="button" cx="60" cy="932.8" r="28.0" fill="#1F6F8B" /><text class="label" x="60" y="937.4666666666666" text-anchor="middle" font-size="14">move-left</text></g>
+<g class="button-group"><title>move-right ArrowRight</title><circle class="button" cx="194.4" cy="932.8" r="28.0" fill="#1F6F8B" /><text class="label" x="194.4" y="937.4666666666666" text-anchor="middle" font-size="14">move-right</text></g>
+<g class="button-group"><title>primary ArrowDown</title><circle class="button" cx="688" cy="956" r="48.0" fill="#F59E0B" /><text class="label" x="688" y="960.6666666666666" text-anchor="middle" font-size="14">primary</text></g>
+<g class="button-group"><title>secondary KeyQ</title><circle class="button" cx="638" cy="848" r="40.0" fill="#60A5FA" /><text class="label" x="638" y="852.6666666666666" text-anchor="middle" font-size="14">secondary</text></g>
+<g class="button-group"><title>tertiary KeyW</title><circle class="button" cx="738" cy="848" r="40.0" fill="#A78BFA" /><text class="label" x="738" y="852.6666666666666" text-anchor="middle" font-size="14">tertiary</text></g>
+</svg>

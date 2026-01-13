@@ -1,0 +1,1196 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cosmic Brick Blaster</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+            font-family: 'Arial', sans-serif;
+        }
+        #phaser-example {
+            border: 2px solid #e94560;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
+        }
+        #game-ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #fff;
+            font-size: 18px;
+            z-index: 100;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.55.2/phaser.min.js"></script>
+    <script>
+        const audioContext = new AudioContext();
+
+        function beep(duration, frequency, volume) {
+            let oscillator = audioContext.createOscillator();
+            let gainNode = audioContext.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            gainNode.gain.value = volume;
+            oscillator.frequency.value = frequency;
+            oscillator.type = "sine";
+            oscillator.start();
+            setTimeout(() => oscillator.stop(), duration);
+        }
+    </script>
+<script src="/static/phaser_swapper.js"></script>
+</head>
+<body>
+<div id="phaser-example"></div>
+<script>
+class BootScene extends Phaser.Scene {
+    constructor() {
+        super({ key: 'BootScene' });
+    }
+
+    preload() {
+        // Display loading text
+        let loadingText = this.add.text(400, 300, 'Loading...', { 
+            fontSize: '32px', 
+            fill: '#ffffff' 
+        }).setOrigin(0.5);
+
+        // Create loading bar
+        let progressBar = this.add.graphics();
+        let progressBox = this.add.graphics();
+        progressBox.fillStyle(0x222222, 0.8);
+        progressBox.fillRect(240, 350, 320, 50);
+
+        // Update loading bar as assets load
+        this.load.on('progress', function (value) {
+            progressBar.clear();
+            progressBar.fillStyle(0xe94560, 1);
+            progressBar.fillRect(250, 360, 300 * value, 30);
+        });
+
+        // Remove loading bar when complete
+        this.load.on('complete', function () {
+            progressBar.destroy();
+            progressBox.destroy();
+            loadingText.destroy();
+        });
+
+        // Load game assets
+        this.load.atlas('assets', 'https://raw.githubusercontent.com/phaserjs/examples/master/public/assets/games/breakout/breakout.png', 'https://raw.githubusercontent.com/phaserjs/examples/master/public/assets/games/breakout/breakout.json');
+
+        // Load custom brick images
+        this.load.image('brick1', 'https://aws.fuzzycode.dev/image_buddy_365day_cache/uploads/650d0284-66ef-4e44-ba51-28913dea877c/glossy red brick for breakout game!resize_64x32.png');
+        this.load.image('brick2', 'https://aws.fuzzycode.dev/image_buddy_365day_cache/uploads/650d0284-66ef-4e44-ba51-28913dea877c/glossy blue brick for breakout game!resize_64x32.png');
+        this.load.image('brick3', 'https://aws.fuzzycode.dev/image_buddy_365day_cache/uploads/650d0284-66ef-4e44-ba51-28913dea877c/glossy green brick for breakout game!resize_64x32.png');
+        this.load.image('brick4', 'https://aws.fuzzycode.dev/image_buddy_365day_cache/uploads/650d0284-66ef-4e44-ba51-28913dea877c/glossy yellow brick for breakout game!resize_64x32_3640efc0a1.png');
+        this.load.image('brick5', 'https://aws.fuzzycode.dev/image_buddy_365day_cache/uploads/650d0284-66ef-4e44-ba51-28913dea877c/glossy purple brick for breakout game!resize_64x32.png');
+
+        // Load powerup images
+        this.load.image('powerup_expand', 'https://images.fuzzycode.dev/fast_ai?search=blue%20glowing%20expand%20powerup%20icon&resize=32x32&transparency=true');
+        this.load.image('powerup_multi', 'https://images.fuzzycode.dev/fast_ai?search=red%20glowing%20multiball%20powerup%20icon&resize=32x32&transparency=true');
+        this.load.image('powerup_slow', 'https://images.fuzzycode.dev/fast_ai?search=green%20glowing%20slow%20powerup%20icon&resize=32x32&transparency=true');
+        this.load.image('powerup_laser', 'https://aws.fuzzycode.dev/image_buddy_365day_cache/uploads/650d0284-66ef-4e44-ba51-28913dea877c/yellow glowing laser powerup icon!resize_32x32!resize_32x32.png');
+
+        // Load background and effects
+        this.load.image('background', 'https://images.fuzzycode.dev/fast_ai?search=space%20arcade%20game%20background%20with%20stars&resize=800x600');
+        this.load.image('particle', 'https://aws.fuzzycode.dev/image_buddy_365day_cache/uploads/650d0284-66ef-4e44-ba51-28913dea877c/glowing particle effect!resize_16x16.png');
+        this.load.image('laser', 'https://aws.fuzzycode.dev/image_buddy_365day_cache/uploads/650d0284-66ef-4e44-ba51-28913dea877c/vertical laser beam!resize_8x24.png');
+
+        // Load sounds
+        this.load.audio('brick_hit', 'https://sounds.fuzzycode.dev/sound_effect?prompt=arcade%20brick%20break&duration=0.5&ext=.mp3');
+        this.load.audio('paddle_hit', 'https://sounds.fuzzycode.dev/sound_effect?prompt=ball%20bounce%20on%20paddle&duration=0.5&ext=.mp3');
+        this.load.audio('powerup_collect', 'https://sounds.fuzzycode.dev/sound_effect?prompt=powerup%20collect%20game&duration=0.5&ext=.mp3');
+        this.load.audio('level_complete', 'https://aws.fuzzycode.dev/generated_sound_effects/retro-level-complete-sound-effect-then-clapping.wav');
+        this.load.audio('game_over', 'https://sounds.fuzzycode.dev/sound_effect?prompt=game%20over%20arcade&duration=1&ext=.mp3');
+        this.load.audio('laser_shoot', 'https://aws.fuzzycode.dev/generated_sound_effects/laser-blast.wav');
+        this.load.audio('background_music', 'https://sounds.fuzzycode.dev/music?prompt=upbeat%20arcade%20game%20background%20music&duration=30&ext=.mp3');
+    }
+
+    create() {
+        this.scene.start('MainMenuScene');
+    }
+}
+
+class MainMenuScene extends Phaser.Scene {
+    constructor() {
+        super({ key: 'MainMenuScene' });
+    }
+
+    create() {
+        // Add background
+        this.add.image(400, 300, 'background');
+
+        // Title text with glow effect
+        const title = this.add.text(400, 150, 'COSMIC BRICK BLASTER', {
+            fontSize: '48px',
+            fontFamily: 'Arial',
+            fontWeight: 'bold',
+            fill: '#e94560'
+        }).setOrigin(0.5);
+
+        // Add glow effect to title
+        title.setStroke('#ffffff', 2);
+        title.setShadow(2, 2, '#333333', 5, true, true);
+
+        // Create start button
+        const startButton = this.add.text(400, 300, 'START GAME', {
+            fontSize: '32px',
+            fontFamily: 'Arial',
+            fill: '#ffffff',
+            backgroundColor: '#0f3460',
+            padding: { x: 20, y: 10 }
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+        // Button hover effect
+        startButton.on('pointerover', () => {
+            startButton.setStyle({ fill: '#e94560' });
+        });
+
+        startButton.on('pointerout', () => {
+            startButton.setStyle({ fill: '#ffffff' });
+        });
+
+        // Start game on click
+        startButton.on('pointerdown', () => {
+            this.scene.start('breakout');
+        });
+
+        // Instructions text
+        this.add.text(400, 400, 'Use mouse to move paddle\nClick to launch the ball', {
+            fontSize: '20px',
+            fontFamily: 'Arial',
+            fill: '#ffffff',
+            align: 'center'
+        }).setOrigin(0.5);
+
+        // Credits
+        this.add.text(400, 500, 'Collect powerups for special abilities!', {
+            fontSize: '18px',
+            fontFamily: 'Arial',
+            fill: '#cccccc'
+        }).setOrigin(0.5);
+
+        // Create star particles
+        const particles = this.add.particles('particle');
+        particles.createEmitter({
+            x: { min: 0, max: 800 },
+            y: 0,
+            speed: { min: 50, max: 100 },
+            angle: { min: 0, max: 360 },
+            scale: { start: 0.5, end: 0 },
+            lifespan: 4000,
+            frequency: 200,
+            blendMode: 'ADD'
+        });
+    }
+}
+
+class Breakout extends Phaser.Scene {
+    constructor() {
+        super({ key: 'breakout' });
+        this.level = 1;
+        this.score = 0;
+        this.lives = 3;
+        this.ballOnPaddle = true;
+        this.activePowerups = [];
+        this.balls = [];
+        this.powerupChance = 0.3; // 30% chance for powerup
+        this.laserActive = false;
+        this.expandedPaddle = false;
+        this.slowedBall = false;
+    }
+
+    create() {
+        // Add background with 30% stretch
+        const bg = this.add.image(400, 300, 'background');
+        bg.setScale(1.3); // Stretch background by 30%
+
+        // Set world bounds
+        this.physics.world.setBoundsCollision(true, true, true, false);
+
+        // Sound effects
+        this.brickHitSound = this.sound.add('brick_hit');
+        this.paddleHitSound = this.sound.add('paddle_hit');
+        this.powerupCollectSound = this.sound.add('powerup_collect');
+        this.levelCompleteSound = this.sound.add('level_complete');
+        this.gameOverSound = this.sound.add('game_over');
+        this.laserShootSound = this.sound.add('laser_shoot');
+
+        // Background music
+        this.bgMusic = this.sound.add('background_music', { loop: true, volume: 0.5 });
+        this.bgMusic.play();
+
+        // Create UI elements
+        this.scoreText = this.add.text(20, 20, 'Score: 0', { 
+            fontSize: '24px', 
+            fill: '#ffffff',
+            fontFamily: 'Arial'
+        });
+
+        this.levelText = this.add.text(400, 20, 'Level: 1', { 
+            fontSize: '24px', 
+            fill: '#ffffff',
+            fontFamily: 'Arial'
+        }).setOrigin(0.5, 0);
+
+        this.livesText = this.add.text(780, 20, 'Lives: 3', { 
+            fontSize: '24px', 
+            fill: '#ffffff',
+            fontFamily: 'Arial'
+        }).setOrigin(1, 0);
+
+        // Create powerups group
+        this.powerups = this.physics.add.group();
+
+        // Create lasers group
+        this.lasers = this.physics.add.group();
+
+        // Create game elements
+        this.createLevel();
+
+        // Setup input handlers
+        this.input.on('pointermove', (pointer) => {
+            this.paddle.x = Phaser.Math.Clamp(pointer.x, this.paddle.width/2, 800 - this.paddle.width/2);
+
+            if (this.balls.length > 0 && this.balls[0].getData('onPaddle')) {
+                this.balls[0].x = this.paddle.x;
+            }
+        });
+
+        this.input.on('pointerup', () => {
+            if (this.balls.length > 0 && this.balls[0].getData('onPaddle')) {
+                this.launchBall();
+            } else if (this.laserActive) {
+                this.shootLaser();
+            }
+        });
+
+        // Particles for explosions
+        this.particles = this.add.particles('particle');
+    }
+
+    createLevel() {
+        // Remove existing bricks if any
+        if (this.bricks) {
+            this.bricks.clear(true, true);
+        }
+
+        // Generate level pattern using visually pleasing patterns
+        const methods = [
+            this.generateSymmetricPattern, 
+            this.generateArchPattern, 
+            this.generateInvadersPattern,
+            this.generatePyramidPattern,
+            this.generateWavePattern,
+            this.generateTargetPattern
+        ];
+
+        const pattern = methods[this.level % methods.length].call(this, 8, 12);
+
+        // Create bricks group
+        this.bricks = this.physics.add.staticGroup();
+
+        // Define brick types and their properties
+        const brickTypes = [
+            { key: 'brick1', tint: 0xffffff, health: 1, points: 10 },   // Regular brick
+            { key: 'brick2', tint: 0xffffff, health: 1, points: 20 },   // Regular brick
+            { key: 'brick3', tint: 0xffffff, health: 2, points: 30 },   // Stronger brick
+            { key: 'brick4', tint: 0xffffff, health: 1, points: 40 },   // Regular brick
+            { key: 'brick5', tint: 0xffffff, health: 3, points: 50 }    // Hardest brick
+        ];
+
+        // Create bricks based on the pattern
+        pattern.forEach((row, rowIndex) => {
+            row.forEach((brick, colIndex) => {
+                if (brick) {
+                    // Determine brick type based on level and position
+                    const brickTypeIndex = (rowIndex + this.level) % brickTypes.length;
+                    const brickType = brickTypes[brickTypeIndex];
+
+                    // Create the brick with proper positioning to avoid going off screen
+                    // Calculate brick width (64) and adjust starting position to center the pattern
+                    const brickWidth = 64;
+                    const startX = (this.sys.game.config.width - row.length * brickWidth) / 2 + brickWidth / 2;
+
+                    // Ensure bricks stay within the visible area by constraining positions
+                    // Add a margin to keep bricks away from the edges
+                    const edgeMargin = 40;
+                    const constrainedX = Phaser.Math.Clamp(
+                        startX + colIndex * brickWidth,
+                        edgeMargin,
+                        this.sys.game.config.width - edgeMargin
+                    );
+
+                    const brickSprite = this.bricks.create(
+                        constrainedX, 
+                        80 + rowIndex * 32, 
+                        brickType.key
+                    );
+
+                    // Make sure bricks stay within the visible area when background is stretched
+                    if (colIndex === 0 || colIndex === row.length - 1 || rowIndex === 0 || rowIndex === pattern.length - 1) {
+                        brickSprite.setData('edge', true);
+                    }
+
+                    // Set brick properties
+                    brickSprite.setData('health', brickType.health);
+                    brickSprite.setData('points', brickType.points);
+
+                    // Add subtle animations to bricks
+                    this.tweens.add({
+                        targets: brickSprite,
+                        scaleX: 1.03,
+                        scaleY: 1.03,
+                        duration: 1000 + Math.random() * 1000,
+                        yoyo: true,
+                        repeat: -1,
+                        ease: 'Sine.easeInOut'
+                    });
+                }
+            });
+        });
+
+        // Create paddle
+        this.paddle = this.physics.add.image(400, 550, 'assets', 'paddle1')
+            .setImmovable()
+            .setCollideWorldBounds(true);
+
+        // Set paddle tint for visual effect (instead of glow)
+        this.paddle.setTint(0xe94560);
+
+        // Create the main ball
+        this.createBall(true);
+
+        // Clear any existing colliders
+        this.physics.world.colliders.destroy();
+
+        // Set up colliders
+        this.physics.add.collider(this.balls, this.bricks, this.hitBrick, null, this);
+        this.physics.add.collider(this.balls, this.paddle, this.hitPaddle, null, this);
+        this.physics.add.collider(this.powerups, this.paddle, this.collectPowerup, null, this);
+        this.physics.add.collider(this.lasers, this.bricks, this.laserHitBrick, null, this);
+    }
+
+    createBall(onPaddle = false) {
+        const ball = this.physics.add.image(
+            onPaddle ? this.paddle.x : 400, 
+            onPaddle ? this.paddle.y - 25 : 300, 
+            'assets', 
+            'ball1'
+        ).setCollideWorldBounds(true).setBounce(1);
+
+        // Add slight tint to ball for visual effect (instead of glow)
+        ball.setTint(0xccffff);
+
+        // Set ball properties
+        ball.setData('onPaddle', onPaddle);
+
+        // Add to balls array
+        this.balls.push(ball);
+
+        // Add trail effect
+        const particles = this.add.particles('particle');
+        const emitter = particles.createEmitter({
+            speed: 20,
+            scale: { start: 0.2, end: 0 },
+            blendMode: 'ADD',
+            lifespan: 200
+        });
+
+        emitter.startFollow(ball);
+        ball.emitter = emitter;
+
+        return ball;
+    }
+
+    launchBall() {
+        if (this.balls.length > 0 && this.balls[0].getData('onPaddle')) {
+            const ball = this.balls[0];
+            ball.setData('onPaddle', false);
+
+            // Set velocity based on level (faster in higher levels)
+            const baseSpeed = 300 + (this.level * 20);
+            const speed = this.slowedBall ? baseSpeed * 0.7 : baseSpeed;
+
+            // Random angle between -60 and 60 degrees
+            const angle = Phaser.Math.Between(-60, 60);
+            const velocity = this.physics.velocityFromAngle(angle - 90, speed);
+
+            ball.setVelocity(velocity.x, velocity.y);
+
+            // Play launch sound
+            beep(100, 520, 0.5);
+        }
+    }
+
+    hitBrick(ball, brick) {
+        // Create explosion effect
+        this.createExplosion(brick.x, brick.y, 0.5);
+
+        // Decrease brick health
+        const health = brick.getData('health') - 1;
+
+        if (health <= 0) {
+            // Brick is destroyed
+            brick.disableBody(true, true);
+
+            // Update score
+            this.score += brick.getData('points');
+            this.scoreText.setText('Score: ' + this.score);
+
+            // Play brick hit sound
+            this.brickHitSound.play();
+
+            // Chance to spawn powerup
+            if (Math.random() < this.powerupChance) {
+                this.spawnPowerup(brick.x, brick.y);
+            }
+        } else {
+            // Update brick health
+            brick.setData('health', health);
+
+            // Visual feedback
+            this.tweens.add({
+                targets: brick,
+                alpha: 0.7,
+                duration: 100,
+                yoyo: true
+            });
+
+            // Play hit sound
+            beep(50, 300, 0.5);
+        }
+
+        // Check if level is complete
+        if (this.bricks.countActive() === 0) {
+            this.levelComplete();
+        }
+    }
+
+    laserHitBrick(laser, brick) {
+        // Create explosion effect
+        this.createExplosion(brick.x, brick.y, 0.3);
+
+        // Destroy brick regardless of health
+        brick.disableBody(true, true);
+
+        // Update score
+        this.score += brick.getData('points');
+        this.scoreText.setText('Score: ' + this.score);
+
+        // Play brick hit sound
+        this.brickHitSound.play();
+
+        // Destroy laser
+        laser.destroy();
+
+        // Chance to spawn powerup
+        if (Math.random() < this.powerupChance / 2) {
+            this.spawnPowerup(brick.x, brick.y);
+        }
+
+        // Check if level is complete
+        if (this.bricks.countActive() === 0) {
+            this.levelComplete();
+        }
+    }
+
+    hitPaddle(ball, paddle) {
+        // Play paddle hit sound
+        this.paddleHitSound.play();
+
+        // Calculate reflection angle based on where the ball hit the paddle
+        const diff = ball.x - paddle.x;
+        const percent = diff / (paddle.width / 2);
+        const maxAngle = 75; // Max reflection angle
+        const angle = percent * maxAngle;
+
+        // Calculate velocity
+        const baseSpeed = 300 + (this.level * 20);
+        const speed = this.slowedBall ? baseSpeed * 0.7 : baseSpeed;
+
+        const velocity = this.physics.velocityFromAngle(angle - 90, speed);
+        ball.setVelocity(velocity.x, velocity.y);
+
+        // Visual feedback
+        this.tweens.add({
+            targets: paddle,
+            scaleX: 1.1,
+            duration: 100,
+            yoyo: true
+        });
+    }
+
+    spawnPowerup(x, y) {
+        // Define powerup types
+        const powerupTypes = [
+            { key: 'powerup_expand', type: 'expand' },
+            { key: 'powerup_multi', type: 'multiball' },
+            { key: 'powerup_slow', type: 'slow' },
+            { key: 'powerup_laser', type: 'laser' }
+        ];
+
+        // Select random powerup
+        const powerupType = Phaser.Utils.Array.GetRandom(powerupTypes);
+
+        // Create powerup
+        const powerup = this.powerups.create(x, y, powerupType.key);
+        powerup.setData('type', powerupType.type);
+
+        // Add slight tint for visual effect (instead of glow)
+        powerup.setTint(0xffffff);
+
+        // Set velocity
+        powerup.setVelocity(0, 150);
+
+        // Add rotation animation
+        this.tweens.add({
+            targets: powerup,
+            angle: 360,
+            duration: 2000,
+            repeat: -1
+        });
+    }
+
+    collectPowerup(paddle, powerup) {
+        // Play powerup sound
+        this.powerupCollectSound.play();
+
+        // Get powerup type
+        const type = powerup.getData('type');
+
+        // Apply powerup effect
+        switch (type) {
+            case 'expand':
+                this.activatePaddleExpand();
+                break;
+            case 'multiball':
+                this.activateMultiBall();
+                break;
+            case 'slow':
+                this.activateSlowBall();
+                break;
+            case 'laser':
+                this.activateLaser();
+                break;
+        }
+
+        // Create collection effect
+        this.createExplosion(powerup.x, powerup.y, 1);
+
+        // Remove powerup
+        powerup.destroy();
+    }
+
+    activatePaddleExpand() {
+        // Expand paddle
+        if (!this.expandedPaddle) {
+            this.expandedPaddle = true;
+
+            // Scale paddle
+            this.tweens.add({
+                targets: this.paddle,
+                scaleX: 1.5,
+                duration: 300,
+                ease: 'Back.easeOut'
+            });
+
+            // Show powerup text
+            this.showPowerupText('PADDLE EXPANDED!');
+
+            // Set timer to revert
+            this.time.delayedCall(10000, () => {
+                if (this.expandedPaddle) {
+                    this.tweens.add({
+                        targets: this.paddle,
+                        scaleX: 1,
+                        duration: 300,
+                        ease: 'Back.easeIn'
+                    });
+                    this.expandedPaddle = false;
+                }
+            });
+        } else {
+            // If already expanded, just reset the timer
+            this.showPowerupText('PADDLE EXPAND EXTENDED!');
+        }
+    }
+
+    activateMultiBall() {
+        // Create 2 additional balls
+        for (let i = 0; i < 2; i++) {
+            const newBall = this.createBall(false);
+
+            // Random velocity
+            const angle = Phaser.Math.Between(-120, -60);
+            const speed = 300 + (this.level * 20);
+            const velocity = this.physics.velocityFromAngle(angle, speed);
+
+            newBall.setVelocity(velocity.x, velocity.y);
+        }
+
+        // Show powerup text
+        this.showPowerupText('MULTIBALL!');
+    }
+
+    activateSlowBall() {
+        // Slow down all balls
+        this.slowedBall = true;
+
+        this.balls.forEach(ball => {
+            if (!ball.getData('onPaddle')) {
+                // Reduce velocity by 30%
+                ball.setVelocity(ball.body.velocity.x * 0.7, ball.body.velocity.y * 0.7);
+
+                // Add visual effect
+                ball.setTint(0x00ffff);
+            }
+        });
+
+        // Show powerup text
+        this.showPowerupText('BALL SLOWED!');
+
+        // Set timer to revert
+        this.time.delayedCall(8000, () => {
+            this.slowedBall = false;
+
+            this.balls.forEach(ball => {
+                if (!ball.getData('onPaddle')) {
+                    // Increase velocity back
+                    ball.setVelocity(ball.body.velocity.x / 0.7, ball.body.velocity.y / 0.7);
+                    ball.clearTint();
+                }
+            });
+        });
+    }
+
+    activateLaser() {
+        // If laser mode is already active, extend the duration and do not add new guns
+        if (this.laserActive) {
+            this.showPowerupText('LASER POWERUP EXTENDED!');
+            // Extend the laser duration by scheduling a new delayed call
+            this.time.delayedCall(15000, () => {
+                if (this.laserActive) {
+                    this.laserActive = false;
+                    if (this.laserGuns) {
+                        this.laserGuns.forEach(gun => gun.destroy());
+                        this.laserGuns = null;
+                    }
+                }
+            });
+            return;
+        }
+        // Activate laser mode
+        this.laserActive = true;
+
+        // Add laser guns to paddle
+        const leftGun = this.add.image(this.paddle.x - 40, this.paddle.y - 10, 'powerup_laser').setScale(0.5);
+        const rightGun = this.add.image(this.paddle.x + 40, this.paddle.y - 10, 'powerup_laser').setScale(0.5);
+        this.laserGuns = [leftGun, rightGun];
+
+        // Show powerup text
+        this.showPowerupText('LASERS ACTIVATED!');
+
+        // Set timer to revert
+        this.time.delayedCall(15000, () => {
+            if (this.laserActive) {
+                this.laserActive = false;
+                if (this.laserGuns) {
+                    this.laserGuns.forEach(gun => gun.destroy());
+                    this.laserGuns = null;
+                }
+            }
+        });
+    }
+
+    shootLaser() {
+        if (this.laserActive) {
+            // Play laser sound
+            this.laserShootSound.play();
+
+            // Create lasers from both guns
+            this.laserGuns.forEach(gun => {
+                const laser = this.lasers.create(gun.x, gun.y, 'laser');
+                laser.setVelocity(0, -400);
+
+                // Add tint for visual effect (instead of glow)
+                laser.setTint(0xffff00);
+            });
+        }
+    }
+
+    showPowerupText(text) {
+        const powerupText = this.add.text(400, 300, text, {
+            fontSize: '32px',
+            fontFamily: 'Arial',
+            fontWeight: 'bold',
+            fill: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 4
+        }).setOrigin(0.5);
+
+        // Animation
+        this.tweens.add({
+            targets: powerupText,
+            scale: 1.5,
+            duration: 1000,
+            ease: 'Bounce.easeOut',
+            onComplete: () => {
+                this.tweens.add({
+                    targets: powerupText,
+                    alpha: 0,
+                    y: 250,
+                    duration: 1000,
+                    onComplete: () => {
+                        powerupText.destroy();
+                    }
+                });
+            }
+        });
+    }
+
+    createExplosion(x, y, scale) {
+        // Create particle explosion
+        const emitter = this.particles.createEmitter({
+            x: x,
+            y: y,
+            speed: { min: 50, max: 200 },
+            angle: { min: 0, max: 360 },
+            scale: { start: scale, end: 0 },
+            blendMode: 'ADD',
+            lifespan: 500,
+            gravityY: 300
+        });
+
+        // Emit particles then destroy
+        emitter.explode(15);
+        this.time.delayedCall(500, () => {
+            emitter.stop();
+        });
+    }
+
+    levelComplete() {
+        // Stop all balls and properly clean up their resources
+        this.balls.forEach(ball => {
+            ball.setVelocity(0, 0);
+
+            // Create celebration particles
+            this.createExplosion(ball.x, ball.y, 1);
+
+            // Stop and completely remove the ball's particle emitter before destroying
+            if (ball.emitter) {
+                ball.emitter.stop();
+                ball.emitter.remove();
+                ball.emitter = null;
+            }
+
+            // Remove ball
+            ball.destroy();
+        });
+
+        // Clear balls array
+        this.balls = [];
+
+        // Force scene to remove any lingering ball sprites
+        this.children.each(child => {
+            if (child.texture && child.texture.key === 'assets' && child.frame && child.frame.name === 'ball1') {
+                if (child.emitter) {
+                    child.emitter.stop();
+                    child.emitter.remove();
+                    child.emitter = null;
+                }
+                child.destroy();
+            }
+        });
+
+        // Play level complete sound
+        this.levelCompleteSound.play();
+
+        // Show level complete text
+        const levelCompleteText = this.add.text(400, 300, 'LEVEL COMPLETE!', {
+            fontSize: '48px',
+            fontFamily: 'Arial',
+            fontWeight: 'bold',
+            fill: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 6
+        }).setOrigin(0.5);
+
+        // Animation
+        this.tweens.add({
+            targets: levelCompleteText,
+            scale: 1.5,
+            duration: 1000,
+            ease: 'Sine.easeInOut',
+            yoyo: true,
+            onComplete: () => {
+                levelCompleteText.destroy();
+
+                // Increase level
+                this.level++;
+                this.levelText.setText('Level: ' + this.level);
+
+                // Clear powerups
+                this.clearPowerups();
+
+                // Start next level
+                this.resetLevel();
+            }
+        });
+    }
+
+    clearPowerups() {
+        // Remove all powerups
+        this.powerups.clear(true, true);
+
+        // Deactivate all powerups
+        this.expandedPaddle = false;
+        this.slowedBall = false;
+        this.laserActive = false;
+
+        // Reset paddle size
+        this.paddle.setScale(1, 1);
+
+        // Remove laser guns if they exist
+        if (this.laserGuns) {
+            this.laserGuns.forEach(gun => gun.destroy());
+        }
+    }
+
+    resetBall() {
+        // Clear all existing balls
+        this.balls.forEach(ball => {
+            if (ball.emitter) {
+                ball.emitter.stop();
+                ball.emitter.remove();
+                ball.emitter = null;
+            }
+            ball.destroy();
+        });
+        this.balls = [];
+
+        // Clean up any lingering ball sprites that might have been missed
+        this.children.each(child => {
+            if (child.texture && child.texture.key === 'assets' && child.frame && child.frame.name === 'ball1') {
+                if (child.emitter) {
+                    child.emitter.stop();
+                    child.emitter.remove();
+                    child.emitter = null;
+                }
+                child.destroy();
+            }
+        });
+
+        // Create new ball on paddle
+        this.createBall(true);
+
+        // Reestablish physics colliders for the new ball
+        this.physics.add.collider(this.balls, this.bricks, this.hitBrick, null, this);
+        this.physics.add.collider(this.balls, this.paddle, this.hitPaddle, null, this);
+    }
+
+    resetLevel() {
+        // Exhaustively clear lingering objects before starting new level
+        this.tweens.killAll();
+        this.lasers.clear(true, true);
+        this.powerups.clear(true, true);
+        this.bricks.clear(true, true);
+
+        // Make sure to destroy the old paddle before creating a new one
+        if (this.paddle) {
+            this.paddle.destroy();
+        }
+
+        // Clean up any remaining particle emitters
+        if (this.particles) {
+            this.particles.emitters.getAll().forEach(emitter => {
+                emitter.stop();
+                emitter.remove();
+            });
+        }
+
+        // Reset game objects by recreating the level (the paddle and ball will be created in createLevel)
+        this.createLevel();
+
+        // Do a final check for any lingering ball objects
+        this.children.each(child => {
+            if (child.type === 'Sprite' && child.texture.key === 'assets' && child.frame.name === 'ball1') {
+                if (child.emitter) {
+                    child.emitter.stop();
+                    child.emitter.remove();
+                }
+                child.destroy();
+            }
+        });
+    }
+
+    gameOver() {
+        // Stop background music
+        this.bgMusic.stop();
+
+        // Play game over sound
+        this.gameOverSound.play();
+
+        // Show game over text
+        const gameOverText = this.add.text(400, 250, 'GAME OVER', {
+            fontSize: '64px',
+            fontFamily: 'Arial',
+            fontWeight: 'bold',
+            fill: '#ff0000',
+            stroke: '#000000',
+            strokeThickness: 6
+        }).setOrigin(0.5);
+
+        // Show final score
+        const scoreText = this.add.text(400, 350, `Final Score: ${this.score}`, {
+            fontSize: '32px',
+            fontFamily: 'Arial',
+            fill: '#ffffff'
+        }).setOrigin(0.5);
+
+        // Create restart button
+        const restartButton = this.add.text(400, 450, 'PLAY AGAIN', {
+            fontSize: '24px',
+            fontFamily: 'Arial',
+            fill: '#ffffff',
+            backgroundColor: '#e94560',
+            padding: { x: 20, y: 10 }
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+        // Button hover effect
+        restartButton.on('pointerover', () => {
+            restartButton.setStyle({ fill: '#000000' });
+        });
+
+        restartButton.on('pointerout', () => {
+            restartButton.setStyle({ fill: '#ffffff' });
+        });
+
+        // Restart game on click
+        restartButton.on('pointerdown', () => {
+            this.scene.start('MainMenuScene');
+        });
+    }
+
+    update() {
+        // Update laser guns position if active
+        if (this.laserActive && this.laserGuns) {
+            this.laserGuns[0].x = this.paddle.x - 40;
+            this.laserGuns[0].y = this.paddle.y - 10;
+            this.laserGuns[1].x = this.paddle.x + 40;
+            this.laserGuns[1].y = this.paddle.y - 10;
+        }
+
+        // Check if any ball is below the screen
+        for (let i = this.balls.length - 1; i >= 0; i--) {
+            const ball = this.balls[i];
+
+            if (ball.y > 600) {
+                // Remove ball
+                if (ball.emitter) {
+                    ball.emitter.stop();
+                    ball.emitter.remove();
+                }
+                ball.destroy();
+                this.balls.splice(i, 1);
+
+                // If it was the last ball, lose a life
+                if (this.balls.length === 0) {
+                    this.lives--;
+                    this.livesText.setText('Lives: ' + this.lives);
+
+                    if (this.lives <= 0) {
+                        this.gameOver();
+                    } else {
+                        this.resetBall();
+                    }
+                }
+            }
+        }
+
+        // Remove lasers that go off screen
+        this.lasers.getChildren().forEach(laser => {
+            if (laser.y < 0) {
+                laser.destroy();
+            }
+        });
+
+        // Remove powerups that go off screen
+        this.powerups.getChildren().forEach(powerup => {
+            if (powerup.y > 600) {
+                powerup.destroy();
+            }
+        });
+    }
+
+    // Level generation methods
+    generateSymmetricPattern(rows, cols) {
+        const pattern = [];
+        // Create an artistically pleasing symmetric pattern
+        for (let row = 0; row < rows; row++) {
+            pattern[row] = [];
+            for (let col = 0; col < cols; col++) {
+                // Arcade-style symmetric pattern with spaces for gameplay
+                if ((row === 0 || row === rows - 1) || 
+                    (col === 0 || col === cols - 1) || 
+                    (row === Math.floor(rows/3) && col > 1 && col < cols - 2) ||
+                    (row === Math.floor(rows*2/3) && col > 1 && col < cols - 2)) {
+                    pattern[row][col] = 1;
+                } else {
+                    pattern[row][col] = 0;
+                }
+            }
+        }
+        return pattern;
+    }
+
+    generateArchPattern(rows, cols) {
+        const pattern = [];
+        // Create an arch pattern reminiscent of classic arcade games
+        const centerCol = Math.floor(cols / 2);
+        
+        for (let row = 0; row < rows; row++) {
+            pattern[row] = [];
+            for (let col = 0; col < cols; col++) {
+                // Create multiple arches
+                const distFromCenter = Math.abs(col - centerCol);
+                const archHeight = Math.floor(rows / 2) - Math.floor(distFromCenter / 2);
+                
+                if (row < archHeight && row > 0) {
+                    pattern[row][col] = 1;
+                } else if (row === 0 && col % 3 === 0) {
+                    // Top row decorations
+                    pattern[row][col] = 1;
+                } else if (row === rows - 1) {
+                    // Bottom row full
+                    pattern[row][col] = 1;
+                } else {
+                    pattern[row][col] = 0;
+                }
+            }
+        }
+        return pattern;
+    }
+
+    generateInvadersPattern(rows, cols) {
+        const pattern = [];
+        // Create a space invaders inspired pattern
+        for (let row = 0; row < rows; row++) {
+            pattern[row] = [];
+            for (let col = 0; col < cols; col++) {
+                // Skip every third row for spacing
+                if (row % 3 === 2) {
+                    pattern[row][col] = 0;
+                    continue;
+                }
+                
+                // Create invader-like shapes
+                if (col % 4 === 0 || col % 4 === 3) {
+                    pattern[row][col] = 0;
+                } else if ((row % 3 === 0 && col % 2 === 0) || 
+                           (row % 3 === 1)) {
+                    pattern[row][col] = 1;
+                } else {
+                    pattern[row][col] = 0;
+                }
+            }
+        }
+        return pattern;
+    }
+
+    generatePyramidPattern(rows, cols) {
+        const pattern = [];
+        const centerCol = Math.floor(cols / 2);
+        
+        for (let row = 0; row < rows; row++) {
+            pattern[row] = [];
+            for (let col = 0; col < cols; col++) {
+                // Calculate how wide each row of the pyramid should be
+                const pyramidWidth = Math.floor((rows - row) * (cols / rows) * 0.8);
+                const halfWidth = Math.floor(pyramidWidth / 2);
+                
+                if (col >= centerCol - halfWidth && col <= centerCol + halfWidth) {
+                    pattern[row][col] = 1;
+                } else {
+                    pattern[row][col] = 0;
+                }
+            }
+        }
+        return pattern;
+    }
+
+    generateWavePattern(rows, cols) {
+        const pattern = [];
+        // Create a wave pattern that's visually interesting
+        for (let row = 0; row < rows; row++) {
+            pattern[row] = [];
+            for (let col = 0; col < cols; col++) {
+                // Create sine wave pattern
+                const waveHeight = Math.floor(Math.sin((col / cols) * Math.PI * 2) * 1.5);
+                const waveRow = Math.floor(rows / 2) + waveHeight;
+                
+                if (Math.abs(row - waveRow) <= 1 || 
+                    row === 0 || 
+                    row === rows - 1 || 
+                    col === 0 || 
+                    col === cols - 1) {
+                    pattern[row][col] = 1;
+                } else {
+                    pattern[row][col] = 0;
+                }
+            }
+        }
+        return pattern;
+    }
+
+    generateTargetPattern(rows, cols) {
+        const pattern = [];
+        // Create a target/bullseye pattern
+        const centerRow = Math.floor(rows / 2);
+        const centerCol = Math.floor(cols / 2);
+        
+        for (let row = 0; row < rows; row++) {
+            pattern[row] = [];
+            for (let col = 0; col < cols; col++) {
+                // Calculate distance from center
+                const rowDist = Math.abs(row - centerRow);
+                const colDist = Math.abs(col - centerCol);
+                const distance = Math.sqrt(rowDist * rowDist + colDist * colDist);
+                
+                // Create concentric circles
+                if (Math.floor(distance) % 2 === 0) {
+                    pattern[row][col] = 1;
+                } else {
+                    pattern[row][col] = 0;
+                }
+            }
+        }
+        return pattern;
+    }
+}
+
+const config = {
+    type: Phaser.AUTO,
+    width: 800,
+    height: 600,
+    parent: 'phaser-example',
+    physics: {
+        default: 'arcade',
+        arcade: {
+            debug: false
+        }
+    },
+    scene: [BootScene, MainMenuScene, Breakout]
+};
+
+const game = new Phaser.Game({
+    ...config,
+    preserveDrawingBuffer: true // This will override the initial value
+});
+</script>
+</body>
+</html>

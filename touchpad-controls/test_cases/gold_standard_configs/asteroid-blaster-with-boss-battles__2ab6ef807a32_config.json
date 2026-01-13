@@ -1,0 +1,47 @@
+{
+  "layout": "auto",
+  "bindings": {
+    "primary": "Space",
+    "pause": "KeyP",
+    "magnitude": "ArrowUp",
+    "move": {
+      "left": "ArrowLeft",
+      "right": "ArrowRight"
+    }
+  },
+  "action_meta": {
+    "primary": {
+      "behavior": "discrete",
+      "interaction": "tap",
+      "simultaneous": true,
+      "kind": "button"
+    },
+    "pause": {
+      "behavior": "discrete",
+      "interaction": "tap",
+      "simultaneous": false,
+      "kind": "button"
+    },
+    "magnitude": {
+      "behavior": "continuous",
+      "interaction": "hold",
+      "simultaneous": true,
+      "control_space": "magnitude",
+      "activation": "hold",
+      "direction_mode": "cardinal",
+      "granularity": "fine",
+      "kind": "button"
+    },
+    "move": {
+      "behavior": "continuous",
+      "interaction": "hold",
+      "simultaneous": true,
+      "control_space": "rate",
+      "activation": "hold",
+      "direction_mode": "cardinal",
+      "granularity": "fine",
+      "kind": "axis"
+    }
+  },
+  "source_output": "test_cases/outputs/top_voted/asteroid-blaster-with-boss-battles__2ab6ef807a32_touch_embedded.html"
+}

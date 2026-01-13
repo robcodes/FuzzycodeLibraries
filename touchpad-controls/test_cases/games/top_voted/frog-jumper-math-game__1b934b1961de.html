@@ -1,0 +1,417 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Frog Survivor</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #87CEEB;
+        }
+        #gameCanvas {
+            border: 2px solid black;
+            background-image: url('https://fuzzycode.dev/@aws/image_buddy_365day_cache/uploads/1c159ab3-db18-4cfe-847d-0342d6f3038c/Pond%20Background!resize_400x600_8c687a3022.png');
+            background-repeat: repeat-y;
+            background-position: center;
+            background-size: 100% auto;
+            animation: scrollBackground 20s linear infinite;
+        }
+        @keyframes scrollBackground {
+            from {
+                background-position: 0px 0px;
+            }
+            to {
+                background-position: 0px 100vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas size to window size
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        const frogImg = new Image();
+        frogImg.src = 'https://fuzzycode.dev/@images/fast_ai?search=cartoon%20frog&resize=50x50&transparency=true';
+
+        const crocImg = new Image();
+        crocImg.src = 'https://fuzzycode.dev/@images/fast_ai?search=cartoon%20crocodile&resize=70x70&transparency=true';
+
+        const lilypadImg = new Image();
+        lilypadImg.src = 'https://fuzzycode.dev/@images/fast_ai?search=lilypad&resize=80x40&transparency=true';
+
+        let frog = { x: canvas.width / 2, y: canvas.height - 100 };
+        let croc = { x: canvas.width / 2, y: canvas.height + 50 };
+        let lilypads = [];
+        let previousPad = null;
+        let score = 0;
+        let level = 1;
+        let jumps = 0;
+        let gameStartTime = Date.now();
+        let cameraOffset = 0;
+        const CAMERA_FOLLOW_Y = canvas.height * 0.6;
+
+        function generateMathProblem() {
+            const a = Math.floor(Math.random() * 10) + 1;
+            const b = Math.floor(Math.random() * 10) + 1;
+            const operator = Math.random() < 0.5 ? '+' : '-';
+            const answer = operator === '+' ? a + b : a - b;
+            return { question: `${a} ${operator} ${b}`, answer };
+        }
+
+        function createLilypads() {
+            const problem = generateMathProblem();
+            const correctPad = Math.floor(Math.random() * 3);
+            if (previousPad) {
+                previousPad.x = canvas.width / 2 - 40;
+            }
+            lilypads = [
+                { x: 50, y: frog.y - 100, answer: correctPad === 0 ? problem.answer : Math.floor(Math.random() * 20) },
+                { x: canvas.width / 2 - 40, y: frog.y - 100, answer: correctPad === 1 ? problem.answer : Math.floor(Math.random() * 20) },
+                { x: canvas.width - 130, y: frog.y - 100, answer: correctPad === 2 ? problem.answer : Math.floor(Math.random() * 20) }
+            ];
+            return problem;
+        }
+
+        let currentProblem = createLilypads();
+
+        function drawGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.save();
+            ctx.translate(0, cameraOffset);
+
+            // Draw previous lilypad if exists
+            if (previousPad) {
+                ctx.drawImage(lilypadImg, previousPad.x, frog.y);
+                ctx.fillStyle = 'black';
+                ctx.font = '20px Arial';
+                ctx.fillText(previousPad.answer, previousPad.x + 30, frog.y + 30);
+            }
+            
+            // Draw lilypads
+            lilypads.forEach((pad, index) => {
+                ctx.drawImage(lilypadImg, pad.x, pad.y);
+                ctx.fillStyle = 'black';
+                ctx.font = '20px Arial';
+                ctx.fillText(pad.answer, pad.x + 30, pad.y + 30);
+                
+                // Draw key indicators
+                ctx.fillStyle = 'white';
+                ctx.strokeStyle = 'black';
+                ctx.lineWidth = 2;
+                let keyText = index === 0 ? '←' : index === 1 ? '↑' : '→';
+                ctx.fillText(keyText, pad.x + 30, pad.y - 10);
+                ctx.strokeText(keyText, pad.x + 30, pad.y - 10);
+            });
+
+            // Draw frog
+            ctx.drawImage(frogImg, frog.x - 25, frog.y - 25);
+
+            // Draw crocodile
+            ctx.drawImage(crocImg, croc.x - 35, croc.y - 35);
+
+            ctx.restore();
+
+            // Draw score and level
+            ctx.fillStyle = 'black';
+            ctx.font = '20px Arial';
+            ctx.fillText(`Score: ${score}`, 10, 30);
+            ctx.fillText(`Level: ${level}`, canvas.width - 100, 30);
+
+            // Draw current problem
+            ctx.fillText(`${currentProblem.question} = ?`, canvas.width / 2 - 50, 30);
+        }
+
+        function moveCrocodile() {
+            if (Date.now() - gameStartTime > 3000) {
+                croc.y -= 0.5;
+                if (croc.y < frog.y + 50) {
+                    gameOver();
+                }
+            }
+        }
+
+        let gameIsOver = false;
+
+        function gameOver() {
+            if (gameIsOver) return;
+            gameIsOver = true;
+
+            const gameOverDiv = document.createElement('div');
+            gameOverDiv.style.position = 'absolute';
+            gameOverDiv.style.top = '50%';
+            gameOverDiv.style.left = '50%';
+            gameOverDiv.style.transform = 'translate(-50%, -50%)';
+            gameOverDiv.style.backgroundColor = 'white';
+            gameOverDiv.style.padding = '20px';
+            gameOverDiv.style.borderRadius = '10px';
+            gameOverDiv.style.textAlign = 'center';
+
+            const playAgainButton = document.createElement('button');
+            playAgainButton.textContent = 'Play Again';
+            playAgainButton.addEventListener('click', () => {
+                window.location.reload();
+            });
+
+            gameOverDiv.innerHTML = `
+                <h2>Game Over!</h2>
+                <p>Your score: ${score}</p>
+            `;
+            gameOverDiv.appendChild(playAgainButton);
+            document.body.appendChild(gameOverDiv);
+        }
+
+        function jump(direction) {
+            let targetPad;
+            switch (direction) {
+                case 'left':
+                    targetPad = lilypads[0];
+                    break;
+                case 'up':
+                    targetPad = lilypads[1];
+                    break;
+                case 'right':
+                    targetPad = lilypads[2];
+                    break;
+            }
+
+            const startX = frog.x;
+            const startY = frog.y;
+            const endX = targetPad.x + 40;
+            const endY = targetPad.y;
+            const jumpDuration = 500; // 500ms for the jump
+            const startTime = Date.now();
+
+            function animateJump() {
+                const currentTime = Date.now();
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / jumpDuration, 1);
+
+                // Add a slight arc to the jump using sine
+                const arcHeight = 50;
+                const yOffset = Math.sin(progress * Math.PI) * arcHeight;
+
+                // Calculate scale based on height of jump
+                const scale = 1 + (yOffset / 200); // Max scale will be 1.25x at peak of jump
+
+                frog.x = startX + (endX - startX) * progress;
+                frog.y = startY + (endY - startY) * progress - yOffset;
+
+                // Update camera offset to follow frog
+                if (frog.y < CAMERA_FOLLOW_Y) {
+                    cameraOffset = CAMERA_FOLLOW_Y - frog.y;
+                }
+
+                // Save the current context state
+                ctx.save();
+                // Clear the previous frame
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                // Save current transform state
+                ctx.save();
+                // Apply camera offset
+                ctx.translate(0, cameraOffset);
+                // Draw lilypads
+                lilypads.forEach((pad, index) => {
+                    ctx.drawImage(lilypadImg, pad.x, pad.y);
+                    ctx.fillStyle = 'black';
+                    ctx.font = '20px Arial';
+                    ctx.fillText(pad.answer, pad.x + 30, pad.y + 30);
+                });
+                // Draw crocodile
+                ctx.drawImage(crocImg, croc.x - 35, croc.y - 35);
+                // Set up frog transform
+                ctx.translate(frog.x, frog.y);
+                ctx.scale(scale, scale);
+                // Draw frog
+                ctx.drawImage(frogImg, -25, -25);
+                ctx.restore();
+
+                // Draw UI elements (score, level, problem)
+                ctx.fillStyle = 'black';
+                ctx.font = '20px Arial';
+                ctx.fillText(`Score: ${score}`, 10, 30);
+                ctx.fillText(`Level: ${level}`, canvas.width - 100, 30);
+                ctx.fillText(`${currentProblem.question} = ?`, canvas.width / 2 - 50, 30);
+
+                if (progress < 1) {
+                    requestAnimationFrame(animateJump);
+                } else {
+                    frog.x = endX;
+                    frog.y = endY;
+
+                    if (targetPad.answer === currentProblem.answer) {
+                        score += 10;
+                        jumps++;
+                        if (jumps === 10) {
+                            level++;
+                            jumps = 0;
+                        }
+
+                        previousPad = {
+                            x: targetPad.x,
+                            y: targetPad.y,
+                            answer: targetPad.answer
+                        };
+
+                        // Clear existing lilypads immediately
+                        lilypads = [];
+
+                        // If not in middle position, animate to middle
+                        if (targetPad !== lilypads[1]) {
+                            const floatStartTime = Date.now();
+                            const floatDuration = 500;
+                            const startX = previousPad.x;
+                            const endX = canvas.width / 2 - 40;
+
+                            function animateFloat() {
+                                const currentTime = Date.now();
+                                const elapsed = currentTime - floatStartTime;
+                                const progress = Math.min(elapsed / floatDuration, 1);
+
+                                previousPad.x = startX + (endX - startX) * progress;
+                                frog.x = previousPad.x + 40; // Update frog position to stay on lilypad
+                                
+                                drawGame(); // Ensure continuous rendering during animation
+
+                                if (progress < 1) {
+                                    requestAnimationFrame(animateFloat);
+                                } else {
+                                    currentProblem = createLilypads();
+                                }
+                            }
+                            animateFloat();
+                        } else {
+                            currentProblem = createLilypads();
+                        }
+                        croc.y = Math.min(croc.y + 50, canvas.height);
+                    } else {
+                        // Remove the wrong pad from lilypads array
+                        lilypads = lilypads.filter(pad => pad !== targetPad);
+                        
+                        // Sinking animation
+                        const sinkStartTime = Date.now();
+                        const sinkDuration = 1000;
+                        const originalY = frog.y;
+                        const originalScale = 1;
+                        const sinkingX = frog.x;
+                        frog.x = -1000; // Move frog off-screen during sinking animation
+                        
+                        function animateSinking() {
+                            const currentTime = Date.now();
+                            const elapsed = currentTime - sinkStartTime;
+                            const progress = Math.min(elapsed / sinkDuration, 1);
+                            
+                            // Scale down to 30% (0.3) of original size
+                            const scale = originalScale * (1 - (0.7 * progress));
+                            
+                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                            
+                            ctx.save();
+                            ctx.translate(0, cameraOffset);
+                            
+                            // Draw remaining lilypads
+                            lilypads.forEach((pad) => {
+                                ctx.drawImage(lilypadImg, pad.x, pad.y);
+                                ctx.fillStyle = 'black';
+                                ctx.font = '20px Arial';
+                                ctx.fillText(pad.answer, pad.x + 30, pad.y + 30);
+                            });
+                            
+                            // Draw sinking pad and frog
+                            ctx.save();
+                            ctx.translate(sinkingX, originalY);
+                            ctx.scale(scale, scale);
+                            ctx.drawImage(lilypadImg, -40, -20);
+                            ctx.drawImage(frogImg, -25, -25);
+                            ctx.restore();
+                            
+                            // Draw crocodile
+                            ctx.drawImage(crocImg, croc.x - 35, croc.y - 35);
+                            
+                            ctx.restore();
+                            
+                            // Draw UI
+                            ctx.fillStyle = 'black';
+                            ctx.font = '20px Arial';
+                            ctx.fillText(`Score: ${score}`, 10, 30);
+                            ctx.fillText(`Level: ${level}`, canvas.width - 100, 30);
+                            ctx.fillText(`${currentProblem.question} = ?`, canvas.width / 2 - 50, 30);
+                            
+                            if (progress < 1) {
+                                requestAnimationFrame(animateSinking);
+                            } else {
+                                gameOver();
+                            }
+                        }
+                        
+                        animateSinking();
+                    }
+                }
+            }
+
+            animateJump();
+        }
+
+        document.addEventListener('keydown', (e) => {
+            switch (e.key) {
+                case 'ArrowLeft':
+                    jump('left');
+                    break;
+                case 'ArrowUp':
+                    jump('up');
+                    break;
+                case 'ArrowRight':
+                    jump('right');
+                    break;
+            }
+        });
+
+        canvas.addEventListener('click', handleClick);
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            handleClick(e.touches[0]);
+        });
+
+        function handleClick(event) {
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = (event.clientY - rect.top);
+
+            lilypads.forEach((pad, index) => {
+                const padScreenY = pad.y + cameraOffset;
+                if (x >= pad.x && x <= pad.x + 80 && 
+                    y >= padScreenY && y <= padScreenY + 40) {
+                    switch(index) {
+                        case 0: jump('left'); break;
+                        case 1: jump('up'); break;
+                        case 2: jump('right'); break;
+                    }
+                }
+            });
+        }
+
+        function gameLoop() {
+            drawGame();
+            moveCrocodile();
+            requestAnimationFrame(gameLoop);
+        }
+
+        gameLoop();
+    </script>
+</body>
+</html>

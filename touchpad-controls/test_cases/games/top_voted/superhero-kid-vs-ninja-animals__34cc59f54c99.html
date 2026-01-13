@@ -1,0 +1,987 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Super Kid Hero vs Evil Ninja Animals</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: #5dc9ff;
+      color: #333;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      text-align: center;
+      background-image: url('https://images.fuzzycode.dev/fast_ai?search=cartoon%20city%20skyline%20background&resize=800x600');
+      background-size: cover;
+      background-position: bottom;
+    }
+    #gameCanvas {
+      display: block;
+      margin: 20px auto;
+      background: transparent;
+      border: 4px solid #ff6b6b;
+      border-radius: 10px;
+      position: relative;
+      box-shadow: 0 0 15px rgba(0,0,0,0.3);
+    }
+    #ui {
+      position: relative;
+      width: 800px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 15px;
+      padding: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+    #scoreDisplay, #livesDisplay, #levelDisplay {
+      display: inline-block;
+      margin: 10px;
+      font-size: 22px;
+      font-weight: bold;
+      color: #ff5722;
+      text-shadow: 1px 1px 2px #fff;
+    }
+    #messageDisplay {
+      display: block;
+      font-size: 28px;
+      margin-top: 15px;
+      height: 40px;
+      overflow: hidden;
+      color: #e91e63;
+      font-weight: bold;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+    #title {
+      font-size: 40px;
+      color: #ff3d00;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+      margin: 20px 0;
+      font-weight: bold;
+    }
+    #controls {
+      margin: 10px auto;
+      font-size: 16px;
+      color: #333;
+      background: rgba(255, 255, 255, 0.7);
+      width: 800px;
+      border-radius: 10px;
+      padding: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1 id="title">SUPER KID HERO vs EVIL NINJA ANIMALS</h1>
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
+  <div id="ui">
+    <div id="scoreDisplay">Stunned: 0</div>
+    <div id="livesDisplay">Health: 3</div>
+    <div id="levelDisplay">Level: 1</div>
+    <div id="messageDisplay"></div>
+  </div>
+  <div id="controls">
+    Use ← → to move | SPACE to shoot slingshot | R to restart | Current Ammo: <span id="ammoDisplay">Pebbles</span>
+  </div>
+  <script>
+    // Canvas
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // UI elements
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const livesDisplay = document.getElementById('livesDisplay');
+    const levelDisplay = document.getElementById('levelDisplay');
+    const messageDisplay = document.getElementById('messageDisplay');
+
+    // Images
+    const playerImage = new Image();
+    playerImage.src = "https://images.fuzzycode.dev/fast_ai?search=cartoon%20superhero%20kid%20with%20cape&resize=64x64&transparency=true";
+
+    const enemySources = [
+      "https://images.fuzzycode.dev/fast_ai?search=cartoon%20evil%20ninja%20raccoon&resize=64x64&transparency=true",
+      "https://images.fuzzycode.dev/fast_ai?search=cartoon%20evil%20ninja%20squirrel&resize=48x48&transparency=true",
+      "https://images.fuzzycode.dev/fast_ai?search=cartoon%20evil%20ninja%20fox&resize=56x56&transparency=true",
+      "https://images.fuzzycode.dev/fast_ai?search=cartoon%20evil%20ninja%20skunk&resize=52x52&transparency=true"
+    ];
+    const loadedEnemyImages = [];
+    enemySources.forEach((src, i) => {
+      const img = new Image();
+      img.src = src;
+      loadedEnemyImages[i] = img;
+    });
+    const bossImage = new Image();
+    bossImage.src = "https://images.fuzzycode.dev/fast_ai?search=cartoon%20giant%20evil%20ninja%20bear%20boss&resize=128x128&transparency=true";
+    const powerupImage = new Image();
+    powerupImage.src = "https://images.fuzzycode.dev/fast_ai?search=cartoon%20first%20aid%20kit&resize=32x32&transparency=true";
+
+    // Background
+    const backgroundImage = new Image();
+    backgroundImage.src = "https://images.fuzzycode.dev/fast_ai?search=cartoon%20park%20background&resize=800x600";
+
+    // Sounds
+    const shootSound = new Audio("https://sounds.fuzzycode.dev/sound_effect?prompt=slingshot%20firing%20pebble&duration=0.5&ext=.mp3");
+    const stickSound = new Audio("https://sounds.fuzzycode.dev/sound_effect?prompt=throwing%20stick%20whoosh&duration=0.5&ext=.mp3");
+    const rockSound = new Audio("https://sounds.fuzzycode.dev/sound_effect?prompt=throwing%20heavy%20rock&duration=0.5&ext=.mp3");
+    const explosionSound = new Audio("https://sounds.fuzzycode.dev/sound_effect?prompt=cute%20animal%20being%20stunned&duration=0.5&ext=.mp3");
+    const powerupSound = new Audio("https://sounds.fuzzycode.dev/sound_effect?prompt=powerup%20pickup%20cartoonish&duration=0.5&ext=.mp3");
+    const bossSound = new Audio("https://sounds.fuzzycode.dev/sound_effect?prompt=big%20angry%20bear%20roar%20cartoon&duration=1&ext=.mp3");
+    const gameMusic = new Audio("https://sounds.fuzzycode.dev/music?prompt=upbeat%20superhero%20kids%20adventure%20music&duration=30&ext=.mp3");
+    gameMusic.loop = true;
+    gameMusic.volume = 0.5;
+
+    // Player variables
+    let playerX = canvas.width / 2 - 32;
+    let playerY = canvas.height - 80;
+    const playerWidth = 64;
+    const playerHeight = 64;
+    let playerSpeed = 6;
+    let playerLives = 3;
+    let canShoot = true;
+    let shootCooldown = 400;
+    let isPlayerInvincible = false;
+    let playerFlashTimer = 0;
+
+    // Ammo types
+    const boomerangSound = new Audio("https://sounds.fuzzycode.dev/sound_effect?prompt=cartoon%20boomerang%20whoosh&duration=1&ext=.mp3");
+
+    const ammoTypes = [
+      { name: "Pebbles", damage: 1, speed: 8, size: 6, color: "#777777", cooldown: 400, sound: shootSound },
+      { name: "Sticks", damage: 2, speed: 7, size: 10, color: "#8B4513", cooldown: 500, sound: stickSound },
+      { name: "Rocks", damage: 3, speed: 6, size: 12, color: "#A0522D", cooldown: 600, sound: rockSound },
+      { name: "Boomerang", damage: 2, speed: 6, size: 20, color: "#FFD700", cooldown: 1000, sound: boomerangSound, isBoomerang: true }
+    ];
+    let currentAmmo = 0; // Index in ammoTypes
+    const ammoDisplay = document.getElementById('ammoDisplay');
+
+    // Gameplay variables
+    let score = 0;
+    let level = 1;
+    let gameActive = false;
+    let leftPressed = false;
+    let rightPressed = false;
+    let spacePressed = false;
+
+    // Projectiles (pebbles, sticks, rocks)
+    const bullets = [];
+
+    // Enemy projectiles (rabies spit)
+    const enemyBullets = [];
+    const enemyBulletSpeed = 3; // Reduced bullet speed
+    let enemyShootInterval = 2500; // Increased time between shots
+    let lastEnemyShot = 0;
+
+    // Enemies (ninja animals)
+    let enemies = [];
+    let enemyRows = 3;
+    let enemyCols = 6;
+    let enemySpeed = 0.8; // Reduced initial speed for easier start
+    let enemyDirection = 1; // 1 = right, -1 = left
+    let enemyDescend = 20;
+    let enemyTypes = [0, 1, 2, 3]; // Raccoon, squirrel, fox, skunk
+
+    // Boss (giant rabid bear)
+    let boss = null;
+
+    // Powerups (health kits)
+    const powerups = [];
+    let powerupChance = 0.1; // 10% chance after an enemy is cured
+
+    // Special effects
+    const cureEffects = [];
+
+    // Timers
+    let lastFrameTime = 0;
+
+    function initGame() {
+      score = 0;
+      playerLives = 3;
+      level = 1;
+      updateScore();
+      updateLives();
+      updateLevel();
+      spawnWave();
+      displayMessage("Press SPACE to Start!");
+      gameActive = false;
+
+      // Start background music
+      try {
+        gameMusic.currentTime = 0;
+        gameMusic.play().catch(e => console.log("Audio play prevented:", e));
+      } catch (e) {
+        console.log("Audio error:", e);
+      }
+    }
+
+    function startLevel() {
+      gameActive = true;
+      displayMessage("");
+    }
+
+    function spawnWave() {
+      enemies = [];
+      boss = null;
+      const offsetX = 80;
+      const offsetY = 80;
+      
+      // In early levels, limit the types of enemies that can appear
+      const availableTypes = level <= 2 ? [0] : // Only raccoons in first 2 levels
+                           level <= 4 ? [0, 1] : // Add squirrels in levels 3-4
+                           level <= 6 ? [0, 1, 2] : // Add foxes in levels 5-6
+                           enemyTypes; // All types after level 6
+      
+      for (let r = 0; r < enemyRows; r++) {
+        for (let c = 0; c < enemyCols; c++) {
+          const typeIndex = availableTypes[Math.floor(Math.random() * availableTypes.length)];
+          const size = typeIndex === 0 ? 64 : 
+                      typeIndex === 1 ? 48 : 
+                      typeIndex === 2 ? 56 : 52;
+
+          // Reduce health for early levels
+          let healthMultiplier = Math.min(1, 0.5 + (level * 0.1));
+          const baseHealth = typeIndex === 0 ? 1 : 
+                            typeIndex === 1 ? 2 : 
+                            typeIndex === 2 ? 3 : 4;
+          const health = Math.max(1, Math.round(baseHealth * healthMultiplier));
+
+          enemies.push({
+            x: offsetX + c * 80,
+            y: offsetY + r * 60,
+            width: size,
+            height: size,
+            type: typeIndex,
+            hp: health,
+            maxHp: health,
+            jumpTimer: Math.random() * 100,
+            jumpHeight: 0
+          });
+        }
+      }
+      
+      // Boss appears every 5 levels instead of every 3
+      if (level % 5 === 0) {
+        // Boss round
+        spawnBoss();
+      }
+    }
+
+    function spawnBoss() {
+      // Boss HP scales more reasonably with level
+      const bossHP = 10 + Math.floor(level / 3) * 2;
+
+      boss = {
+        x: canvas.width / 2 - 64,
+        y: 80,
+        width: 128,
+        height: 128,
+        hp: bossHP,
+        maxHp: bossHP, // Track max HP for health bar
+        flashTimer: 0,
+        isFlashing: false
+      };
+      bossSound.currentTime = 0;
+      bossSound.play().catch(e => console.log("Audio play prevented:", e));
+    }
+
+    function displayMessage(msg) {
+      messageDisplay.textContent = msg;
+    }
+
+    function updateScore() {
+      scoreDisplay.textContent = "Stunned: " + score;
+    }
+
+    function updateLives() {
+      livesDisplay.textContent = "Health: " + playerLives;
+    }
+
+    function updateLevel() {
+      levelDisplay.textContent = "Level: " + level;
+    }
+
+    function gameOver() {
+      displayMessage("GAME OVER! Press R to Restart");
+      gameActive = false;
+      playerLives = 0; // Ensure player is dead
+
+      // Add event listener for 'R' key to restart the game
+      const restartHandler = function(e) {
+        if (e.key.toLowerCase() === 'r') {
+          document.removeEventListener('keydown', restartHandler);
+          initGame();
+        }
+      };
+      document.addEventListener('keydown', restartHandler);
+    }
+
+    function nextLevel() {
+      level++;
+      updateLevel();
+
+      // More gradual difficulty increase
+      if (level % 2 === 0) { // Only increase rows every other level
+        enemyRows = Math.min(enemyRows + 1, 5);
+      }
+      if (level % 3 === 0) { // Only increase columns every third level
+        enemyCols = Math.min(enemyCols + 1, 8);
+      }
+
+      // Much smaller speed increase
+      enemySpeed += 0.1;
+
+      spawnWave();
+      displayMessage("Level " + level + " - More Ninja Animals to Defeat!");
+      setTimeout(() => {
+        displayMessage("");
+        gameActive = true;
+      }, 2000);
+    }
+
+    // Event Listeners
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowLeft') leftPressed = true;
+      if (e.key === 'ArrowRight') rightPressed = true;
+      if (e.key === ' ') {
+        spacePressed = true;
+        if (!gameActive && playerLives > 0) {
+          // Start or unpause the game
+          startLevel();
+        }
+      }
+      if (e.key.toLowerCase() === 'r' && !gameActive && playerLives <= 0) {
+        initGame();
+      }
+    });
+
+    document.addEventListener('keyup', function (e) {
+      if (e.key === 'ArrowLeft') leftPressed = false;
+      if (e.key === 'ArrowRight') rightPressed = false;
+      if (e.key === ' ') spacePressed = false;
+    });
+
+    function update(dt) {
+      if (!gameActive) return;
+
+      // Move player
+      if (leftPressed) playerX -= playerSpeed;
+      if (rightPressed) playerX += playerSpeed;
+      if (playerX < 0) playerX = 0;
+      if (playerX + playerWidth > canvas.width) playerX = canvas.width - playerWidth;
+
+      // Update player invincibility
+      if (isPlayerInvincible) {
+        playerFlashTimer += dt;
+        if (playerFlashTimer > 1500) {
+          isPlayerInvincible = false;
+          playerFlashTimer = 0;
+        }
+      }
+
+      // Shooting
+      if (spacePressed && canShoot) {
+        shoot();
+        canShoot = false;
+        setTimeout(() => (canShoot = true), shootCooldown);
+      }
+
+      // Update bullets
+      for (let i = 0; i < bullets.length; i++) {
+        // Handle boomerang movement
+        if (bullets[i].isBoomerang) {
+          bullets[i].rotation += 0.2; // Rotate faster for boomerang
+
+          if (!bullets[i].returning) {
+            // Going up
+            bullets[i].y -= bullets[i].speed;
+            // Check if it should return when it reaches the top of the screen
+            if (bullets[i].y <= 0) {
+              bullets[i].returning = true;
+            }
+          } else {
+            // Coming back down
+            bullets[i].y += bullets[i].speed * 0.8;
+
+            // Add slight homing effect toward player
+            if (bullets[i].x + bullets[i].width/2 < playerX + playerWidth/2) {
+              bullets[i].x += 1;
+            } else if (bullets[i].x + bullets[i].width/2 > playerX + playerWidth/2) {
+              bullets[i].x -= 1;
+            }
+
+            // Remove if caught by player or goes off screen
+            if (isColliding(bullets[i].x, bullets[i].y, bullets[i].width, bullets[i].height, 
+                           playerX, playerY, playerWidth, playerHeight)) {
+              bullets.splice(i, 1);
+              i--;
+              continue;
+            }
+          }
+
+          // Remove if it goes too far past the player
+          if (bullets[i].y > canvas.height + 20) {
+            bullets.splice(i, 1);
+            i--;
+            continue;
+          }
+        } else {
+          // Normal bullet behavior
+          bullets[i].y -= bullets[i].speed;
+          bullets[i].rotation += 0.1;
+          if (bullets[i].y < -10) {
+            bullets.splice(i, 1);
+            i--;
+            continue;
+          }
+        }
+      }
+
+      // Update Enemy bullets
+      let currentTime = performance.now();
+      if (currentTime - lastEnemyShot > enemyShootInterval && (enemies.length > 0 || boss)) {
+        shootFromEnemy();
+        lastEnemyShot = currentTime;
+      }
+      for (let i = 0; i < enemyBullets.length; i++) {
+        enemyBullets[i].y += enemyBulletSpeed;
+        enemyBullets[i].rotation = (enemyBullets[i].rotation || 0) + 0.1;
+        if (enemyBullets[i].y > canvas.height + 10) {
+          enemyBullets.splice(i, 1);
+          i--;
+        }
+      }
+
+      // Move enemies with jumping animation
+      let moveDown = false;
+      for (let e of enemies) {
+        e.x += enemySpeed * enemyDirection;
+
+        // Jump animation
+        e.jumpTimer += dt * 0.01;
+        e.jumpHeight = Math.sin(e.jumpTimer) * 5;
+      }
+
+      for (let e of enemies) {
+        if ((enemyDirection > 0 && e.x + e.width > canvas.width - 10) ||
+            (enemyDirection < 0 && e.x < 10)) {
+          moveDown = true;
+          break;
+        }
+      }
+
+      if (moveDown) {
+        for (let e of enemies) {
+          e.y += enemyDescend;
+        }
+        enemyDirection *= -1;
+      }
+
+      // Move boss if present
+      if (boss) {
+        boss.x += 1.5 * Math.sin(currentTime * 0.001);
+
+        // Boss flashing effect when hit
+        if (boss.isFlashing) {
+          boss.flashTimer += dt;
+          if (boss.flashTimer > 200) {
+            boss.isFlashing = false;
+            boss.flashTimer = 0;
+          }
+        }
+      }
+
+      // Check bullet collisions (player bullets vs enemies)
+      for (let i = 0; i < bullets.length; i++) {
+        // Check if bullet still exists at this index
+        if (!bullets[i]) continue;
+        
+        const b = bullets[i];
+        // Skip if bullet is invalid
+        if (!b || typeof b.x === 'undefined' || typeof b.y === 'undefined') continue;
+
+        // Check normal enemies
+        for (let j = 0; j < enemies.length; j++) {
+          // Skip if enemy index is out of bounds (could happen if enemies were removed)
+          if (j >= enemies.length) break;
+          const e = enemies[j];
+          // Make sure enemy exists and has valid properties
+          if (!e || typeof e.x === 'undefined' || typeof e.y === 'undefined') continue;
+          
+          if (isColliding(b.x, b.y, b.width, b.height, e.x, e.y - e.jumpHeight, e.width, e.height)) {
+            // Handle boomerang collision logic
+            if (b.isBoomerang) {
+              // Ensure targetsHit exists
+              if (!b.targetsHit) b.targetsHit = [];
+              
+              // Check if this enemy was already hit by this boomerang
+              const alreadyHit = b.targetsHit.includes(j);
+
+              if (b.returning && alreadyHit) {
+                // On return journey, we've already hit this enemy, so pass through
+                continue;
+              }
+
+              // Add to list of hit targets
+              if (!alreadyHit) {
+                b.targetsHit.push(j);
+              }
+
+              // Apply damage
+              explosionSound.currentTime = 0;
+              explosionSound.play().catch(err => console.log("Audio play prevented:", err));
+              e.hp -= b.damage;
+              // Ensure health doesn't go below zero
+              e.hp = Math.max(0, e.hp);
+
+              // Add stun effect
+              addCureEffect(e.x + e.width/2, e.y + e.height/2);
+
+              // Check if enemy was defeated
+              if (e.hp <= 0) {
+                // cured animal
+                score += 10 * (e.type + 1);
+                updateScore();
+                // chance to drop powerup
+                if (Math.random() < powerupChance) {
+                  spawnPowerup(e.x + e.width / 2, e.y + e.height / 2);
+                }
+                enemies.splice(j, 1);
+                j--;
+              }
+
+              // If we're on the way up, stop the boomerang at the target
+              if (!b.returning) {
+                // Stop the boomerang and make it return
+                b.returning = true;
+                break; // Continue checking other enemies
+              }
+
+              // If we're returning, continue through (don't break)
+            } else {
+              // Normal bullet behavior - apply damage and remove bullet
+              explosionSound.currentTime = 0;
+              explosionSound.play().catch(err => console.log("Audio play prevented:", err));
+              e.hp -= b.damage;
+              bullets.splice(i, 1);
+              i--;
+
+              // Add stun effect
+              addCureEffect(e.x + e.width/2, e.y + e.height/2);
+            }
+
+            // For non-boomerang bullets, ensure health doesn't go below zero and enemy is removed when it reaches zero
+            if (e.hp <= 0) {
+              // cured animal
+              score += 10 * (e.type + 1);
+              updateScore();
+              // chance to drop powerup
+              if (Math.random() < powerupChance) {
+                spawnPowerup(e.x + e.width / 2, e.y + e.height / 2);
+              }
+              enemies.splice(j, 1);
+              j--;
+            } else {
+              // Ensure health is always a positive integer (at least 1)
+              e.hp = Math.max(1, Math.round(e.hp));
+            }
+
+            // For normal bullets, we break after the first hit
+            if (!b.isBoomerang) {
+              break;
+            }
+          }
+        }
+        // Check boss
+        if (boss && i >= 0 && bullets[i]) {
+          if (isColliding(b.x, b.y, b.width, b.height, boss.x, boss.y, boss.width, boss.height)) {
+            explosionSound.currentTime = 0;
+            explosionSound.play().catch(err => console.log("Audio play prevented:", err));
+            boss.hp -= bullets[i].damage;
+            boss.hp = Math.max(0, boss.hp); // Ensure boss health doesn't go negative
+            boss.isFlashing = true;
+            bullets.splice(i, 1);
+            i--;
+
+            // Add stun effect
+            addCureEffect(boss.x + boss.width/2, boss.y + boss.height/2);
+
+            if (boss.hp <= 0) {
+              score += 200;
+              updateScore();
+              boss = null;
+              displayMessage("Boss Defeated! Great Job!");
+              setTimeout(() => {
+                if (enemies.length === 0) {
+                  nextLevel();
+                } else {
+                  displayMessage("");
+                }
+              }, 2000);
+            }
+          }
+        }
+      }
+
+      // Check player collisions with enemy bullets
+      if (!isPlayerInvincible) {
+        for (let i = 0; i < enemyBullets.length; i++) {
+          const eb = enemyBullets[i];
+          if (isColliding(eb.x, eb.y, eb.width, eb.height, playerX, playerY, playerWidth, playerHeight)) {
+            explosionSound.currentTime = 0;
+            explosionSound.play().catch(err => console.log("Audio play prevented:", err));
+            enemyBullets.splice(i, 1);
+            i--;
+            playerLives--;
+            updateLives();
+
+            // Make player temporarily invincible
+            isPlayerInvincible = true;
+
+            if (playerLives <= 0) {
+              gameOver();
+            } else {
+              displayMessage("Ouch! Be careful!");
+              setTimeout(() => {
+                if (gameActive) displayMessage("");
+              }, 1500);
+            }
+          }
+        }
+      }
+
+      // Check powerup collisions
+      for (let i = 0; i < powerups.length; i++) {
+        const p = powerups[i];
+        p.y += 2;
+        p.rotation = (p.rotation || 0) + 0.02;
+        if (isColliding(p.x, p.y, p.width, p.height, playerX, playerY, playerWidth, playerHeight)) {
+          applyPowerup();
+          powerups.splice(i, 1);
+          i--;
+        } else if (p.y > canvas.height) {
+          powerups.splice(i, 1);
+          i--;
+        }
+      }
+
+      // Update cure effects
+      for (let i = 0; i < cureEffects.length; i++) {
+        cureEffects[i].timer -= dt;
+        cureEffects[i].size += dt * 0.05;
+        cureEffects[i].opacity -= dt * 0.002;
+
+        if (cureEffects[i].timer <= 0 || cureEffects[i].opacity <= 0) {
+          cureEffects.splice(i, 1);
+          i--;
+        }
+      }
+
+      // Check if all enemies are destroyed
+      if (enemies.length === 0 && !boss) {
+        nextLevel();
+      }
+
+      // Check if any enemies reached the bottom
+      for (let e of enemies) {
+        if (e.y + e.height > canvas.height - 20) {
+          displayMessage("Animals reached the city! Game Over!");
+          gameOver();
+          // Clear enemies array to stop movement
+          enemies = [];
+          // Clear all bullets to stop movement
+          bullets.length = 0;
+          enemyBullets.length = 0;
+          break;
+        }
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw background
+      ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+
+      // Draw player with flashing effect when invincible
+      if (!isPlayerInvincible || Math.floor(playerFlashTimer / 100) % 2 === 0) {
+        ctx.drawImage(playerImage, playerX, playerY, playerWidth, playerHeight);
+      }
+
+      // Draw projectiles (pebbles, sticks, rocks, boomerangs)
+      for (let b of bullets) {
+        ctx.save();
+        ctx.translate(b.x + b.width/2, b.y + b.height/2);
+        ctx.rotate(b.rotation);
+
+        if (b.type === 0) { // Pebbles
+          ctx.fillStyle = b.color;
+          ctx.beginPath();
+          ctx.arc(0, 0, b.width/2, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (b.type === 1) { // Sticks
+          ctx.fillStyle = b.color;
+          ctx.fillRect(-b.width/2, -b.height/2, b.width, b.height * 1.5);
+        } else if (b.type === 2) { // Rocks
+          ctx.fillStyle = b.color;
+          ctx.beginPath();
+          ctx.moveTo(-b.width/2, -b.height/2);
+          ctx.lineTo(b.width/2, -b.height/3);
+          ctx.lineTo(b.width/3, b.height/2);
+          ctx.lineTo(-b.width/3, b.height/3);
+          ctx.closePath();
+          ctx.fill();
+        } else if (b.type === 3) { // Boomerang
+          ctx.fillStyle = b.color;
+          // Draw boomerang shape
+          ctx.beginPath();
+          // Traditional curved boomerang shape
+          ctx.moveTo(-b.width/2, 0);
+          ctx.quadraticCurveTo(-b.width/4, -b.height/2, b.width/4, -b.height/2);
+          ctx.quadraticCurveTo(b.width/2, -b.height/4, b.width/2, 0);
+          ctx.quadraticCurveTo(b.width/4, b.height/2, -b.width/4, b.height/2);
+          ctx.quadraticCurveTo(-b.width/2, b.height/4, -b.width/2, 0);
+          ctx.closePath();
+          ctx.fill();
+
+          // Add wood-grain effect
+          ctx.strokeStyle = "#8B4513";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(-b.width/3, -b.height/4);
+          ctx.lineTo(b.width/3, -b.height/4);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(-b.width/3, b.height/4);
+          ctx.lineTo(b.width/3, b.height/4);
+          ctx.stroke();
+
+          // Add a trail effect for returning boomerangs
+          if (b.returning) {
+            ctx.globalAlpha = 0.4;
+            ctx.fillStyle = "#FFFF00";
+            ctx.beginPath();
+            ctx.arc(0, 0, b.width/4, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+
+        ctx.restore();
+      }
+
+      // Draw enemies with jump animation and health bars
+      for (let e of enemies) {
+        let img = loadedEnemyImages[e.type];
+        ctx.drawImage(img, e.x, e.y - e.jumpHeight, e.width, e.height);
+
+        // Draw health bar
+        const barWidth = e.width;
+        const barHeight = 6;
+        const healthPercent = e.hp / e.maxHp;
+
+        // Background of health bar
+        ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+        ctx.fillRect(e.x, e.y - e.jumpHeight - 10, barWidth, barHeight);
+
+        // Health indicator
+        ctx.fillStyle = healthPercent > 0.6 ? "#4CAF50" : 
+                        healthPercent > 0.3 ? "#FFC107" : "#F44336";
+        ctx.fillRect(e.x, e.y - e.jumpHeight - 10, barWidth * healthPercent, barHeight);
+      }
+
+      // Draw enemy bullets (ninja stars)
+      ctx.fillStyle = "#363636";
+      for (let eb of enemyBullets) {
+        ctx.save();
+        ctx.translate(eb.x + eb.width/2, eb.y + eb.height/2);
+        ctx.rotate(eb.rotation);
+
+        // Draw ninja star
+        ctx.beginPath();
+        for (let i = 0; i < 4; i++) {
+          ctx.rotate(Math.PI / 2);
+          ctx.moveTo(0, 0);
+          ctx.lineTo(0, -eb.width/2);
+          ctx.lineTo(eb.width/2, -eb.width/2);
+          ctx.lineTo(0, 0);
+        }
+        ctx.fill();
+
+        ctx.restore();
+      }
+      // Draw boss with flashing effect when hit
+      if (boss) {
+        if (!boss.isFlashing || Math.floor(boss.flashTimer / 50) % 2 === 0) {
+          ctx.drawImage(bossImage, boss.x, boss.y, boss.width, boss.height);
+        }
+
+        // Boss HP bar
+        ctx.fillStyle = "red";
+        ctx.fillRect(boss.x, boss.y - 20, boss.width, 10);
+        ctx.fillStyle = "#4CAF50";
+        let hpWidth = (boss.hp / boss.maxHp) * boss.width;
+        ctx.fillRect(boss.x, boss.y - 20, hpWidth, 10);
+      }
+
+      // Draw powerups with rotation
+      for (let p of powerups) {
+        ctx.save();
+        ctx.translate(p.x + p.width/2, p.y + p.height/2);
+        ctx.rotate(p.rotation);
+        ctx.drawImage(powerupImage, -p.width/2, -p.height/2, p.width, p.height);
+        ctx.restore();
+      }
+
+      // Draw cure effects
+      for (let effect of cureEffects) {
+        ctx.save();
+        ctx.globalAlpha = effect.opacity;
+        ctx.translate(effect.x, effect.y);
+
+        // Draw sparkle effect
+        ctx.fillStyle = "#4CAF50";
+        for (let i = 0; i < 8; i++) {
+          ctx.save();
+          ctx.rotate(i * Math.PI / 4);
+          ctx.fillRect(0, 0, effect.size, effect.size / 4);
+          ctx.restore();
+        }
+
+        ctx.restore();
+      }
+    }
+
+    function loop(timestamp) {
+      let dt = timestamp - lastFrameTime;
+      lastFrameTime = timestamp;
+      update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    function shoot() {
+      const ammo = ammoTypes[currentAmmo];
+      ammo.sound.currentTime = 0;
+      ammo.sound.play().catch(err => console.log("Audio play prevented:", err));
+
+      let bulletObj = {
+        x: playerX + playerWidth / 2 - ammo.size/2,
+        y: playerY,
+        width: ammo.size,
+        height: ammo.size,
+        speed: ammo.speed,
+        damage: ammo.damage,
+        color: ammo.color,
+        type: currentAmmo,
+        rotation: 0
+      };
+
+      // Add boomerang specific properties
+      if (ammo.isBoomerang) {
+        bulletObj.isBoomerang = true;
+        bulletObj.returning = false;
+        bulletObj.maxHeight = canvas.height; // Now we'll use the top of the screen, but keeping for compatibility
+        bulletObj.targetsHit = []; // Track which enemies were hit on way up
+      }
+      
+      // Ensure non-boomerang bullets also have targetsHit array to prevent errors
+      if (!bulletObj.targetsHit) {
+        bulletObj.targetsHit = [];
+      }
+
+      bullets.push(bulletObj);
+
+      // Update cooldown based on ammo type
+      shootCooldown = ammo.cooldown;
+    }
+
+    function updateAmmoDisplay() {
+      ammoDisplay.textContent = ammoTypes[currentAmmo].name;
+    }
+
+    function shootFromEnemy() {
+      if (enemies.length <= 0 && !boss) return;
+      let source;
+      if (boss) {
+        source = { x: boss.x + boss.width / 2, y: boss.y + boss.height };
+      } else {
+        source = enemies[Math.floor(Math.random() * enemies.length)];
+        source = { x: source.x + source.width / 2, y: source.y + source.height };
+      }
+      enemyBullets.push({
+        x: source.x - 5,
+        y: source.y,
+        width: 10,
+        height: 10,
+        rotation: 0
+      });
+    }
+
+    function isColliding(x1, y1, w1, h1, x2, y2, w2, h2) {
+      return (
+        x1 < x2 + w2 &&
+        x1 + w1 > x2 &&
+        y1 < y2 + h2 &&
+        y1 + h1 > y2
+      );
+    }
+
+    function spawnPowerup(x, y) {
+      powerups.push({
+        x: x - 16,
+        y: y,
+        width: 32,
+        height: 32,
+        rotation: 0
+      });
+    }
+
+    function applyPowerup() {
+      powerupSound.currentTime = 0;
+      powerupSound.play().catch(err => console.log("Audio play prevented:", err));
+      const rand = Math.random();
+      // 25% chance extra life, 25% chance faster shooting, 15% super speed, 35% better ammo (including boomerang)
+      if (rand < 0.25) {
+        playerLives++;
+        updateLives();
+        displayMessage("Health Boost!");
+        setTimeout(() => displayMessage(""), 1500);
+      } else if (rand < 0.5) {
+        for (let ammo of ammoTypes) {
+          ammo.cooldown = Math.max(150, ammo.cooldown - 50);
+        }
+        displayMessage("Faster Shooting!");
+        setTimeout(() => displayMessage(""), 1500);
+      } else if (rand < 0.65) {
+        playerSpeed += 1;
+        displayMessage("Super Speed!");
+        setTimeout(() => displayMessage(""), 1500);
+      } else {
+        // Upgrade ammo type - with higher chance of boomerang
+        if (rand > 0.9 || currentAmmo === 3) {
+          // Force boomerang (3 is the boomerang index)
+          currentAmmo = 3;
+        } else {
+          // Upgrade to next ammo type
+          currentAmmo = (currentAmmo + 1) % ammoTypes.length;
+        }
+        updateAmmoDisplay();
+        displayMessage("New Ammo: " + ammoTypes[currentAmmo].name + "!");
+        setTimeout(() => displayMessage(""), 1500);
+      }
+    }
+
+    function addCureEffect(x, y) {
+      cureEffects.push({
+        x: x,
+        y: y,
+        size: 10,
+        opacity: 1,
+        timer: 500
+      });
+    }
+
+    initGame();
+    updateAmmoDisplay();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

@@ -1,0 +1,164 @@
+{
+  "results": [
+    {
+      "requested": "bogglebeast",
+      "matched": "Bogglebeast Quest - v2 - many levels and worlds v1",
+      "hash_key": "84cbae393613",
+      "source": "top_voted",
+      "score": 1.0,
+      "file": "test_cases/games/top_voted/bogglebeast-quest-v2-many-levels-and-worlds-v1__84cbae393613.html"
+    },
+    {
+      "requested": "bodysuit jumper",
+      "matched": "Bodysuit Jumper Platformer",
+      "hash_key": "3b637562d778",
+      "source": "top_voted",
+      "score": 1.0,
+      "file": "test_cases/games/top_voted/bodysuit-jumper-platformer__3b637562d778.html"
+    },
+    {
+      "requested": "bible typerunner",
+      "matched": "Bible Typerunner",
+      "hash_key": "5959dde2f14f",
+      "source": "top_voted",
+      "score": 1.0,
+      "file": "test_cases/games/top_voted/bible-typerunner__5959dde2f14f.html"
+    },
+    {
+      "requested": "space invaders with powerups",
+      "matched": "Space Invaders with powerups",
+      "hash_key": "0504eaffda94",
+      "source": "top_voted",
+      "score": 1.0,
+      "file": "test_cases/games/top_voted/space-invaders-with-powerups__0504eaffda94.html"
+    },
+    {
+      "requested": "cookie monster munch",
+      "matched": "Cookie monster munch",
+      "hash_key": "465d1281d6a5",
+      "source": "top_voted",
+      "score": 1.0,
+      "file": "test_cases/games/top_voted/cookie-monster-munch__465d1281d6a5.html"
+    },
+    {
+      "requested": "dance fever boss battle",
+      "matched": "Dance fever boss battle",
+      "hash_key": "ba3c2373e25c",
+      "source": "top_voted",
+      "score": 1.0,
+      "file": "test_cases/games/top_voted/dance-fever-boss-battle__ba3c2373e25c.html"
+    },
+    {
+      "requested": "carrot cruncher",
+      "matched": "Educational Game - Carrot Cruncher Math Adventure",
+      "hash_key": "5b0307aeb311",
+      "source": "top_voted",
+      "score": 1.0,
+      "file": "test_cases/games/top_voted/educational-game-carrot-cruncher-math-adventure__5b0307aeb311.html"
+    },
+    {
+      "requested": "asteroid blaster with boss battles",
+      "matched": "Asteroid Blaster with Boss Battles",
+      "hash_key": "2ab6ef807a32",
+      "source": "top_voted",
+      "score": 1.0,
+      "file": "test_cases/games/top_voted/asteroid-blaster-with-boss-battles__2ab6ef807a32.html"
+    },
+    {
+      "requested": "simbas bug adventure",
+      "matched": "Simba's Bug Adventure v2",
+      "hash_key": "82289e92f1c2",
+      "source": "top_voted",
+      "score": 1.0,
+      "file": "test_cases/games/top_voted/simba-s-bug-adventure-v2__82289e92f1c2.html"
+    },
+    {
+      "requested": "fluffy rope swinger",
+      "matched": "Fluffy Rope Swinger - Fullscreen Pendulum",
+      "hash_key": "8f092763260d",
+      "source": "top_voted",
+      "score": 1.0,
+      "file": "test_cases/games/top_voted/fluffy-rope-swinger-fullscreen-pendulum__8f092763260d.html"
+    },
+    {
+      "requested": "superhero kid vs ninja animals",
+      "matched": "Superhero kid vs Ninja Animals",
+      "hash_key": "34cc59f54c99",
+      "source": "top_voted",
+      "score": 1.0,
+      "file": "test_cases/games/top_voted/superhero-kid-vs-ninja-animals__34cc59f54c99.html"
+    },
+    {
+      "requested": "bounce quest",
+      "matched": "Bounce Quest - To The Top",
+      "hash_key": "363f80e33d70",
+      "source": "top_voted",
+      "score": 1.0,
+      "file": "test_cases/games/top_voted/bounce-quest-to-the-top__363f80e33d70.html"
+    },
+    {
+      "requested": "cosmic brick blaster",
+      "matched": "Cosmic Brick Blaster",
+      "hash_key": "a554196936fa",
+      "source": "top_voted",
+      "score": 1.0,
+      "file": "test_cases/games/top_voted/cosmic-brick-blaster__a554196936fa.html"
+    },
+    {
+      "requested": "koala survivor",
+      "matched": "Koala Survivor Rampage",
+      "hash_key": "32d23069c20a",
+      "source": "top_voted",
+      "score": 1.0,
+      "file": "test_cases/games/top_voted/koala-survivor-rampage__32d23069c20a.html"
+    },
+    {
+      "requested": "googly boomerang quest",
+      "matched": "Googly Boomerang Quest: Portal Panic! ",
+      "hash_key": "7d6b4c125c07",
+      "source": "top_voted",
+      "score": 1.0,
+      "file": "test_cases/games/top_voted/googly-boomerang-quest-portal-panic__7d6b4c125c07.html"
+    },
+    {
+      "requested": "age of empires style game",
+      "matched": "Age of Empires Style Game v3 - much better - winnable, guard towers, better3 - fixed speed bug",
+      "hash_key": "610ff957166a",
+      "source": "top_voted",
+      "score": 1.0,
+      "file": "test_cases/games/top_voted/age-of-empires-style-game-v3-much-better-winnable-guard-towers-better3-fixed-speed-bug__610ff957166a.html"
+    },
+    {
+      "requested": "bubblebound",
+      "matched": "Bubblebound! - 1shotted v2",
+      "hash_key": "3b5d636d7f22",
+      "source": "top_voted",
+      "score": 1.0,
+      "file": "test_cases/games/top_voted/bubblebound-1shotted-v2__3b5d636d7f22.html"
+    },
+    {
+      "requested": "frog jumper math game",
+      "matched": "Frog jumper math game",
+      "hash_key": "1b934b1961de",
+      "source": "top_voted",
+      "score": 1.0,
+      "file": "test_cases/games/top_voted/frog-jumper-math-game__1b934b1961de.html"
+    },
+    {
+      "requested": "tetris game",
+      "matched": "Tetris Game",
+      "hash_key": "2a94b719e827",
+      "source": "top_voted",
+      "score": 1.0,
+      "file": "test_cases/games/top_voted/tetris-game__2a94b719e827.html"
+    },
+    {
+      "requested": "avoid the gemrs v3",
+      "matched": "Avoid The Germs Game v3",
+      "hash_key": "c284065f70f0",
+      "source": "top_voted",
+      "score": 0.824,
+      "file": "test_cases/games/top_voted/avoid-the-germs-game-v3__c284065f70f0.html"
+    }
+  ]
+}

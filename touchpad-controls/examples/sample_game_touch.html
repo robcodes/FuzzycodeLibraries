@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Astro Drift (Keyboard Only)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background: #0b0f17;
+            color: #d1d5db;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            overflow: hidden;
+        }
+
+        #gameRoot {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        canvas {
+            width: min(960px, 96vw);
+            height: min(540px, 72vh);
+            border: 2px solid #1f2937;
+            background: radial-gradient(circle at 30% 20%, #1f2937, #020617);
+        }
+
+        #hud {
+            margin-top: 12px;
+            font-size: 13px;
+            color: #9ca3af;
+            text-align: center;
+            max-width: 90vw;
+        }
+
+        #hud strong {
+            color: #f8fafc;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameRoot">
+        <canvas id="game" width="960" height="540"></canvas>
+        <div id="hud">
+            <div><strong>Controls:</strong> WASD move, Arrow keys aim, Space fire, Esc pause</div>
+            <div id="status">Status: running</div>
+            <div id="pressed">Pressed: (none)</div>
+        </div>
+    </div>
+
+    <script>
+        const CONTROLS = {
+            move: { up: "KeyW", down: "KeyS", left: "KeyA", right: "KeyD" },
+            aim: { up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight" },
+            fire: "Space",
+            pause: "Escape"
+        };
+
+        const canvas = document.getElementById("game");
+        const ctx = canvas.getContext("2d");
+        const statusEl = document.getElementById("status");
+        const pressedEl = document.getElementById("pressed");
+
+        const state = {
+            pressed: new Set(),
+            paused: false,
+            ship: { x: canvas.width / 2, y: canvas.height / 2, size: 20 },
+            aim: { x: 1, y: 0 },
+            bullets: [],
+            cooldown: 0
+        };
+
+        const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+
+        const updatePressedHud = () => {
+            const codes = Array.from(state.pressed.values());
+            pressedEl.textContent = "Pressed: " + (codes.length ? codes.join(", ") : "(none)");
+        };
+
+        const getAxis = (negativeCode, positiveCode) => {
+            const neg = state.pressed.has(negativeCode);
+            const pos = state.pressed.has(positiveCode);
+            if (neg && !pos) return -1;
+            if (pos && !neg) return 1;
+            return 0;
+        };
+
+        const updateAim = () => {
+            const ax = getAxis(CONTROLS.aim.left, CONTROLS.aim.right);
+            const ay = getAxis(CONTROLS.aim.up, CONTROLS.aim.down);
+            if (ax !== 0 || ay !== 0) {
+                const len = Math.hypot(ax, ay) || 1;
+                state.aim.x = ax / len;
+                state.aim.y = ay / len;
+            }
+        };
+
+        const spawnBullet = () => {
+            if (state.cooldown > 0) return;
+            state.cooldown = 10;
+            const speed = 6;
+            state.bullets.push({
+                x: state.ship.x,
+                y: state.ship.y,
+                vx: state.aim.x * speed,
+                vy: state.aim.y * speed,
+                life: 120
+            });
+        };
+
+        document.addEventListener("keydown", (event) => {
+            if (event.code === CONTROLS.pause) {
+                state.paused = !state.paused;
+                statusEl.textContent = "Status: " + (state.paused ? "paused" : "running");
+                return;
+            }
+
+            state.pressed.add(event.code);
+            if (event.code === CONTROLS.fire) {
+                event.preventDefault();
+                spawnBullet();
+            }
+            updatePressedHud();
+        });
+
+        document.addEventListener("keyup", (event) => {
+            state.pressed.delete(event.code);
+            updatePressedHud();
+        });
+
+        const resizeCanvas = () => {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = Math.max(480, Math.round(rect.width));
+            canvas.height = Math.max(270, Math.round(rect.height));
+        };
+
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+
+        const update = () => {
+            if (!state.paused) {
+                const speed = 2.6;
+                const mx = getAxis(CONTROLS.move.left, CONTROLS.move.right) * speed;
+                const my = getAxis(CONTROLS.move.up, CONTROLS.move.down) * speed;
+                state.ship.x = clamp(state.ship.x + mx, state.ship.size, canvas.width - state.ship.size);
+                state.ship.y = clamp(state.ship.y + my, state.ship.size, canvas.height - state.ship.size);
+
+                updateAim();
+
+                if (state.pressed.has(CONTROLS.fire)) {
+                    spawnBullet();
+                }
+
+                if (state.cooldown > 0) state.cooldown -= 1;
+
+                state.bullets.forEach((bullet) => {
+                    bullet.x += bullet.vx;
+                    bullet.y += bullet.vy;
+                    bullet.life -= 1;
+                });
+
+                state.bullets = state.bullets.filter((bullet) => (
+                    bullet.life > 0 &&
+                    bullet.x > -20 &&
+                    bullet.x < canvas.width + 20 &&
+                    bullet.y > -20 &&
+                    bullet.y < canvas.height + 20
+                ));
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.strokeStyle = "#1f2937";
+            ctx.lineWidth = 1;
+            for (let i = 0; i < 40; i += 1) {
+                const x = (i * 37) % canvas.width;
+                const y = (i * 73) % canvas.height;
+                ctx.beginPath();
+                ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            ctx.fillStyle = "#38bdf8";
+            ctx.beginPath();
+            ctx.arc(state.ship.x, state.ship.y, state.ship.size, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = "#f8fafc";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(state.ship.x, state.ship.y);
+            ctx.lineTo(
+                state.ship.x + state.aim.x * state.ship.size * 1.6,
+                state.ship.y + state.aim.y * state.ship.size * 1.6
+            );
+            ctx.stroke();
+
+            ctx.fillStyle = "#f97316";
+            state.bullets.forEach((bullet) => {
+                ctx.beginPath();
+                ctx.arc(bullet.x, bullet.y, 4, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            requestAnimationFrame(update);
+        };
+
+        update();
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/nipplejs@0.10.2/dist/nipplejs.js" crossorigin="anonymous"></script>
+    <script src="../touchpad-controls.js"></script>
+    <script>
+        const touchBindings = {
+            move: { up: "KeyW", down: "KeyS", left: "KeyA", right: "KeyD" },
+            aim: { up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight" },
+            primary: "Space",
+            pause: "Escape"
+        };
+
+        TouchpadControls.create({
+            layout: "auto",
+            bindings: touchBindings
+        });
+    </script>
+</body>
+</html>

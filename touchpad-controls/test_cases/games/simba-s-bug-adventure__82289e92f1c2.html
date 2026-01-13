@@ -1,0 +1,250 @@
+<html>
+<head>
+  <title>Simba's Bug Adventure</title>
+  <script src="https://unpkg.com/kaboom@3000.1.17/dist/kaboom.js"></script>
+  <style>
+    body { margin: 0; }
+  </style>
+</head>
+<body>
+  <script>
+    kaboom({
+      background: [220, 180, 140], // Savannah-like background
+    })
+
+    loadAseprite("simba", "https://fuzzycode.dev/@aws/generated_sprites/ASE/cuddly lion~2a75a141-f754-41f9-8feb-96c521351c0d.png", "https://fuzzycode.dev/@sprites/custome_ase?url=https://fuzzycode.dev/@aws/generated_sprites/ASE/cuddly lion~2a75a141-f754-41f9-8feb-96c521351c0d.json&sprite_name=simba")
+    loadSprite("bug", "https://fuzzycode.dev/@images/dezgo?search=transparent+red+bug&resize=32x32&transparency=true")
+    loadSprite("bird", "https://fuzzycode.dev/@aws/image_buddy_365day_cache/uploads/261b809f-e353-4bb9-b30d-0a99a96e7b56/bird!resize_256x64_033e88ecbd.png") // Larger bird sprite
+    loadSprite("hyena", "https://fuzzycode.dev/@aws/image_buddy_365day_cache/uploads/261b809f-e353-4bb9-b30d-0a99a96e7b56/hyena!resize_64x64.png") // Blue hyena sprite
+    loadSound("bug", "https://fuzzycode.dev/@sounds/sound?query=munch.mp3")
+
+    setGravity(4000)
+
+    const PLAYER_SPEED = 640
+    const JUMP_FORCE = 1200
+    const NUM_PLATFORMS = 5
+
+    function spin(speed = 1200) {
+      let spinning = false
+      return {
+        require: ["rotate"],
+        update() {
+          if (!spinning) {
+            return
+          }
+          this.angle -= speed * dt()
+          if (this.angle <= -360) {
+            spinning = false
+            this.angle = 0
+          }
+        },
+        spin() {
+          spinning = true
+        },
+      }
+    }
+
+    scene("game", () => {
+
+      const score = add([
+        text("0", 24),
+        pos(24, 24),
+        { value: 0 },
+      ])
+
+      const simba = add([
+        sprite("simba"),
+        area(),
+        anchor("center"),
+        pos(0, 0),
+        body({ jumpForce: JUMP_FORCE }),
+        doubleJump(),
+        rotate(0),
+        spin(),
+        scale(64/241), // Adjust scale to maintain original size
+        {
+          last_walk_time: null,
+        },
+      ])
+
+      simba.play("simba-idle")
+
+      simba.onUpdate(() => {
+        const simba_currently_walking = simba.last_walk_time !== null && Date.now() - simba.last_walk_time < 50;
+        if (!simba_currently_walking && simba.curAnim() != "simba-idle" && simba.vel.y == 0) {
+          simba.play("simba-idle");
+        }
+
+        if (simba.vel.y > 0 && simba.curAnim() !== "simba-fall") {
+          simba.play('simba-fall', true);
+        } else if (simba.vel.y < 0 && simba.curAnim() !== "simba-jump") {
+          simba.play('simba-jump', true);
+        }
+      })
+
+      for (let i = 1; i < NUM_PLATFORMS; i++) {
+        add([
+          sprite("bird"),
+          area(),
+          pos(rand(0, width()), i * height() / NUM_PLATFORMS),
+          body({ isStatic: true }),
+          anchor("center"),
+          "platform",
+          {
+            speed: rand(120, 320),
+            dir: choose([-1, 1]),
+          },
+        ])
+      }
+
+      simba.pos = get("platform")[0].pos.sub(0, 64)
+
+      function genBug(avoid) {
+        const plats = get("platform")
+        let idx = randi(0, plats.length)
+        if (avoid != null) {
+          idx = choose([...plats.keys()].filter((i) => i !== avoid))
+        }
+        const plat = plats[idx]
+        add([
+          pos(),
+          anchor("center"),
+          sprite("bug"),
+          area(),
+          follow(plat, vec2(0, -60)),
+          "bug",
+          { idx: idx },
+        ])
+      }
+
+      genBug(0)
+
+      for (let i = 0; i < width() / 64; i++) {
+        add([
+          pos(i * 64, height()),
+          sprite("hyena"), 
+          area(),
+          anchor("bot"),
+          scale(),
+          "danger",
+        ])
+      }
+
+      simba.onCollide("danger", () => {
+        go("lose")
+      })
+
+      simba.onCollide("bug", (c) => {
+        destroy(c)
+        play("bug")
+        score.value += 1
+        score.text = score.value
+        genBug(c.idx)
+      })
+
+      simba.onDoubleJump(() => {
+        simba.spin()
+      })
+
+      onUpdate("platform", (p) => {
+        p.move(p.dir * p.speed, 0)
+        if (p.pos.x < 0 || p.pos.x > width()) {
+          p.dir = -p.dir
+        }
+      })
+
+      onKeyPress("space", () => {
+        simba.doubleJump()
+      })
+
+      function move(x) {
+        simba.move(x, 0)
+        if (simba.pos.x < 0) {
+          simba.pos.x = width()
+        } else if (simba.pos.x > width()) {
+          simba.pos.x = 0
+        }
+      }
+
+      onKeyDown("left", () => {
+        move(-PLAYER_SPEED)
+        simba.last_walk_time = Date.now();
+        simba.flipX = true;
+        if (simba.curAnim() !== "simba-walk" && simba.vel.y == 0) {
+          simba.play('simba-walk');
+        }
+      })
+
+      onKeyDown("right", () => {
+        move(PLAYER_SPEED)
+        simba.flipX = false;
+        simba.last_walk_time = Date.now();
+        if (simba.curAnim() !== "simba-walk" && simba.vel.y == 0) {
+          simba.play('simba-walk');
+        }
+      })
+
+      onGamepadButtonPress("south", () => simba.doubleJump())
+
+      onGamepadStick("left", (v) => {
+        move(v.x * PLAYER_SPEED)
+        if (v.x !== 0) {
+          simba.last_walk_time = Date.now();
+          simba.flipX = v.x < 0;
+          if (simba.curAnim() !== "simba-walk" && simba.vel.y == 0) {
+            simba.play('simba-walk');
+          }
+        }
+      })
+
+      let timeLeft = 30
+
+      const timer = add([
+        anchor("topright"),
+        pos(width() - 24, 24),
+        text(timeLeft),
+      ])
+
+      onUpdate(() => {
+        timeLeft -= dt()
+        if (timeLeft <= 0) {
+          go("win", score.value)
+        }
+        timer.text = timeLeft.toFixed(2)
+      })
+
+    })
+
+    scene("win", (score) => {
+
+      add([
+        sprite("simba"),
+        pos(width() / 2, height() / 2 - 80),
+        scale(2),
+        anchor("center"),
+      ])
+
+      add([
+        text(score),
+        pos(width() / 2, height() / 2 + 80),
+        scale(2),
+        anchor("center"),
+      ])
+
+      onKeyPress("space", () => go("game"))
+      onGamepadButtonPress("south", () => go("game"))
+
+    })
+
+    scene("lose", () => {
+      add([
+        text("You Lose"),
+      ])
+      onKeyPress("space", () => go("game"))
+      onGamepadButtonPress("south", () => go("game"))
+    })
+
+    go("game")
+  </script>
+</body>
+</html>

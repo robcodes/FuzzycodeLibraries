@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="768" viewBox="0 0 1024 768">
+<defs>
+<style>
+text { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+.label { fill: #E2E8F0; font-size: 12px; }
+.title { fill: #E2E8F0; font-size: 14px; font-weight: 600; }
+.safe { fill: none; stroke: #475569; stroke-width: 2; stroke-dasharray: 6 4; }
+.button { stroke: #0F172A; stroke-width: 2; }
+</style>
+</defs>
+<rect width="1024" height="768" fill="#0B1020" />
+<rect class="safe" x="0" y="0" width="1024" height="768" />
+<text class="title" x="12" y="22">simba-s-bug-adventure-v2__82289e92f1c2 - tablet-landscape (safe-platformer)</text>
+<g class="button-group"><title>move left:ArrowLeft right:ArrowRight</title><circle class="button" cx="88" cy="668" r="56.0" fill="#1F6F8B" /><text class="label" x="88" y="672.6666666666666" text-anchor="middle" font-size="14">move</text></g>
+<g class="button-group"><title>jump Space</title><circle class="button" cx="936" cy="668" r="48.0" fill="#F97316" /><text class="label" x="936" y="672.6666666666666" text-anchor="middle" font-size="14">jump</text></g>
+</svg>

@@ -1,0 +1,36 @@
+{
+  "layout": "auto",
+  "bindings": {
+    "jump": "ArrowUp",
+    "primary": "Space",
+    "move": {
+      "left": "ArrowLeft",
+      "right": "ArrowRight"
+    }
+  },
+  "action_meta": {
+    "jump": {
+      "behavior": "discrete",
+      "interaction": "tap",
+      "simultaneous": false,
+      "kind": "button"
+    },
+    "primary": {
+      "behavior": "discrete",
+      "interaction": "tap",
+      "simultaneous": false,
+      "kind": "button"
+    },
+    "move": {
+      "behavior": "continuous",
+      "interaction": "hold",
+      "simultaneous": false,
+      "control_space": "vector",
+      "activation": "hold",
+      "direction_mode": "cardinal",
+      "granularity": "fine",
+      "kind": "axis"
+    }
+  },
+  "source_output": "test_cases/outputs/top_voted/googly-boomerang-quest-portal-panic__7d6b4c125c07_touch_embedded.html"
+}

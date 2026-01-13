@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="844" height="390" viewBox="0 0 844 390">
+<defs>
+<style>
+text { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+.label { fill: #E2E8F0; font-size: 12px; }
+.title { fill: #E2E8F0; font-size: 14px; font-weight: 600; }
+.safe { fill: none; stroke: #475569; stroke-width: 2; stroke-dasharray: 6 4; }
+.button { stroke: #0F172A; stroke-width: 2; }
+</style>
+</defs>
+<rect width="844" height="390" fill="#0B1020" />
+<rect class="safe" x="47" y="0" width="750" height="369" />
+<text class="title" x="12" y="22">educational-game-carrot-cruncher-math-adventure__5b0307aeb311 - phone-landscape (digital-dpad)</text>
+<g class="button-group"><title>move-up ArrowUp</title><circle class="button" cx="148.1" cy="210.3" r="24.0" fill="#1F6F8B" /><text class="label" x="148.1" y="214.3" text-anchor="middle" font-size="12">move-up</text></g>
+<g class="button-group"><title>move-down ArrowDown</title><circle class="button" cx="148.1" cy="325.5" r="24.0" fill="#1F6F8B" /><text class="label" x="148.1" y="329.5" text-anchor="middle" font-size="12">move-down</text></g>
+<g class="button-group"><title>move-left ArrowLeft</title><circle class="button" cx="90.5" cy="267.9" r="24.0" fill="#1F6F8B" /><text class="label" x="90.5" y="271.9" text-anchor="middle" font-size="12">move-left</text></g>
+<g class="button-group"><title>move-right ArrowRight</title><circle class="button" cx="205.7" cy="267.9" r="24.0" fill="#1F6F8B" /><text class="label" x="205.7" y="271.9" text-anchor="middle" font-size="12">move-right</text></g>
+<g class="button-group"><title>primary Space</title><circle class="button" cx="744.4" cy="308.6" r="28.0" fill="#F59E0B" /><text class="label" x="744.4" y="313.2666666666667" text-anchor="middle" font-size="14">primary</text></g>
+</svg>

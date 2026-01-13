@@ -1,0 +1,1466 @@
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Bodsuit Jumper Platformer</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        height: 100%;
+        background: #222;
+        font-family: Arial, sans-serif;
+      }
+      canvas {
+        display: block;
+        background: #87ceeb url('https://aws.fuzzycode.dev/image_buddy_365day_cache/uploads/650d0284-66ef-4e44-ba51-28913dea877c/texture pattern!resize_800x600.png') ;
+        background-size: cover;
+      }
+      .overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 10;
+      }
+      .hidden {
+        display: none;
+      }
+      .menu-button {
+        background: #444;
+        color: #fff;
+        border: none;
+        padding: 15px 30px;
+        margin: 10px;
+        font-size: 18px;
+        cursor: pointer;
+      }
+      .menu-button:hover {
+        background: #666;
+      }
+      #hud {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        color: #fff;
+        font-size: 20px;
+        z-index: 5;
+      }
+      ul {
+        list-style: none;
+        padding-left: 0;
+        text-align: left;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="gameCanvas"></canvas>
+    <div id="hud"></div>
+
+    <div id="objectPalette" style="position: fixed; left: 10px; top: 60px; z-index: 20; background: rgba(0,0,0,0.8); padding: 10px; border-radius: 5px; display: none;">
+      <h3 style="color: white; margin: 0 0 10px 0;">Object Palette</h3>
+      <div id="platformTemplate" class="paletteItem" draggable="true" style="width: 100px; height: 20px; background: #8B5A2B; margin: 5px; cursor: move;">Platform</div>
+      <canvas id="suitTemplate1" class="paletteItem" draggable="true" width="40" height="35" style="margin: 5px; cursor: move;"></canvas>
+      <canvas id="suitTemplate2" class="paletteItem" draggable="true" width="50" height="40" style="margin: 5px; cursor: move;"></canvas>
+      <canvas id="suitTemplate3" class="paletteItem" draggable="true" width="60" height="45" style="margin: 5px; cursor: move;"></canvas>
+    </div>
+
+    <div id="mainMenu" class="overlay">
+      <h1>Bodsuit Jumper</h1>
+      <button id="startGameBtn" class="menu-button">Start Game</button>
+      <button id="tutorialBtn" class="menu-button">Tutorial</button>
+    </div>
+
+    <div id="tutorialMenu" class="overlay hidden">
+      <h2>Tutorial</h2>
+      <p><strong>Controls:</strong></p>
+      <ul>
+        <li>Move Left: Left Arrow or A</li>
+        <li>Move Right: Right Arrow or D</li>
+        <li>Jump: Space, Up Arrow, or W</li>
+      </ul>
+      <p>
+        Collect body suits to gain extra mid-air jumps. Each suit collected
+        increases your extra jump count. While in mid-air, if you press jump and
+        you have an extra jump available, your highest suit will fall off and you'll
+        perform a double jump.
+      </p>
+      <p>Reach the purple portal to complete the level.</p>
+      <button id="startFromTutorialBtn" class="menu-button">Start Game</button>
+      <button id="backToMenuFromTutorialBtn" class="menu-button">
+        Back to Menu
+      </button>
+    </div>
+
+    <div id="levelCompleteMenu" class="overlay hidden">
+      <h2>Level Complete!</h2>
+      <button id="returnToMenuBtn" class="menu-button">
+        Return to Main Menu
+      </button>
+    </div>
+    <button id="editLevelBtn" style="position: fixed; right: 10px; top: 10px; z-index:20; padding: 10px 20px; background: #444; color: #fff; border: none; cursor: pointer;">Edit Level</button>
+    <div id="levelEditorPanel" style="position: fixed; right: 10px; top: 60px; z-index:20; width: 300px; background: rgba(0,0,0,0.8); padding: 10px; color: #fff; display: none;">
+      <div id="levelEditorHeader" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <button id="prevLevelBtn" class="menu-button" style="width:30%;">←</button>
+        <span id="levelIndicator" style="width:40%; text-align:center; font-size:16px;">Level 1</span>
+        <button id="nextLevelBtn" class="menu-button" style="width:30%;">→</button>
+      </div>
+      <textarea id="levelsEditor" style="width: 100%; height: 200px; background: #333; color: #fff; border: none; padding: 5px;"></textarea>
+      <button id="copyLevelsBtn" class="menu-button" style="margin-top:10px; width:100%;">Copy All Levels</button>
+      <button id="clearLevelsBtn" class="menu-button" style="margin-top:10px; width:100%;">Clear Levels</button>
+    </div>
+
+    <script>
+      (function () {
+        var canvas = document.getElementById("gameCanvas");
+        var ctx = canvas.getContext("2d");
+        var hud = document.getElementById("hud");
+        var mainMenu = document.getElementById("mainMenu");
+        var tutorialMenu = document.getElementById("tutorialMenu");
+        var levelCompleteMenu = document.getElementById("levelCompleteMenu");
+
+        // Canvas responsiveness
+        function resizeCanvas() {
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+        }
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+
+        // Game state: "menu", "tutorial", "playing", "levelComplete"
+        var gameState = "menu";
+
+        // Input handling
+        var keys = {};
+        window.addEventListener("keydown", function (e) {
+          keys[e.code] = true;
+          // Prevent default for common keys
+          if (
+            ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(
+              e.code
+            )
+          ) {
+            e.preventDefault();
+          }
+        });
+        window.addEventListener("keyup", function (e) {
+          keys[e.code] = false;
+        });
+
+        // Audio elements (using Fuzzycode endpoints)
+        var jumpSound = new Audio(
+          "https://sounds.fuzzycode.dev/sound_effect?prompt=platformer%20jump%20sound&duration=0.5"
+        );
+        var doubleJumpSound = new Audio(
+          "https://sounds.fuzzycode.dev/sound_effect?prompt=platformer%20double%20jump%20sound&duration=0.5"
+        );
+        var suitCollectSound = new Audio(
+          "https://sounds.fuzzycode.dev/sound_effect?prompt=platformer%20suit%20collection&duration=0.5"
+        );
+        var levelCompleteSound = new Audio(
+          "https://sounds.fuzzycode.dev/sound_effect?prompt=platformer%20level%20completion&duration=0.5"
+        );
+        var backgroundMusic = new Audio(
+          "https://sounds.fuzzycode.dev/music?prompt=platformer%20background%20music&duration=30"
+        );
+        backgroundMusic.loop = true;
+
+        // Helper function to calculate suit dimensions based on level
+        function calculateSuitDimensions(level) {
+          // Base size slightly larger than player
+          const baseWidth = 40;
+          const baseHeight = 35;
+          // Each level increases size proportionally
+          return {
+            width: baseWidth + (level - 1) * 10,
+            height: baseHeight + (level - 1) * 5
+          };
+        }
+
+        // Helper function to parse body suits from level config.
+        function parseBodySuits(suits) {
+          return suits.map(function(suit) {
+            var suitDimensions = calculateSuitDimensions(suit.requiredLevel);
+            return {
+              x: suit.x,
+              y: canvas.height - suit.offsetFromBottom,
+              width: suitDimensions.width,
+              height: suitDimensions.height,
+              requiredLevel: suit.requiredLevel
+            };
+          });
+        }
+
+        // Helper function to parse platforms from level config.
+        function parsePlatforms(plats) {
+          return plats.map(function(plat) {
+            var newPlat = Object.assign({}, plat);
+            if (newPlat.width === "full") {
+              newPlat.width = canvas.width;
+            }
+            newPlat.y = canvas.height - newPlat.offsetFromBottom;
+            delete newPlat.offsetFromBottom;
+            return newPlat;
+          });
+        }
+        
+        // Helper function to compute total suit margin.
+        function computeSuitMargin(suits) {
+          var total = 0;
+          for (var i = 0; i < suits.length; i++) {
+            total += 5 * suits[i];
+          }
+          return total;
+        }
+
+        // Helper function to draw deletion icon.
+        function drawDeletionIcon(ctx, obj) {
+          ctx.fillStyle = "#FF0000";
+          ctx.fillRect(obj.x + obj.width - 15, obj.y - 15, 15, 15);
+          ctx.fillStyle = "#FFFFFF";
+          ctx.font = "12px sans-serif";
+          ctx.fillText("X", obj.x + obj.width - 12, obj.y - 3);
+        }
+        // Helper function to try deleting an object from an array based on a click.
+        function tryDeleteObject(arr, mouseX, mouseY) {
+          for (var i = arr.length - 1; i >= 0; i--) {
+            if (isDeletionIconClicked(mouseX, mouseY, arr[i])) {
+              arr.splice(i, 1);
+              updateLevelsEditor();
+              return true;
+            }
+          }
+          return false;
+        }
+        
+        // Helper function to check if the deletion icon was clicked.
+        function isDeletionIconClicked(mouseX, mouseY, obj) {
+          return mouseX >= obj.x + obj.width - 15 && mouseX <= obj.x + obj.width &&
+                 mouseY >= obj.y - 15 && mouseY <= obj.y;
+        }
+        
+        // Helper function to draw a suit border with gradient.
+        function drawSuitBorder(ctx, obj) {
+          var thickness = 5;
+          var suitGradient = ctx.createLinearGradient(obj.x, obj.y, obj.x, obj.y + obj.height);
+          suitGradient.addColorStop(0, "#F39C12");
+          suitGradient.addColorStop(1, "#E74C3C");
+          ctx.fillStyle = suitGradient;
+          // Left border.
+          ctx.fillRect(obj.x, obj.y, thickness, obj.height);
+          // Right border.
+          ctx.fillRect(obj.x + obj.width - thickness, obj.y, thickness, obj.height);
+          // Bottom border.
+          ctx.fillRect(obj.x, obj.y + obj.height - thickness, obj.width, thickness);
+        }
+        // Helper function to check if a point is inside a rectangle.
+        function isInside(obj, x, y) {
+          return x >= obj.x && x <= obj.x + obj.width &&
+                 y >= obj.y && y <= obj.y + obj.height;
+        }
+        // Helper function to get the editable object under the mouse.
+        function getEditableObjectUnderMouse(mouseX, mouseY) {
+          if (endGoal && isInside(endGoal, mouseX, mouseY)) {
+            return { obj: endGoal, type: "endGoal" };
+          }
+          for (var i = bodySuits.length - 1; i >= 0; i--) {
+            if (isInside(bodySuits[i], mouseX, mouseY)) {
+              return { obj: bodySuits[i], type: "bodySuit" };
+            }
+          }
+          for (var i = platforms.length - 1; i >= 0; i--) {
+            if (isInside(platforms[i], mouseX, mouseY)) {
+              return { obj: platforms[i], type: "platform" };
+            }
+          }
+          return null;
+        }
+        // Helper function to check landing collision with a platform.
+        function isLandingOnPlatform(entity, plat, extraMargin) {
+          extraMargin = extraMargin || 0;
+          return (
+            entity.x + entity.width > plat.x &&
+            entity.x < plat.x + plat.width &&
+            entity.vy >= 0 &&
+            (entity.y - entity.vy + entity.height + extraMargin) <= plat.y &&
+            (entity.y + entity.height + extraMargin) >= plat.y
+          );
+        }
+        
+        // Game objects
+        var player = {
+          x: 50,
+          y: 0,
+          width: 30,
+          height: 30,
+          vx: 0,
+          vy: 0,
+          speed: 0.5,
+          maxSpeed: 5,
+          jumpStrength: 12,
+          onGround: false,
+          suits: [], // Array of collected suit levels (each suit grants one extra jump)
+          facing: 'right'
+        };
+
+        var currentLevel = 1;
+        var platforms = [];
+        var bodySuits = [];
+        var droppedSuits = [];
+        var endGoal = null;
+        var defaultLevelsConfig = [
+  {
+    "playerStart": {
+      "x": 542.4936967681506,
+      "offsetFromBottom": 50
+    },
+    "platforms": [
+      {
+        "x": 50,
+        "offsetFromBottom": 100,
+        "width": 200,
+        "height": 20
+      },
+      {
+        "x": 235,
+        "offsetFromBottom": 223,
+        "width": 150,
+        "height": 20
+      },
+      {
+        "x": 369,
+        "offsetFromBottom": 315,
+        "width": 150,
+        "height": 20
+      },
+      {
+        "x": 922,
+        "offsetFromBottom": 416,
+        "width": 150,
+        "height": 20
+      },
+      {
+        "x": 0,
+        "offsetFromBottom": 20,
+        "width": "full",
+        "height": 20
+      }
+    ],
+    "bodySuits": [
+      {
+        "x": 477,
+        "offsetFromBottom": 364,
+        "width": 40,
+        "height": 35,
+        "requiredLevel": 1
+      },
+      {
+        "x": 635,
+        "offsetFromBottom": 79,
+        "width": 50,
+        "height": 40,
+        "requiredLevel": 2
+      }
+    ],
+    "endGoal": {
+      "x": 1002,
+      "offsetFromBottom": 726,
+      "width": 40,
+      "height": 60
+    }
+  },
+  {
+    "playerStart": {
+      "x": 277.4999999999997,
+      "offsetFromBottom": 50
+    },
+    "platforms": [
+      {
+        "x": 50,
+        "offsetFromBottom": 100,
+        "width": 150,
+        "height": 20
+      },
+      {
+        "x": 250,
+        "offsetFromBottom": 200,
+        "width": 150,
+        "height": 20
+      },
+      {
+        "x": 490,
+        "offsetFromBottom": 330,
+        "width": 150,
+        "height": 20
+      },
+      {
+        "x": 883,
+        "offsetFromBottom": 130,
+        "width": 150,
+        "height": 20
+      },
+      {
+        "x": 0,
+        "offsetFromBottom": 20,
+        "width": 1066,
+        "height": 20
+      }
+    ],
+    "bodySuits": [
+      {
+        "x": 311,
+        "offsetFromBottom": 252,
+        "width": 40,
+        "height": 35,
+        "requiredLevel": 1
+      },
+      {
+        "x": 543,
+        "offsetFromBottom": 381,
+        "width": 50,
+        "height": 40,
+        "requiredLevel": 2
+      },
+      {
+        "x": 935,
+        "offsetFromBottom": 190,
+        "width": 50,
+        "height": 40,
+        "requiredLevel": 3
+      }
+    ],
+    "endGoal": {
+      "x": 945,
+      "offsetFromBottom": 761,
+      "width": 40,
+      "height": 60
+    }
+  },
+  {
+    "playerStart": {
+      "x": 531.9550312631178,
+      "offsetFromBottom": 55
+    },
+    "platforms": [
+      {
+        "x": 0,
+        "offsetFromBottom": 20,
+        "width": "full",
+        "height": 20
+      },
+      {
+        "x": 478,
+        "offsetFromBottom": 149,
+        "width": 150,
+        "height": 20
+      },
+      {
+        "x": 66,
+        "offsetFromBottom": 334,
+        "width": 150,
+        "height": 20
+      },
+      {
+        "x": 1176,
+        "offsetFromBottom": 162,
+        "width": 150,
+        "height": 20
+      },
+      {
+        "x": 878,
+        "offsetFromBottom": 501,
+        "width": 150,
+        "height": 20
+      },
+      {
+        "x": 266,
+        "offsetFromBottom": 445,
+        "width": 150,
+        "height": 20
+      }
+    ],
+    "bodySuits": [
+      {
+        "x": 524,
+        "offsetFromBottom": 197,
+        "width": 40,
+        "height": 35,
+        "requiredLevel": 1
+      },
+      {
+        "x": 1039,
+        "offsetFromBottom": 957,
+        "width": 50,
+        "height": 40,
+        "requiredLevel": 2
+      },
+      {
+        "x": 108,
+        "offsetFromBottom": 377,
+        "width": 40,
+        "height": 35,
+        "requiredLevel": 1
+      },
+      {
+        "x": 317,
+        "offsetFromBottom": 487,
+        "width": 50,
+        "height": 40,
+        "requiredLevel": 2
+      },
+      {
+        "x": 1230,
+        "offsetFromBottom": 208,
+        "width": 50,
+        "height": 40,
+        "requiredLevel": 2
+      }
+    ],
+    "endGoal": {
+      "x": 882,
+      "offsetFromBottom": 585,
+      "width": 40,
+      "height": 60
+    }
+  },
+  {
+    "playerStart": {
+      "x": 831.2624846171309,
+      "offsetFromBottom": 55
+    },
+    "platforms": [
+      {
+        "x": 0,
+        "offsetFromBottom": 20,
+        "width": "full",
+        "height": 20
+      },
+      {
+        "x": 1049,
+        "offsetFromBottom": 381,
+        "width": 150,
+        "height": 20
+      },
+      {
+        "x": 36,
+        "offsetFromBottom": 119,
+        "width": 150,
+        "height": 20
+      },
+      {
+        "x": 220,
+        "offsetFromBottom": 201,
+        "width": 150,
+        "height": 20
+      },
+      {
+        "x": 61,
+        "offsetFromBottom": 324,
+        "width": 150,
+        "height": 20
+      },
+      {
+        "x": 363,
+        "offsetFromBottom": 538,
+        "width": 150,
+        "height": 20
+      }
+    ],
+    "bodySuits": [
+      {
+        "x": 86,
+        "offsetFromBottom": 361,
+        "width": 40,
+        "height": 35,
+        "requiredLevel": 1
+      },
+      {
+        "x": 423,
+        "offsetFromBottom": 583,
+        "width": 50,
+        "height": 40,
+        "requiredLevel": 2
+      },
+      {
+        "x": 369,
+        "offsetFromBottom": 574,
+        "width": 40,
+        "height": 35,
+        "requiredLevel": 1
+      }
+    ],
+    "endGoal": {
+      "x": 1137,
+      "offsetFromBottom": 655,
+      "width": 40,
+      "height": 60
+    }
+  },
+  {
+    "playerStart": {
+      "x": 205.60546928964874,
+      "offsetFromBottom": 50
+    },
+    "platforms": [
+      {
+        "x": 0,
+        "offsetFromBottom": 20,
+        "width": "full",
+        "height": 20
+      },
+      {
+        "x": 39,
+        "offsetFromBottom": 113,
+        "width": 150,
+        "height": 20
+      },
+      {
+        "x": 196,
+        "offsetFromBottom": 217,
+        "width": 150,
+        "height": 20
+      },
+      {
+        "x": 899,
+        "offsetFromBottom": 232,
+        "width": 150,
+        "height": 20
+      },
+      {
+        "x": 298,
+        "offsetFromBottom": 583,
+        "width": 150,
+        "height": 20
+      },
+      {
+        "x": 515,
+        "offsetFromBottom": 476,
+        "width": 150,
+        "height": 20
+      },
+      {
+        "x": 82,
+        "offsetFromBottom": 373,
+        "width": 150,
+        "height": 20
+      }
+    ],
+    "bodySuits": [
+      {
+        "x": 990,
+        "offsetFromBottom": 278,
+        "width": 60,
+        "height": 45,
+        "requiredLevel": 3
+      },
+      {
+        "x": 408,
+        "offsetFromBottom": 622,
+        "width": 40,
+        "height": 35,
+        "requiredLevel": 1
+      },
+      {
+        "x": 152,
+        "offsetFromBottom": 415,
+        "width": 40,
+        "height": 35,
+        "requiredLevel": 1
+      },
+      {
+        "x": 600,
+        "offsetFromBottom": 525,
+        "width": 50,
+        "height": 40,
+        "requiredLevel": 2
+      },
+      {
+        "x": 767,
+        "offsetFromBottom": 70,
+        "width": 40,
+        "height": 35,
+        "requiredLevel": 1
+      }
+    ],
+    "endGoal": {
+      "x": 1270,
+      "offsetFromBottom": 678,
+      "width": 40,
+      "height": 60
+    }
+  }
+];
+var levelsConfig;
+if (sessionStorage.getItem("levelsConfig")) {
+  try {
+    levelsConfig = JSON.parse(sessionStorage.getItem("levelsConfig"));
+  } catch (e) {
+    console.error("Error reading levelsConfig from sessionStorage", e);
+    levelsConfig = defaultLevelsConfig;
+    sessionStorage.setItem("levelsConfig", JSON.stringify(defaultLevelsConfig));
+  }
+} else {
+  levelsConfig = defaultLevelsConfig;
+  sessionStorage.setItem("levelsConfig", JSON.stringify(defaultLevelsConfig));
+}
+
+        // Level initialization
+        function initLevel() {
+          if (!levelsConfig[currentLevel - 1]) {
+            levelsConfig[currentLevel - 1] = {
+              playerStart: { x: 50, offsetFromBottom: 100 },
+              platforms: [],
+              bodySuits: [],
+              endGoal: null
+            };
+            sessionStorage.setItem("levelsConfig", JSON.stringify(levelsConfig));
+          }
+          var levelData = levelsConfig[currentLevel - 1];
+
+          // Set up platforms based on config using helper function.
+          platforms = parsePlatforms(levelData.platforms);
+
+          // Set up body suits using helper function.
+          bodySuits = parseBodySuits(levelData.bodySuits);
+
+          // Set up end goal (portal).
+          if (levelData.endGoal) {
+            endGoal = Object.assign({}, levelData.endGoal);
+            endGoal.y = canvas.height - levelData.endGoal.offsetFromBottom;
+            delete endGoal.offsetFromBottom;
+          } else {
+            endGoal = null;
+          }
+
+          // Set player starting position.
+          if (levelData.playerStart) {
+            player.x = levelData.playerStart.x;
+            player.y = canvas.height - levelData.playerStart.offsetFromBottom;
+          } else {
+            var startPlat = platforms[0];
+            player.x = startPlat.x + 20;
+            player.y = startPlat.y - player.height;
+          }
+
+          // Reset player physics and suits.
+          player.vx = 0;
+          player.vy = 0;
+          player.onGround = true;
+          player.suits = [];
+
+          // Reset dropped suits.
+          droppedSuits = [];
+          updateLevelsEditor();
+        }
+
+        // Simple AABB collision detection helper.
+        function isColliding(a, b) {
+          return (
+            a.x < b.x + b.width &&
+            a.x + a.width > b.x &&
+            a.y < b.y + b.height &&
+            a.y + a.height > b.y
+          );
+        }
+
+        var lastTime = 0;
+
+        // Update game state
+        function update(dt) {
+          if (gameState !== "playing") return;
+
+          // Horizontal movement via keys.
+          if (keys["ArrowLeft"] || keys["KeyA"]) {
+            player.vx -= player.speed;
+            player.facing = 'left';
+          }
+          if (keys["ArrowRight"] || keys["KeyD"]) {
+            player.vx += player.speed;
+            player.facing = 'right';
+          }
+          // Apply friction if no horizontal keys pressed.
+          if (
+            !keys["ArrowLeft"] &&
+            !keys["KeyA"] &&
+            !keys["ArrowRight"] &&
+            !keys["KeyD"]
+          ) {
+            player.vx *= 0.9;
+          }
+          // Limit maximum speed.
+          if (player.vx > player.maxSpeed) player.vx = player.maxSpeed;
+          if (player.vx < -player.maxSpeed) player.vx = -player.maxSpeed;
+
+          // Apply gravity.
+          player.vy += 0.5;
+
+          // Update player position.
+          player.x += player.vx;
+          player.y += player.vy;
+          player.onGround = false;
+
+          var totalSuitMargin = computeSuitMargin(player.suits);
+          for (var i = 0; i < platforms.length; i++) {
+            var plat = platforms[i];
+            if (isLandingOnPlatform(player, plat, totalSuitMargin)) {
+              player.y = plat.y - player.height - totalSuitMargin;
+              player.vy = 0;
+              player.onGround = true;
+            }
+          }
+
+          // Prevent player from moving off screen horizontally.
+          if (player.x < 0) {
+            player.x = 0;
+            player.vx = 0;
+          }
+          if (player.x + player.width > canvas.width) {
+            player.x = canvas.width - player.width;
+            player.vx = 0;
+          }
+          // Prevent falling below canvas.
+          var totalSuitMarginLocal = computeSuitMargin(player.suits);
+          if (player.y + player.height + totalSuitMarginLocal > canvas.height) {
+            player.y = canvas.height - player.height - totalSuitMarginLocal;
+            player.vy = 0;
+            player.onGround = true;
+          }
+
+          // Check for body suit collection (only when falling onto them).
+          for (var i = bodySuits.length - 1; i >= 0; i--) {
+            var suit = bodySuits[i];
+            if (isColliding(player, suit) && player.vy > 0 && (player.y + player.height <= suit.y + 15)) {
+              // Only collectible if player's suits count + 1 equals suit's requiredLevel.
+              if (player.suits.length + 1 === suit.requiredLevel) {
+                player.suits.push(suit.requiredLevel);
+                if (!editingMode) {
+                  bodySuits.splice(i, 1);
+                }
+                suitCollectSound.play();
+              }
+            }
+          }
+
+          // Check collision with the end goal (portal).
+          if (endGoal && isColliding(player, endGoal)) {
+            if (!player.inTransition) {
+              player.inTransition = true;
+              levelCompleteSound.play();
+
+              // Create portal effect
+              gameState = "transition";
+              var portalRadius = 0;
+              var maxRadius = Math.max(canvas.width, canvas.height);
+              var portalSpeed = 15;
+              var portalCenter = {
+                x: endGoal.x + endGoal.width/2,
+                y: endGoal.y + endGoal.height/2
+              };
+              var startTime = Date.now();
+
+              var portalSound = new Audio("https://sounds.fuzzycode.dev/sound_effect?prompt=quick magical whoosh&duration=1.0");
+              portalSound.play();
+
+              function portalTransition() {
+                var elapsed = (Date.now() - startTime) / 1000;
+                if (portalRadius < maxRadius) {
+                  // Save the current game state
+                  ctx.save();
+
+                  // Clear and redraw the game state
+                  ctx.clearRect(0, 0, canvas.width, canvas.height);
+                  render();
+
+                  // Add subtle portal glow
+                  ctx.fillStyle = `rgba(147, 51, 234, ${0.1 * Math.sin(elapsed * 4)})`;
+                  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                  // Draw multiple portal rings with rotation
+                  for(let i = 0; i < 3; i++) {
+                    let currentRadius = Math.max(0, portalRadius - (i * 15));
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(portalCenter.x, portalCenter.y, currentRadius, 0, Math.PI * 2);
+                    var gradient = ctx.createRadialGradient(
+                      portalCenter.x, portalCenter.y, currentRadius * 0.8,
+                      portalCenter.x, portalCenter.y, currentRadius
+                    );
+                    gradient.addColorStop(0, `rgba(${147 + i*20}, ${51 + i*20}, ${234 - i*20}, ${0.6 - i*0.15})`);
+                    gradient.addColorStop(1, 'rgba(147, 51, 234, 0)');
+                    ctx.fillStyle = gradient;
+                    ctx.fill();
+
+                    // Add rotating energy lines
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${0.5 - i*0.1})`;
+                    ctx.lineWidth = 2;
+                    for(let j = 0; j < 8; j++) {
+                      let angle = (j/8) * Math.PI * 2 + elapsed * 2;
+                      ctx.beginPath();
+                      ctx.moveTo(
+                        portalCenter.x + Math.cos(angle) * (currentRadius * 0.8),
+                        portalCenter.y + Math.sin(angle) * (currentRadius * 0.8)
+                      );
+                      ctx.lineTo(
+                        portalCenter.x + Math.cos(angle) * currentRadius,
+                        portalCenter.y + Math.sin(angle) * currentRadius
+                      );
+                      ctx.stroke();
+                    }
+                    ctx.restore();
+                  }
+
+                  // Add dynamic sparks
+                  for(let i = 0; i < 12; i++) {
+                    let angle = (i/12) * Math.PI * 2 + elapsed * 3;
+                    let sparkRadius = portalRadius * (0.5 + 0.5 * Math.sin(elapsed * 5 + i));
+                    let sparkX = portalCenter.x + Math.cos(angle) * sparkRadius;
+                    let sparkY = portalCenter.y + Math.sin(angle) * sparkRadius;
+                    ctx.beginPath();
+                    ctx.arc(sparkX, sparkY, 3, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${0.8 * Math.random()})`;
+                    ctx.fill();
+                  }
+
+                  ctx.restore();
+
+                  portalRadius += portalSpeed;
+                  requestAnimationFrame(portalTransition);
+                } else {
+                  if (currentLevel < levelsConfig.length) {
+                    currentLevel++;
+                    initLevel();
+                    gameState = "playing";
+                  } else {
+                    gameState = "levelComplete";
+                    backgroundMusic.pause();
+                    showLevelComplete();
+                  }
+                  player.inTransition = false;
+                }
+              }
+
+              portalTransition();
+            }
+          }
+
+          // Check for dropped suit collection (only when falling onto them).
+          for (var i = droppedSuits.length - 1; i >= 0; i--) {
+            var suit = droppedSuits[i];
+            if (isColliding(player, suit) && player.vy > 0 && (player.y + player.height <= suit.y + 15)) {
+              if (player.suits.length + 1 === suit.requiredLevel) {
+                player.suits.push(suit.requiredLevel);
+                droppedSuits.splice(i, 1);
+                suitCollectSound.play();
+              }
+            }
+          }
+
+          // Update dropped suits (from double jumps)
+          for (var i = 0; i < droppedSuits.length; i++) {
+            var dSuit = droppedSuits[i];
+            dSuit.vy += 0.5;
+            dSuit.y += dSuit.vy;
+            for (var j = 0; j < platforms.length; j++) {
+              var plat = platforms[j];
+              if (isLandingOnPlatform(dSuit, plat)) {
+                dSuit.y = plat.y - dSuit.height;
+                dSuit.vy = 0;
+              }
+            }
+            // Remove dropped suit if off screen.
+            if (dSuit.y > canvas.height) {
+              droppedSuits.splice(i, 1);
+              i--;
+            }
+          }
+        }
+
+        // Render game objects.
+        function render() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          // Draw platforms with 3D gradient.
+          platforms.forEach(function (plat) {
+            var platformGradient = ctx.createLinearGradient(plat.x, plat.y, plat.x, plat.y + plat.height);
+            platformGradient.addColorStop(0, "#8B5A2B");
+            platformGradient.addColorStop(1, "#654321");
+            ctx.fillStyle = platformGradient;
+            ctx.fillRect(plat.x, plat.y, plat.width, plat.height);
+          });
+
+          // Draw body suit collectibles with 3D gradient (open top).
+          bodySuits.forEach(function (suit) {
+            drawSuitBorder(ctx, suit);
+          });
+
+          // Draw dropped suits with 3D gradient (open top).
+          droppedSuits.forEach(function (dSuit) {
+            drawSuitBorder(ctx, dSuit);
+          });
+
+          // Draw end goal (portal) with 3D gradient.
+          if (endGoal) {
+            var portalGradient = ctx.createLinearGradient(endGoal.x, endGoal.y, endGoal.x, endGoal.y + endGoal.height);
+            portalGradient.addColorStop(0, "#DA70D6");
+            portalGradient.addColorStop(1, "#800080");
+            ctx.fillStyle = portalGradient;
+            ctx.fillRect(endGoal.x, endGoal.y, endGoal.width, endGoal.height);
+          }
+
+          // Draw player with suit layers with 3D effect.
+          // Calculate bobbing effect when moving
+          var bobAmount = 0;
+          if (Math.abs(player.vx) > 0.1) {
+            bobAmount = Math.sin(Date.now() / 100) * 2;
+          }
+          // Draw base player with gradient.
+          var playerGradient = ctx.createLinearGradient(player.x, player.y + bobAmount, player.x, player.y + player.height + bobAmount);
+          playerGradient.addColorStop(0, "#F39C12");
+          playerGradient.addColorStop(1, "#E74C3C");
+          ctx.fillStyle = playerGradient;
+          ctx.fillRect(player.x, player.y + bobAmount, player.width, player.height);
+          // Draw additional body suit layers (open top) with gradient.
+          var borderThickness = 5;
+          for (var i = 0; i < player.suits.length; i++) {
+            var suitLevel = player.suits[i];
+            var suitX = player.x - suitLevel * borderThickness - 0.5;
+            var suitY = player.y + bobAmount - 0.5;
+            var suitWidth = player.width + 2 * suitLevel * borderThickness + 1;
+            var suitHeight = player.height + suitLevel * borderThickness + 1;
+            var suitGradient = ctx.createLinearGradient(suitX, suitY, suitX, suitY + suitHeight);
+            suitGradient.addColorStop(0, "#F39C12");
+            suitGradient.addColorStop(1, "#E74C3C");
+            ctx.fillStyle = suitGradient;
+            // Draw left border.
+            ctx.fillRect(suitX, suitY, borderThickness + 1, suitHeight);
+            // Draw right border.
+            ctx.fillRect(suitX + suitWidth - (borderThickness + 1), suitY, borderThickness + 1, suitHeight);
+            // Draw bottom border.
+            ctx.fillRect(suitX, suitY + suitHeight - (borderThickness + 1), suitWidth, borderThickness + 1);
+          }
+
+          // Draw eyes on the player.
+          var eyeRadius = 3;
+          var pupilRadius = 1.5;
+          var leftEyeX = player.x + player.width * 0.3;
+          var leftEyeY = player.y + player.height * 0.3;
+          var rightEyeX = player.x + player.width * 0.7;
+          var rightEyeY = player.y + player.height * 0.3;
+          var pupilOffset = (player.facing === 'left') ? -2 : 2;
+          ctx.fillStyle = "#FFF";
+          ctx.beginPath();
+          ctx.arc(leftEyeX, leftEyeY, eyeRadius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#000";
+          ctx.beginPath();
+          ctx.arc(leftEyeX + pupilOffset, leftEyeY, pupilRadius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#FFF";
+          ctx.beginPath();
+          ctx.arc(rightEyeX, rightEyeY, eyeRadius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#000";
+          ctx.beginPath();
+          ctx.arc(rightEyeX + pupilOffset, rightEyeY, pupilRadius, 0, Math.PI * 2);
+          ctx.fill();
+          // Draw HUD.
+          hud.innerHTML = "Extra Jumps: " + player.suits.length;
+          var levelText = "Level " + currentLevel + " / " + levelsConfig.length;
+          ctx.font = "24px Arial";
+          ctx.fillStyle = "#FFF";
+          var textWidth = ctx.measureText(levelText).width;
+          ctx.fillText(levelText, (canvas.width - textWidth) / 2, 30);
+          // If in editing mode, draw outlines for editable objects.
+          if (editingMode) {
+            ctx.strokeStyle = "#FFD700";
+            ctx.lineWidth = 2;
+            platforms.forEach(function(plat) {
+              ctx.strokeRect(plat.x, plat.y, plat.width, plat.height);
+              drawDeletionIcon(ctx, plat);
+            });
+            bodySuits.forEach(function(suit) {
+              drawSuitBorder(ctx, suit);
+              ctx.strokeRect(suit.x, suit.y, suit.width, suit.height);
+              drawDeletionIcon(ctx, suit);
+            });
+            if (endGoal) {
+              ctx.strokeRect(endGoal.x, endGoal.y, endGoal.width, endGoal.height);
+              drawDeletionIcon(ctx, endGoal);
+            }
+          }
+        }
+
+        // Jump input handling with double jump mechanism.
+        var jumpKeyPressed = false;
+        window.addEventListener("keydown", function (e) {
+          if (
+            (e.code === "Space" || e.code === "ArrowUp" || e.code === "KeyW") &&
+            !jumpKeyPressed
+          ) {
+            jumpKeyPressed = true;
+            if (player.onGround) {
+              player.vy = -player.jumpStrength;
+              player.onGround = false;
+              jumpSound.play();
+            } else {
+              // If mid-air and extra jump is available.
+              if (player.suits.length > 0) {
+                player.vy = -player.jumpStrength;
+                // Remove the largest (most recently collected) suit.
+                var droppedLevel = player.suits.pop();
+                // Calculate dropped suit size based on level
+                var suitDimensions = calculateSuitDimensions(droppedLevel);
+                var dropWidth = suitDimensions.width;
+                var dropHeight = suitDimensions.height;
+                droppedSuits.push({
+                  x: player.x,
+                  y: player.y + player.height + 5,
+                  width: dropWidth,
+                  height: dropHeight,
+                  vy: 5,
+                  requiredLevel: droppedLevel
+                });
+                doubleJumpSound.play();
+              }
+            }
+          }
+        });
+        window.addEventListener("keyup", function (e) {
+          if (e.code === "Space" || e.code === "ArrowUp" || e.code === "KeyW") {
+            jumpKeyPressed = false;
+          }
+        });
+
+        // Main game loop.
+        function gameLoop(timestamp) {
+          var dt = (timestamp - lastTime) / 16;
+          lastTime = timestamp;
+          update(dt);
+          if (gameState !== "transition") {
+            render();
+          }
+          requestAnimationFrame(gameLoop);
+        }
+        requestAnimationFrame(gameLoop);
+
+        // Overlay management functions.
+        function showMainMenu() {
+          gameState = "menu";
+          mainMenu.classList.remove("hidden");
+          tutorialMenu.classList.add("hidden");
+          levelCompleteMenu.classList.add("hidden");
+          backgroundMusic.pause();
+          editLevelBtn.style.display = "none";
+        }
+        function showTutorial() {
+          gameState = "tutorial";
+          mainMenu.classList.add("hidden");
+          tutorialMenu.classList.remove("hidden");
+          levelCompleteMenu.classList.add("hidden");
+          backgroundMusic.pause();
+          editLevelBtn.style.display = "none";
+        }
+        function startGame() {
+          currentLevel = 1;
+          gameState = "playing";
+          mainMenu.classList.add("hidden");
+          tutorialMenu.classList.add("hidden");
+          levelCompleteMenu.classList.add("hidden");
+          initLevel();
+          backgroundMusic.currentTime = 0;
+          backgroundMusic.play();
+          editLevelBtn.style.display = "block";
+        }
+        function showLevelComplete() {
+          levelCompleteMenu.classList.remove("hidden");
+        }
+
+        // Button Event Listeners.
+        document
+          .getElementById("startGameBtn")
+          .addEventListener("click", startGame);
+        document
+          .getElementById("tutorialBtn")
+          .addEventListener("click", showTutorial);
+        document
+          .getElementById("startFromTutorialBtn")
+          .addEventListener("click", startGame);
+        document
+          .getElementById("backToMenuFromTutorialBtn")
+          .addEventListener("click", showMainMenu);
+        document
+          .getElementById("returnToMenuBtn")
+          .addEventListener("click", function () {
+            showMainMenu();
+          });
+        var editingMode = false;
+        var editLevelBtn = document.getElementById("editLevelBtn");
+        var levelEditorPanel = document.getElementById("levelEditorPanel");
+        var levelsEditor = document.getElementById("levelsEditor");
+        var copyLevelsBtn = document.getElementById("copyLevelsBtn");
+
+        editLevelBtn.addEventListener("click", function() {
+          editingMode = !editingMode;
+          if (editingMode) {
+            editLevelBtn.textContent = "Stop Editing";
+            levelEditorPanel.style.display = "block";
+            document.getElementById("objectPalette").style.display = "block";
+            // Revert bodySuits to original level config using helper function.
+            var levelData = levelsConfig[currentLevel - 1];
+            bodySuits = parseBodySuits(levelData.bodySuits);
+            updateLevelsEditor();  // Update text area with current visual config
+          } else {
+            editLevelBtn.textContent = "Edit Level";
+            levelEditorPanel.style.display = "none";
+            document.getElementById("objectPalette").style.display = "none";
+            // Optionally, additional code can be added here to handle code parsing if needed.
+          }
+        });
+
+        copyLevelsBtn.addEventListener("click", function() {
+          navigator.clipboard.writeText(levelsEditor.value).then(function() {
+            copyLevelsBtn.textContent = "Copied!";
+            setTimeout(function() {
+              copyLevelsBtn.textContent = "Copy All Levels";
+            }, 2000);
+          });
+        });
+        var clearLevelsBtn = document.getElementById("clearLevelsBtn");
+        clearLevelsBtn.addEventListener("click", function() {
+          sessionStorage.removeItem("levelsConfig");
+          clearLevelsBtn.textContent = "Levels Cleared!";
+          setTimeout(function() {
+            clearLevelsBtn.textContent = "Clear Levels";
+          }, 2000);
+        });
+        var prevLevelBtn = document.getElementById("prevLevelBtn");
+        var nextLevelBtn = document.getElementById("nextLevelBtn");
+        var levelIndicator = document.getElementById("levelIndicator");
+        prevLevelBtn.addEventListener("click", function() {
+          if (currentLevel > 1) {
+            currentLevel--;
+            initLevel();
+            updateLevelsEditor();
+          }
+        });
+        nextLevelBtn.addEventListener("click", function() {
+          currentLevel++;
+          if (currentLevel > levelsConfig.length) {
+            var defaultEndGoalX = Math.min(Math.max(0, canvas.width - 100), canvas.width - 40);
+            if (!isFinite(defaultEndGoalX)) defaultEndGoalX = canvas.width - 40;
+            levelsConfig.push({
+              playerStart: { x: 50, offsetFromBottom: 100 },
+              platforms: [{
+                x: 0,
+                offsetFromBottom: 20,
+                width: "full",
+                height: 20
+              }],
+              bodySuits: [],
+              endGoal: {
+                x: defaultEndGoalX,
+                offsetFromBottom: 100,
+                width: 40,
+                height: 60
+              }
+            });
+            sessionStorage.setItem("levelsConfig", JSON.stringify(levelsConfig));
+          }
+          initLevel();
+          updateLevelsEditor();
+        });
+
+        // Visual editing functionality: enable drag-and-drop editing on the canvas
+        var currentEditObj = null;
+        var currentEditType = null;
+        var editOffsetX = 0;
+        var editOffsetY = 0;
+
+        canvas.addEventListener("mousedown", function(e) {
+          if (!editingMode || e.button !== 0) return; // Only respond to left-click
+          var rect = canvas.getBoundingClientRect();
+          var mouseX = e.clientX - rect.left;
+          var mouseY = e.clientY - rect.top;
+          if (tryDeleteObject(platforms, mouseX, mouseY)) return;
+          if (tryDeleteObject(bodySuits, mouseX, mouseY)) return;
+          if (endGoal && isDeletionIconClicked(mouseX, mouseY, endGoal)) {
+            endGoal = null;
+            updateLevelsEditor();
+            return;
+          }
+
+          var editableItem = getEditableObjectUnderMouse(mouseX, mouseY);
+          if (editableItem) {
+            currentEditObj = editableItem.obj;
+            currentEditType = editableItem.type;
+            editOffsetX = mouseX - currentEditObj.x;
+            editOffsetY = mouseY - currentEditObj.y;
+            return;
+          }
+        });
+
+        canvas.addEventListener("mousemove", function(e) {
+          if (!editingMode || !currentEditObj) return;
+          var rect = canvas.getBoundingClientRect();
+          var mouseX = e.clientX - rect.left;
+          var mouseY = e.clientY - rect.top;
+          var newX = mouseX - editOffsetX;
+          var newY = mouseY - editOffsetY;
+          if (typeof currentEditObj.width !== 'undefined') {
+            newX = Math.max(0, Math.min(newX, canvas.width - currentEditObj.width));
+          }
+          if (typeof currentEditObj.height !== 'undefined') {
+            newY = Math.max(0, Math.min(newY, canvas.height - currentEditObj.height));
+          }
+          currentEditObj.x = newX;
+          currentEditObj.y = newY;
+          updateLevelsEditor();
+        });
+
+        canvas.addEventListener("mouseup", function(e) {
+          if (!editingMode) return;
+          currentEditObj = null;
+          currentEditType = null;
+        });
+
+        canvas.addEventListener("mouseleave", function(e) {
+          if (editingMode) {
+            currentEditObj = null;
+            currentEditType = null;
+          }
+        });
+
+        // Add drag and drop functionality for palette items
+        // Initialize palette suit templates
+        function initPaletteSuits() {
+          for (let i = 1; i <= 3; i++) {
+            const canvasElem = document.getElementById('suitTemplate' + i);
+            const ctx = canvasElem.getContext('2d');
+            const thickness = 5;
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvasElem.height);
+            gradient.addColorStop(0, "#F39C12");
+            gradient.addColorStop(1, "#E74C3C");
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, thickness, canvasElem.height);
+            ctx.fillRect(canvasElem.width - thickness, 0, thickness, canvasElem.height);
+            ctx.fillRect(0, canvasElem.height - thickness, canvasElem.width, thickness);
+          }
+        }
+        initPaletteSuits();
+
+        document.querySelectorAll('.paletteItem').forEach(function(item) {
+          item.addEventListener('dragstart', function(e) {
+            if (!editingMode) return;
+            var rect = item.getBoundingClientRect();
+            editOffsetX = e.clientX - rect.left;
+            editOffsetY = e.clientY - rect.top;
+
+            e.dataTransfer.setData('text/plain', item.id);
+            e.dataTransfer.effectAllowed = 'copy';
+
+            if (item.id === 'platformTemplate') {
+              currentEditObj = { type: "platform" };
+            } else if (item.id.startsWith('suitTemplate')) {
+              var level = parseInt(item.id.slice(-1));
+              currentEditObj = {
+                type: "bodySuit",
+                width: 40 + (level - 1) * 10,
+                height: 35 + (level - 1) * 5,
+                level: level
+              };
+            }
+            currentEditType = "new";
+          });
+          item.addEventListener('dragend', function(e) {
+            currentEditObj = null;
+            currentEditType = null;
+          });
+        });
+
+        // Add canvas drop zone functionality
+        canvas.addEventListener('dragover', function(e) {
+          if (!editingMode) return;
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'copy';
+        });
+
+        canvas.addEventListener('drop', function(e) {
+          if (!editingMode) return;
+          e.preventDefault();
+
+          var rect = canvas.getBoundingClientRect();
+          var mouseX = Math.max(0, Math.min(e.clientX - rect.left, canvas.width));
+          var mouseY = Math.max(0, Math.min(e.clientY - rect.top, canvas.height));
+          var dropX = mouseX - editOffsetX;
+          var dropY = mouseY - editOffsetY;
+
+          if (currentEditObj && currentEditType === "new") {
+            if (currentEditObj.type === "platform") {
+              platforms.push({
+                x: dropX,
+                y: dropY,
+                width: 150,
+                height: 20
+              });
+            } else if (currentEditObj.type === "bodySuit") {
+              var suitDimensions = calculateSuitDimensions(currentEditObj.level);
+              bodySuits.push({
+                x: dropX,
+                y: dropY,
+                width: suitDimensions.width,
+                height: suitDimensions.height,
+                requiredLevel: currentEditObj.level
+              });
+            }
+            updateLevelsEditor();
+          }
+
+          currentEditObj = null;
+          currentEditType = null;
+        });
+
+        function updateLevelsEditor() {
+          var newLevelConfig = {
+            playerStart: {
+              x: player.x,
+              offsetFromBottom: canvas.height - player.y
+            },
+            platforms: platforms.map(function(plat) {
+              return {
+                x: plat.x,
+                offsetFromBottom: canvas.height - plat.y,
+                width: (plat.width === canvas.width ? "full" : plat.width),
+                height: plat.height
+              };
+            }),
+            bodySuits: bodySuits.map(function(suit) {
+              return {
+                x: suit.x,
+                offsetFromBottom: canvas.height - suit.y,
+                requiredLevel: suit.requiredLevel
+              };
+            }),
+            endGoal: endGoal ? {
+              x: endGoal.x,
+              offsetFromBottom: canvas.height - endGoal.y,
+              width: endGoal.width,
+              height: endGoal.height
+            } : null
+          };
+          levelsConfig[currentLevel - 1] = newLevelConfig;
+          levelsEditor.value = "var levelsConfig = " + JSON.stringify(levelsConfig, null, 2) + ";";
+          sessionStorage.setItem("levelsConfig", JSON.stringify(levelsConfig));
+          document.getElementById("levelIndicator").textContent = "Level " + currentLevel;
+        }
+      })();
+    </script>
+  </body>
+</html>

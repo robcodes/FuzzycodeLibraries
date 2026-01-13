@@ -1,0 +1,510 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Touchpad Controls Demo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            background: #111;
+            color: #eee;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        h1 {
+            text-align: center;
+            margin: 16px 0 4px;
+        }
+
+        p.description {
+            text-align: center;
+            margin: 0 16px 12px;
+            font-size: 14px;
+            color: #ccc;
+        }
+
+        #layoutBar {
+            max-width: 800px;
+            margin: 0 auto 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            touch-action: manipulation;
+            pointer-events: auto;
+        }
+
+        #layoutBar label {
+            color: #ccc;
+        }
+
+        #layoutSelect {
+            padding: 4px 8px;
+            font-size: 13px;
+            background: #222;
+            color: #eee;
+            border-radius: 4px;
+            border: 1px solid #444;
+            touch-action: manipulation;
+            pointer-events: auto;
+            cursor: pointer;
+        }
+
+        #gameContainer {
+            position: relative;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 8px 8px 24px;
+            height: calc(100vh - 170px); /* leave space for header & legend */
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #gameCanvas {
+            flex: 1 1 auto;
+            max-width: 100%;
+            max-height: 100%;
+            border: 2px solid #555;
+            background: #000;
+        }
+
+        #hud {
+            text-align: center;
+            font-size: 13px;
+            margin-top: 6px;
+        }
+
+        #hud span.label {
+            color: #aaa;
+        }
+
+        #hud span.value {
+            color: #fff;
+        }
+
+        #message {
+            margin-top: 6px;
+            font-size: 13px;
+            color: #9be7ff;
+        }
+
+        /* Root container for right-hand controls in dual-stick layout */
+        #bottomRightRoot {
+            position: absolute;
+            right: 10px;
+            bottom: 10px;
+            width: 170px;
+            height: 210px; /* enough room for joystick + fire vertically */
+        }
+
+        #toggleControlsBtn {
+            display: block;
+            margin: 8px auto 16px;
+            padding: 8px 16px;
+            border-radius: 4px;
+            border: 1px solid #555;
+            background: #222;
+            color: #eee;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        #toggleControlsBtn:hover {
+            background: #333;
+        }
+
+        #legend {
+            max-width: 800px;
+            margin: 0 auto 16px;
+            font-size: 13px;
+            color: #ccc;
+        }
+
+        #legend ul {
+            padding-left: 18px;
+        }
+
+        /* Demo-specific styling for some buttons (on top of library styles) */
+        .primary-action-button {
+            box-shadow:
+                0 0 0 1px rgba(125, 211, 252, 0.6),
+                0 15px 40px rgba(8, 47, 73, 0.95);
+            background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.3), rgba(14, 165, 233, 0.25)) !important;
+        }
+
+        .secondary-action-button {
+            box-shadow:
+                0 0 0 1px rgba(74, 222, 128, 0.6),
+                0 15px 40px rgba(5, 46, 22, 0.95);
+            background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.25), rgba(34, 197, 94, 0.2)) !important;
+        }
+
+        .shoot-button {
+            box-shadow:
+                0 0 0 1px rgba(248, 113, 113, 0.8),
+                0 20px 45px rgba(127, 29, 29, 0.95);
+            background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.35), rgba(220, 38, 38, 0.3)) !important;
+        }
+
+        /* Slightly emphasise movement pads vs actions */
+        #safe-move,
+        #fast-move,
+        #ds-move,
+        #run-left,
+        #run-right {
+            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.85);
+        }
+
+        #safe-jump,
+        #fast-jump,
+        #run-jump {
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        /* Responsive tweak: a tiny boost in size on phones */
+        @media (max-width: 640px) {
+            .touchpad {
+                transform: scale(1.06);
+            }
+
+            #legend {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Touchpad Controls Demo</h1>
+    <p class="description">
+        On-screen controls simulate keyboard input. Try different layouts and watch the HUD.
+    </p>
+
+    <!-- Layout selector -->
+    <div id="layoutBar">
+        <label for="layoutSelect">Control layout:</label>
+        <select id="layoutSelect">
+            <option value="safe-platformer">Safe Platformer (horizontal-only)</option>
+            <option value="fast-platformer">Fast Platformer (full directional)</option>
+            <option value="dual-stick">Dual-Stick Shooter</option>
+            <option value="runner">Minimal Runner (3 buttons)</option>
+        </select>
+    </div>
+
+    <div id="gameContainer">
+        <!-- Simple "game" canvas -->
+        <canvas id="gameCanvas" width="640" height="360" tabindex="0"></canvas>
+
+        <!-- HUD showing which keys are currently pressed -->
+        <div id="hud">
+            <div>
+                <span class="label">Pressed keys:</span>
+                <span class="value" id="pressedKeys">(none)</span>
+            </div>
+            <div id="lastEvent">(no events yet)</div>
+            <div id="message">Tap the on-screen controls or press keys on your keyboard.</div>
+        </div>
+
+        <!-- Root container for some right-hand controls in dual-stick layout -->
+        <div id="bottomRightRoot"></div>
+    </div>
+
+    <button id="toggleControlsBtn">Disable touch controls</button>
+
+    <div id="legend">
+        <strong>Layouts shown in this demo:</strong>
+        <ul>
+            <li>
+                <strong>Safe Platformer:</strong>
+                Horizontal-only move pad bottom-left, jump and attack stacked bottom-right
+                to avoid accidental vertical input.
+            </li>
+            <li>
+                <strong>Fast Platformer:</strong>
+                Full directional pad bottom-left for tighter control, with jump/attack bottom-right.
+            </li>
+            <li>
+                <strong>Dual-Stick Shooter:</strong>
+                Left joystick for WASD movement, right joystick for arrow-key aiming,
+                FIRE button above the right joystick in a shared HUD container.
+            </li>
+            <li>
+                <strong>Minimal Runner:</strong>
+                Three large buttons (left, jump, right) along a bottom band.
+            </li>
+        </ul>
+    </div>
+
+    <!-- nipplejs (required by joystick touchpads) -->
+    <script src="https://cdn.jsdelivr.net/npm/nipplejs@0.10.2/dist/nipplejs.js" crossorigin="anonymous"></script>
+
+    <script src="../touchpad-controls.js"></script>
+
+    <!-- Demo/game script -->
+    <script>
+        (function () {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+
+            const pressedCodes = new Set();
+            const pressedEl = document.getElementById('pressedKeys');
+            const lastEventEl = document.getElementById('lastEvent');
+            const messageEl = document.getElementById('message');
+            const layoutSelect = document.getElementById('layoutSelect');
+            const toggleBtn = document.getElementById('toggleControlsBtn');
+
+            const player = {
+                x: canvas.width / 2,
+                y: canvas.height / 2,
+                size: 20,
+                speed: 2.0
+            };
+
+            let controlsInstances = [];
+            let controlsEnabled = true;
+            let currentLayout = layoutSelect.value || 'safe-platformer';
+
+            function clamp(val, min, max) {
+                return Math.max(min, Math.min(max, val));
+            }
+
+            function updateHud() {
+                const arr = Array.from(pressedCodes);
+                pressedEl.textContent = arr.length ? arr.join(', ') : '(none)';
+            }
+
+            // Listen to key events (both physical & simulated)
+            document.addEventListener('keydown', function (e) {
+                pressedCodes.add(e.code || e.key);
+                lastEventEl.textContent = 'keydown: key=' + e.key + ', code=' + e.code + ', keyCode=' + e.keyCode;
+                updateHud();
+            });
+
+            document.addEventListener('keyup', function (e) {
+                pressedCodes.delete(e.code || e.key);
+                lastEventEl.textContent = 'keyup: key=' + e.key + ', code=' + e.code + ', keyCode=' + e.keyCode;
+                updateHud();
+            });
+
+            // Simple "game loop" to move a square with keyboard inputs
+            function gameLoop() {
+                if (pressedCodes.has('ArrowLeft') || pressedCodes.has('KeyA')) {
+                    player.x -= player.speed;
+                }
+                if (pressedCodes.has('ArrowRight') || pressedCodes.has('KeyD')) {
+                    player.x += player.speed;
+                }
+                if (pressedCodes.has('ArrowUp') || pressedCodes.has('KeyW')) {
+                    player.y -= player.speed;
+                }
+                if (pressedCodes.has('ArrowDown') || pressedCodes.has('KeyS')) {
+                    player.y += player.speed;
+                }
+
+                player.x = clamp(player.x, player.size / 2, canvas.width - player.size / 2);
+                player.y = clamp(player.y, player.size / 2, canvas.height - player.size / 2);
+
+                const shooting =
+                    pressedCodes.has('KeyJ') ||
+                    pressedCodes.has('KeyK') ||
+                    pressedCodes.has('Space') ||
+                    pressedCodes.has('Enter');
+
+                if (shooting) {
+                    messageEl.textContent = 'Shooting! (Space / Enter / J / K)';
+                } else {
+                    messageEl.textContent = 'Tap the on-screen controls or press keys on your keyboard.';
+                }
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#222';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = '#4CAF50';
+                ctx.fillRect(
+                    player.x - player.size / 2,
+                    player.y - player.size / 2,
+                    player.size,
+                    player.size
+                );
+
+                requestAnimationFrame(gameLoop);
+            }
+
+            gameLoop();
+
+            // --- Touchpad controls setup ---
+
+            function destroyAllControls() {
+                controlsInstances.forEach(function (inst) {
+                    if (inst && typeof inst.destroy === 'function') {
+                        inst.destroy();
+                    }
+                });
+                controlsInstances = [];
+            }
+
+            function buildControlsForLayout(layout) {
+                const instances = [];
+
+                // Internal SVG Path Definitions (Material / Custom)
+                const SVG_PATHS = {
+                    moveH: `<path d="M3 12l5-5v3h4v4H8v3l-5-5z M21 12l-5-5v3h-4v4h4v3l5-5z"/>`,
+                    moveAll: `<path d="M12 2l-4 4h8l-4-4z M2 12l4 4v-8l-4 4z M22 12l-4-4v8l4-4z M12 22l4-4H8l4 4z"/>`,
+                    jump: `<path d="M12 6l-6 6h4v4h4v-4h4L12 6z"/>`,
+                    attack: `<path d="M21 3l-2.3 2.3-1.4-1.4-1.4 1.4 1.4 1.4-1.4 1.4-1.4-1.4-1.4 1.4 1.4 1.4-5 5L3 17.5V21h3.5L14 13.5l5 5 1.4-1.4-1.4-1.4 1.4-1.4 1.4 1.4 1.4-1.4-1.4-1.4 1.4-1.4L21 3z"/>`,
+                    fire: `<circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="2" fill="currentColor"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4" stroke="currentColor" stroke-width="2"/>`,
+                    left: `<path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"/>`,
+                    right: `<path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/>`,
+                    joystick: `<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"/><circle cx="12" cy="12" r="3" fill="currentColor" opacity="0.2"/>`
+                };
+
+                const withIcon = (pathKey, size = '45%', opacity = 0.9, color = 'white') => {
+                    const content = SVG_PATHS[pathKey] || '';
+                    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${color}">${content}</svg>`;
+                    const dataUrl = `url("data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}")`;
+                    return {
+                        backgroundImage: `${dataUrl}, var(--touchpad-bg)`,
+                        backgroundSize: `${size}, 100%`,
+                        backgroundRepeat: 'no-repeat, no-repeat',
+                        backgroundPosition: 'center, center',
+                        opacity: opacity
+                    };
+                };
+
+                const bindingsByLayout = {
+                    'safe-platformer': {
+                        move: { left: 'ArrowLeft', right: 'ArrowRight' },
+                        primary: 'Space',
+                        secondary: 'KeyJ'
+                    },
+                    'fast-platformer': {
+                        move: { left: 'ArrowLeft', right: 'ArrowRight', up: 'ArrowUp', down: 'ArrowDown' },
+                        primary: 'Space',
+                        secondary: 'KeyJ'
+                    },
+                    'dual-stick': {
+                        move: { left: 'KeyA', right: 'KeyD', up: 'KeyW', down: 'KeyS' },
+                        aim: { left: 'ArrowLeft', right: 'ArrowRight', up: 'ArrowUp', down: 'ArrowDown' },
+                        primary: ['Space', 'Enter']
+                    },
+                    runner: {
+                        primary: 'Space',
+                        secondary: 'ArrowLeft',
+                        tertiary: 'ArrowRight'
+                    }
+                };
+
+                const bindings = bindingsByLayout[layout] || bindingsByLayout['safe-platformer'];
+                const layoutResult = TouchpadControls.buildLayout({ layout: layout, bindings: bindings });
+                const buttons = layoutResult.buttons.map((button) => {
+                    const next = Object.assign({}, button);
+                    next.style = Object.assign({}, button.style);
+                    next.classList = Array.isArray(button.classList) ? button.classList.slice() : [];
+
+                    const role = button.role;
+                    const idMap = {
+                        'safe-platformer': { move: 'safe-move', primary: 'safe-jump', secondary: 'safe-attack' },
+                        'fast-platformer': { move: 'fast-move', primary: 'fast-jump', secondary: 'fast-attack' },
+                        'dual-stick': { move: 'ds-move', aim: 'ds-aim', primary: 'ds-fire' },
+                        runner: { secondary: 'run-left', primary: 'run-jump', tertiary: 'run-right' }
+                    };
+
+                    if (idMap[layout] && idMap[layout][role]) {
+                        next.id = idMap[layout][role];
+                    }
+
+                    if (layout === 'safe-platformer') {
+                        if (role === 'move') Object.assign(next.style, withIcon('moveH', '60%'));
+                        if (role === 'primary') {
+                            Object.assign(next.style, withIcon('jump', '50%'));
+                            next.classList.push('primary-action-button');
+                        }
+                        if (role === 'secondary') {
+                            Object.assign(next.style, withIcon('attack', '55%'));
+                            next.classList.push('secondary-action-button');
+                        }
+                    } else if (layout === 'fast-platformer') {
+                        if (role === 'move') Object.assign(next.style, withIcon('moveAll', '65%'));
+                        if (role === 'primary') {
+                            Object.assign(next.style, withIcon('jump', '50%'));
+                            next.classList.push('primary-action-button');
+                        }
+                        if (role === 'secondary') {
+                            Object.assign(next.style, withIcon('attack', '55%'));
+                            next.classList.push('secondary-action-button');
+                        }
+                    } else if (layout === 'dual-stick') {
+                        if (role === 'move' || role === 'aim') {
+                            Object.assign(next.style, withIcon('joystick', '50%', 0.6));
+                        }
+                        if (role === 'primary') {
+                            Object.assign(next.style, withIcon('fire', '60%', 1.0, '#f87171'));
+                            next.classList.push('shoot-button');
+                        }
+                    } else if (layout === 'runner') {
+                        if (role === 'secondary') Object.assign(next.style, withIcon('left', '50%'));
+                        if (role === 'primary') {
+                            Object.assign(next.style, withIcon('jump', '50%'));
+                            next.classList.push('primary-action-button');
+                        }
+                        if (role === 'tertiary') Object.assign(next.style, withIcon('right', '50%'));
+                    }
+
+                    return next;
+                });
+
+                const mainControls = TouchpadControls.create({
+                    buttons: buttons,
+                    responsive: false
+                });
+                instances.push(mainControls);
+
+                return instances;
+            }
+
+            function applyLayout(layoutName) {
+                currentLayout = layoutName;
+                destroyAllControls();
+                if (!controlsEnabled) return;
+                controlsInstances = buildControlsForLayout(layoutName);
+            }
+
+            applyLayout(currentLayout);
+
+            layoutSelect.addEventListener('change', function (e) {
+                const layoutName = e.target.value;
+                applyLayout(layoutName);
+            });
+
+            toggleBtn.addEventListener('click', function () {
+                if (controlsEnabled) {
+                    destroyAllControls();
+                    toggleBtn.textContent = 'Enable touch controls';
+                    controlsEnabled = false;
+                } else {
+                    controlsEnabled = true;
+                    applyLayout(currentLayout);
+                    toggleBtn.textContent = 'Disable touch controls';
+                }
+            });
+
+            let resizeTimer = null;
+            window.addEventListener('resize', function () {
+                if (!controlsEnabled) return;
+                if (resizeTimer) window.clearTimeout(resizeTimer);
+                resizeTimer = window.setTimeout(function () {
+                    applyLayout(currentLayout);
+                }, 150);
+            });
+        })();
+    </script>
+</body>
+</html>
