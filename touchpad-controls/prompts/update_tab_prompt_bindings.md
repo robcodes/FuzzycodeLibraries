@@ -92,8 +92,8 @@ Touchpad config schema (deterministic JSON):
 }
 
 Important:
-- The JSON schema above is for *analysis*. You must translate it into `bindings` + `actionMeta`
-  `bindings` (that will render no controls)
+- The JSON schema above is for *analysis*. You must translate it into `bindings` + `actionMeta`.
+- If you are unsure about a control, omit it rather than guessing.
 
 Rules for axes/actions (apply from first principles):
 - Use axes only for directional or rate controls; use actions for single-key controls.

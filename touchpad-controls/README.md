@@ -88,11 +88,11 @@ without the Python pipeline.
 
 ## Prompts (keep in sync)
 The **canonical** prompt lives at:
-- `prompts/prompt_template.md` (used by the Python script)
+- `prompts/pipeline_prompt_template.md` (used by the Python script)
 
-Prompt-only editing (same semantics, different injection instructions):
-- `prompts/prompt.md` (inject flat bindings/actionMeta)
-- `prompts/prompt_analysis.md` (inject analysis schema directly)
+Update-tab editing (same semantics, different injection instructions):
+- `prompts/update_tab_prompt_bindings.md` (inject flat bindings/actionMeta)
+- `prompts/update_tab_prompt_analysis.md` (inject analysis schema directly)
 
 Rule: the semantics/rules section must stay identical to the canonical prompt. Only the
 injection instructions differ.
@@ -109,12 +109,12 @@ Outputs:
 - `<game>_touch.html` (external touchpad-controls.js)
 - `<game>_touch_embedded.html` (embedded library)
 
-This script uses `prompts/prompt_template.md` and records runs in `llm_runs/`.
+This script uses `prompts/pipeline_prompt_template.md` and records runs in `llm_runs/`.
 It supports Groq (`openai/gpt-oss-120b`) or Codex (`gpt-5.1-codex-mini`), and reads `GROQ_API_KEY`
 from `.env` (current or parent directory).
 
 ### 2) Prompt-only editing
-Use `prompts/prompt.md` or `prompts/prompt_analysis.md` when applying edits manually (e.g., update tab).
+Use `prompts/update_tab_prompt_bindings.md` or `prompts/update_tab_prompt_analysis.md` when applying edits manually (e.g., update tab).
 
 ## Testing and regression
 - `scripts/validate_layouts.js`: sanity checks layout bounds/sizes.

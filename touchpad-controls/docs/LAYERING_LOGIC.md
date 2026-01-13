@@ -25,7 +25,7 @@ nondeterministic LLM output is bridged into deterministic behavior.
   - `kind`, `behavior`, `interaction`, `simultaneous`
   - `control_space`: `vector`, `rate`, `magnitude`
   - `importance`, `context` (future)
- - Follow the canonical schema and rules in `prompts/prompt_template.md` (manual prompts must mirror it).
+ - Follow the canonical schema and rules in `prompts/pipeline_prompt_template.md` (manual prompts must mirror it).
 
 **Why here**
 - The LLM can interpret code intent and usage patterns that are hard to encode deterministically.

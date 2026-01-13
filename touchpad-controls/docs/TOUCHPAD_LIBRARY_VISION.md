@@ -256,8 +256,8 @@ into `bindings` + `actionMeta` at runtime. This lets prompt-only edits still wor
 the analysis shape.
 
 ## Prompt Sources (keep in sync)
-The canonical LLM prompt is `prompts/prompt_template.md` (used by the Python pipeline).
-Manual edit prompts (`prompts/prompt.md`, `prompts/prompt_analysis.md`) must mirror the same schema and rules;
+The canonical LLM prompt is `prompts/pipeline_prompt_template.md` (used by the Python pipeline).
+Manual edit prompts (`prompts/update_tab_prompt_bindings.md`, `prompts/update_tab_prompt_analysis.md`) must mirror the same schema and rules;
 only the injection instructions should differ. This prevents drift between the Python and
 prompt-only flows.
 
