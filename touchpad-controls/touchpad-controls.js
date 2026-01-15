@@ -86,9 +86,6 @@
                     box-shadow 150ms ease,
                     background 200ms ease,
                     filter 150ms linear;
-                background-position: center;
-                background-repeat: no-repeat;
-                background-size: 45%;
             }
 
             .touchpad::after {
