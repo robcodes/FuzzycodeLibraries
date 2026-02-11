@@ -96,7 +96,7 @@ Update-tab editing (same semantics, different injection instructions):
 
 Rule: the semantics/rules section must stay identical to the canonical prompt. Only the
 injection instructions differ.
-CDN note: prompts currently reference `http://aws.fuzzycode.dev/fuzzycode_assets/touchpad-controls.js?v2`
+CDN note: prompts currently reference `https://aws.fuzzycode.dev/fuzzycode_assets/touchpad-controls.js?v2`
 for cache busting.
 
 ## Tooling and workflows

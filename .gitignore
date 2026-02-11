@@ -1,7 +1,9 @@
 **/__pycache__/
+.auditdata/
 **/*.pyc
 **/.env
 **/.venv/
 **/node_modules/
 **/llm_runs/
 **/test_cases/outputs/
+page_audits/runs/

@@ -4,6 +4,11 @@
     } else {
         root.TouchpadControls = factory();
         root.touchpadControls = root.TouchpadControls;
+        // Legacy compatibility: some existing pages call a global createTouchpadControls().
+        if (typeof root.createTouchpadControls !== "function") {
+            root.createTouchpadControls =
+                root.TouchpadControls.createTouchpadControls || root.TouchpadControls.create;
+        }
     }
 }(typeof self !== "undefined" ? self : this, function () {
     "use strict";
@@ -371,21 +376,29 @@
         }
     };
 
+    const getButtonKeys = (btn) => {
+        if (!btn || typeof btn !== "object") return null;
+        if (btn.keys != null) return btn.keys;
+        if (btn.key != null) return btn.key;
+        return null;
+    };
+
     const resolveLabelText = (btn, labelMode) => {
         if (!btn) return "";
+        const keys = getButtonKeys(btn);
         if (labelMode === "none") return "";
         if (labelMode === "text") {
             if (btn.label) return String(btn.label);
-            if (typeof btn.keys === "string") return keyLabel(btn.keys);
+            if (typeof keys === "string") return keyLabel(keys);
             return "";
         }
         if (labelMode === "key") {
-            if (typeof btn.keys === "string") return keyLabel(btn.keys);
+            if (typeof keys === "string") return keyLabel(keys);
             return "";
         }
         if (labelMode === "both") {
             if (btn.label) return String(btn.label);
-            if (typeof btn.keys === "string") return keyLabel(btn.keys);
+            if (typeof keys === "string") return keyLabel(keys);
             return "";
         }
         return "";
@@ -419,7 +432,7 @@
         if (btn.icon) return btn.icon;
         const iconColor = theme && theme.iconColor ? theme.iconColor : ICON_COLOR_DEFAULT;
         const meta = btn.meta || null;
-        const keys = btn.keys;
+        const keys = getButtonKeys(btn);
         const role = btn.role;
 
         if (meta && meta.pair_position) {
@@ -1032,6 +1045,7 @@
 
         buttons.forEach((btn) => {
             if (!btn) return;
+            const buttonKeys = getButtonKeys(btn);
 
             const theme = mergeTheme(baseTheme, btn.theme);
             const touchpad = document.createElement("div");
@@ -1050,8 +1064,8 @@
             let type = btn.type;
             if (!type) {
                 if (
-                    (Array.isArray(btn.keys) && btn.keys.length > 1) ||
-                    (btn.keys && typeof btn.keys === "object" && !Array.isArray(btn.keys))
+                    (Array.isArray(buttonKeys) && buttonKeys.length > 1) ||
+                    (buttonKeys && typeof buttonKeys === "object" && !Array.isArray(buttonKeys))
                 ) {
                     type = "joystick";
                 } else {
@@ -1071,7 +1085,7 @@
 
             const ariaLabel = btn.label != null
                 ? String(btn.label)
-                : (labelText || (typeof btn.keys === "string" ? keyLabel(btn.keys) : ""));
+                : (labelText || (typeof buttonKeys === "string" ? keyLabel(buttonKeys) : ""));
             if (ariaLabel) {
                 touchpad.setAttribute("aria-label", ariaLabel);
             }
@@ -1134,7 +1148,7 @@
                 touchpad.classList.add("touchpad--button");
             }
 
-            const tp = { element: touchpad, keys: btn.keys, type: type };
+            const tp = { element: touchpad, keys: buttonKeys, type: type };
             touchpads.push(tp);
         });
 

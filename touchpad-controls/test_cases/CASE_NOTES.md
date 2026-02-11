@@ -26,6 +26,7 @@ These are saved as regression configs in `test_cases/gold_standard_configs`.
 - Bible Typerunner: Typing game; needs a full keyboard or input focus helper.
 - Avoid the Germs (V3): Mouse-only; touch-to-mouse not yet supported.
 - Cosmic Brick Blaster: Mouse-only; same as above.
+- Neon Breach: Mouse + keyboard; LLM only returns movement (WASD) with no actions. Expected until mouse-to-touch is supported.
 - Frog Jumper Math Game: Already has solid tablet controls; we likely should detect and avoid injecting UI.
 - Age of Empires style game: RTS complexity is too high for auto-touchpad; likely needs a different UX or skip.
 

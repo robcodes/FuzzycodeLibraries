@@ -1,4 +1,4 @@
-Use this "http://aws.fuzzycode.dev/fuzzycode_assets/touchpad-controls.js?v2" to add touchpad controls to the game.
+Use this "https://aws.fuzzycode.dev/fuzzycode_assets/touchpad-controls.js?v2" to add touchpad controls to the game.
 
 You are editing a single-page HTML game. Your job:
 1) Identify the keyboard controls used by the game.
@@ -15,7 +15,7 @@ Rules:
 
 Required script tags to inject:
 <script src="https://cdn.jsdelivr.net/npm/nipplejs@0.10.2/dist/nipplejs.js" crossorigin="anonymous"></script>
-<script src="http://aws.fuzzycode.dev/fuzzycode_assets/touchpad-controls.js?v2"></script>
+<script src="https://aws.fuzzycode.dev/fuzzycode_assets/touchpad-controls.js?v2"></script>
 
 Then inject a config block like this (fill in bindings/actionMeta from your analysis):
 <script>

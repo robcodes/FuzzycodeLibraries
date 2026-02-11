@@ -1,0 +1,564 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Breach: Capture the Flag</title>
+    <multi-asset-sheet id="game_assets" assets="player_blue,player_red,flag_blue,flag_red,wall_tile,floor_tile,particle" style="cyberpunk neon pixel art top-down shooter style" server_sheet_key="2930866bbdab10d9d35721c18f84bc5136f6fe402bdce3dacbbd6bbf149e8242" server_sheet_hash="7019103f7b21249c536165174b4acff657d2cc522aad76d16540a6768b2444a8" server_sheet_dt="2026-01-20T17:53:35.496943+00:00"></multi-asset-sheet>
+    <multi-asset-sheet id="powerup_assets" assets="shield_icon,triple_icon,rapid_icon,speed_icon" style="cyberpunk neon pixel art glowing powerup icons" spritesheet_ref="game_assets" server_sheet_key="c064dab5b580cb760b7badc7ecca99135037981ebbcdd63fc595c8be7166cc64" server_sheet_hash="9f957b431e2117d5f98c4ae6b32a19acf8de4b20e64898c8195a3b58e3be6799" server_sheet_dt="2026-01-20T18:05:23.047667+00:00"></multi-asset-sheet>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #050505;
+            color: #00ffcc;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        #ui-layer {
+            position: absolute;
+            top: 20px;
+            display: flex;
+            justify-content: space-between;
+            width: 800px;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .score-box {
+            background: rgba(0, 0, 0, 0.85);
+            padding: 12px 25px;
+            border: 2px solid #00ffcc;
+            border-radius: 4px;
+            font-size: 28px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.5), inset 0 0 10px rgba(0, 255, 204, 0.2);
+            text-transform: uppercase;
+        }
+        #blue-score { border-color: #00d4ff; color: #00d4ff; box-shadow: 0 0 20px rgba(0, 212, 255, 0.5); }
+        #red-score { border-color: #ff2a6d; color: #ff2a6d; box-shadow: 0 0 20px rgba(255, 42, 109, 0.5); }
+        #game-container {
+            position: relative;
+            border: 4px solid #333;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 1);
+        }
+        canvas {
+            display: block;
+            background: #111;
+            cursor: crosshair;
+        }
+        #overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 40px;
+            border: 2px solid #00ffcc;
+            display: block;
+        }
+        button {
+            background: #00ffcc;
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        button:hover {
+            background: #fff;
+            box-shadow: 0 0 20px #00ffcc;
+        }
+        .instructions {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui-layer">
+        <div class="score-box" id="blue-score">BLUE: 0</div>
+        <div class="score-box" id="red-score">RED: 0</div>
+    </div>
+
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <div id="overlay">
+            <h1>NEON BREACH</h1>
+            <p>Capture the enemy flag and bring it back to your base.</p>
+            <button onclick="startGame()">START MISSION</button>
+            <div class="instructions">
+                WASD to Move | MOUSE to Aim | CLICK to Shoot<br>
+                Touch enemy flag to steal | Return to base to score
+            </div>
+        </div>
+    </div>
+
+    <audio id="snd-shoot" src="https://sounds.uat.fuzzycode.dev/sound_effect?prompt=retro+laser+shot+high+pitch&duration=0.5&ext=.mp3"></audio>
+    <audio id="snd-cap" src="https://sounds.uat.fuzzycode.dev/sound_effect?prompt=achievement+unlock+digital&duration=1&ext=.mp3"></audio>
+    <audio id="bgm" loop src="https://sounds.uat.fuzzycode.dev/music?prompt=dark+cyberpunk+techno+battle+theme&duration=45&ext=.mp3"></audio>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const blueScoreEl = document.getElementById('blue-score');
+        const redScoreEl = document.getElementById('red-score');
+        const overlay = document.getElementById('overlay');
+
+        canvas.width = 1000;
+        canvas.height = 600;
+
+        const TILE_SIZE = 40;
+        const PLAYER_SIZE = 30;
+        const BULLET_SPEED = 7;
+        
+        const assets = {
+            bluePlayer: "https://images.uat.fuzzycode.dev/multi_ai?grab=player_blue&resize=32x32&sheet_key=2930866bbdab10d9d35721c18f84bc5136f6fe402bdce3dacbbd6bbf149e8242",
+            redPlayer: "https://images.uat.fuzzycode.dev/multi_ai?grab=player_red&resize=32x32&sheet_key=2930866bbdab10d9d35721c18f84bc5136f6fe402bdce3dacbbd6bbf149e8242",
+            blueFlag: "https://images.uat.fuzzycode.dev/multi_ai?grab=flag_blue&resize=32x32&sheet_key=2930866bbdab10d9d35721c18f84bc5136f6fe402bdce3dacbbd6bbf149e8242",
+            redFlag: "https://images.uat.fuzzycode.dev/multi_ai?grab=flag_red&resize=32x32&sheet_key=2930866bbdab10d9d35721c18f84bc5136f6fe402bdce3dacbbd6bbf149e8242",
+            wall: "https://images.uat.fuzzycode.dev/multi_ai?grab=wall_tile&resize=40x40&sheet_key=2930866bbdab10d9d35721c18f84bc5136f6fe402bdce3dacbbd6bbf149e8242",
+            floor: "https://images.uat.fuzzycode.dev/multi_ai?grab=floor_tile&resize=40x40&sheet_key=2930866bbdab10d9d35721c18f84bc5136f6fe402bdce3dacbbd6bbf149e8242",
+            particle: "https://images.uat.fuzzycode.dev/multi_ai?grab=particle&resize=16x16&sheet_key=2930866bbdab10d9d35721c18f84bc5136f6fe402bdce3dacbbd6bbf149e8242",
+            shield_icon: "https://images.uat.fuzzycode.dev/multi_ai?grab=shield_icon&resize=30x30&sheet_key=c064dab5b580cb760b7badc7ecca99135037981ebbcdd63fc595c8be7166cc64",
+            triple_icon: "https://images.uat.fuzzycode.dev/multi_ai?grab=triple_icon&resize=30x30&sheet_key=c064dab5b580cb760b7badc7ecca99135037981ebbcdd63fc595c8be7166cc64",
+            rapid_icon: "https://images.uat.fuzzycode.dev/multi_ai?grab=rapid_icon&resize=30x30&sheet_key=c064dab5b580cb760b7badc7ecca99135037981ebbcdd63fc595c8be7166cc64",
+            speed_icon: "https://images.uat.fuzzycode.dev/multi_ai?grab=speed_icon&resize=30x30&sheet_key=c064dab5b580cb760b7badc7ecca99135037981ebbcdd63fc595c8be7166cc64"
+        };
+
+        const images = {};
+        Object.keys(assets).forEach(key => {
+            images[key] = new Image();
+            images[key].src = assets[key];
+        });
+
+        let gameState = {
+            running: false,
+            score: { blue: 0, red: 0 },
+            keys: {},
+            mouse: { x: 0, y: 0 },
+            particles: []
+        };
+
+        class Entity {
+            constructor(x, y, w, h) {
+                this.x = x;
+                this.y = y;
+                this.w = w;
+                this.h = h;
+            }
+            getCenter() { return { x: this.x + this.w / 2, y: this.y + this.h / 2 }; }
+        }
+
+        class Player extends Entity {
+            constructor(x, y, team) {
+                super(x, y, PLAYER_SIZE, PLAYER_SIZE);
+                this.team = team;
+                this.speed = 4;
+                this.hasFlag = false;
+                this.health = 100;
+                this.angle = 0;
+                this.spawnPos = { x, y };
+                this.lastShot = 0;
+                this.powerups = {
+                    shield: 0,
+                    triple: 0,
+                    rapid: 0,
+                    speed: 0
+                };
+            }
+
+            update() {
+                // Update powerup timers
+                const now = Date.now();
+                Object.keys(this.powerups).forEach(k => {
+                    if (this.powerups[k] > 0 && now > this.powerups[k]) this.powerups[k] = 0;
+                });
+
+                const currentSpeed = this.powerups.speed ? this.speed * 1.6 : this.speed;
+                let dx = 0;
+                let dy = 0;
+
+                if (this.team === 'blue') {
+                    if (gameState.keys['KeyW']) dy -= currentSpeed;
+                    if (gameState.keys['KeyS']) dy += currentSpeed;
+                    if (gameState.keys['KeyA']) dx -= currentSpeed;
+                    if (gameState.keys['KeyD']) dx += currentSpeed;
+                    
+                    const center = this.getCenter();
+                    this.angle = Math.atan2(gameState.mouse.y - center.y, gameState.mouse.x - center.x);
+                } else {
+                    const move = this.aiLogic();
+                    dx = move.dx;
+                    dy = move.dy;
+                }
+
+                // Sliding Wall Collision Logic
+                // Try X movement
+                const oldX = this.x;
+                this.x += dx;
+                if (walls.some(w => checkRectCollision(this, w))) {
+                    this.x = oldX;
+                }
+
+                // Try Y movement
+                const oldY = this.y;
+                this.y += dy;
+                if (walls.some(w => checkRectCollision(this, w))) {
+                    this.y = oldY;
+                }
+
+                // Bounds
+                this.x = Math.max(0, Math.min(canvas.width - this.w, this.x));
+                this.y = Math.max(0, Math.min(canvas.height - this.h, this.y));
+            }
+
+            aiLogic() {
+                let target = this.hasFlag ? redBase : blueFlag;
+                
+                // AI Powerup priority: if a powerup exists nearby and AI isn't busy scoring
+                if (!this.hasFlag && powerups.length > 0) {
+                    const nearestPup = powerups[0];
+                    const distToPup = Math.hypot(nearestPup.x - this.x, nearestPup.y - this.y);
+                    if (distToPup < 300) target = nearestPup;
+                }
+
+                const tdx = target.x - this.x;
+                const tdy = target.y - this.y;
+                const dist = Math.sqrt(tdx*tdx + tdy*tdy);
+                
+                let moveX = 0;
+                let moveY = 0;
+
+                if (dist > 5) {
+                    moveX = (tdx/dist) * (this.speed * 0.7);
+                    moveY = (tdy/dist) * (this.speed * 0.7);
+                }
+                
+                // Simple AI raycast avoidance: if path is blocked, try to steer
+                const futurePos = { x: this.x + moveX * 5, y: this.y + moveY * 5, w: this.w, h: this.h };
+                if (walls.some(w => checkRectCollision(futurePos, w))) {
+                    // Try perpendicular steering
+                    const tempX = moveX;
+                    moveX = -moveY;
+                    moveY = tempX;
+                }
+                
+                // Set movement angle
+                this.angle = Math.atan2(moveY, moveX);
+
+                // AI Shooting Logic
+                const now = Date.now();
+                const opponent = players[0]; // The blue player
+                const distToOpponent = Math.hypot(opponent.x - this.x, opponent.y - this.y);
+                
+                // Shoot if close enough
+                if (distToOpponent < 400) {
+                    const center = this.getCenter();
+                    const oppCenter = opponent.getCenter();
+                    this.angle = Math.atan2(oppCenter.y - center.y, oppCenter.x - center.x);
+                    fireBullet(this);
+                }
+                return { dx: moveX, dy: moveY };
+            }
+
+            respawn() {
+                if (this.powerups.shield > 0) {
+                    this.powerups.shield = 0;
+                    return; // Prevent death
+                }
+                this.x = this.spawnPos.x;
+                this.y = this.spawnPos.y;
+                this.hasFlag = false;
+                this.health = 100;
+                Object.keys(this.powerups).forEach(k => this.powerups[k] = 0);
+            }
+
+            draw() {
+                const center = this.getCenter();
+                if (this.powerups.shield > 0) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = '#00ffcc';
+                    ctx.lineWidth = 2;
+                    ctx.arc(center.x, center.y, 25, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+
+                ctx.save();
+                ctx.translate(center.x, center.y);
+                
+                // If moving left (PI/2 to 3PI/2), the sprite might look upside down depending on asset orientation.
+                // We ensure the sprite is always 'upright' by flipping the Y scale if looking left, 
+                // or simply rotating. Most top-down assets expect simple rotation.
+                ctx.rotate(this.angle);
+                
+                // If the player is facing left, we flip the sprite vertically to keep it 'upright' 
+                // relative to the screen if the asset is a side-profile. 
+                // For true top-down, we just rotate. Given the 'upside down' feedback, 
+                // it suggests the asset is more of a 3/4 view or side view.
+                if (Math.abs(this.angle) > Math.PI / 2) {
+                    ctx.scale(1, -1);
+                }
+
+                ctx.drawImage(this.team === 'blue' ? images.bluePlayer : images.redPlayer, -this.w/2, -this.h/2, this.w, this.h);
+                ctx.restore();
+                
+                if (this.hasFlag) {
+                    ctx.drawImage(this.team === 'blue' ? images.redFlag : images.blueFlag, this.x, this.y - 20, 20, 20);
+                }
+            }
+        }
+
+        class Bullet {
+            constructor(x, y, angle, team) {
+                this.x = x;
+                this.y = y;
+                this.vx = Math.cos(angle) * BULLET_SPEED;
+                this.vy = Math.sin(angle) * BULLET_SPEED;
+                this.team = team;
+                this.radius = 4;
+                this.life = 100;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life--;
+            }
+            draw() {
+                ctx.fillStyle = this.team === 'blue' ? '#00f2ff' : '#ff0044';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        class Powerup extends Entity {
+            constructor(x, y, type) {
+                super(x, y, 30, 30);
+                this.type = type; // shield, triple, rapid, speed
+            }
+            draw() {
+                const img = images[this.type + '_icon'];
+                if (img) ctx.drawImage(img, this.x, this.y, this.w, this.h);
+            }
+        }
+
+        let players = [];
+        let bullets = [];
+        let powerups = [];
+        let lastPowerupSpawn = 0;
+        let walls = [];
+        const blueBase = { x: 50, y: 280, w: 60, h: 60 };
+        const redBase = { x: 890, y: 280, w: 60, h: 60 };
+        let blueFlag = { x: 60, y: 290, team: 'blue', picked: false };
+        let redFlag = { x: 910, y: 290, team: 'red', picked: false };
+
+        function initMap() {
+            walls = [];
+            // Central pillars with more vertical space
+            for (let i = 0; i < 3; i++) {
+                walls.push(new Entity(480, i * 200 + 40, 40, 120));
+            }
+            // Side obstacles with more horizontal and vertical clearance
+            for (let i = 0; i < 2; i++) {
+                walls.push(new Entity(250, 100 + i * 300, 40, 100));
+                walls.push(new Entity(710, 100 + i * 300, 40, 100));
+            }
+        }
+
+        function checkRectCollision(a, b) {
+            return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+        }
+
+        function startGame() {
+            overlay.style.display = 'none';
+            gameState.running = true;
+            gameState.score = { blue: 0, red: 0 };
+            players = [
+                new Player(100, 300, 'blue'),
+                new Player(850, 300, 'red')
+            ];
+            bullets = [];
+            powerups = [];
+            lastPowerupSpawn = Date.now();
+            initMap();
+            document.getElementById('bgm').play();
+            requestAnimationFrame(gameLoop);
+        }
+
+        window.addEventListener('keydown', e => gameState.keys[e.code] = true);
+        window.addEventListener('keyup', e => gameState.keys[e.code] = false);
+        canvas.addEventListener('mousemove', e => {
+            const rect = canvas.getBoundingClientRect();
+            gameState.mouse.x = e.clientX - rect.left;
+            gameState.mouse.y = e.clientY - rect.top;
+        });
+        function fireBullet(p) {
+            const now = Date.now();
+            const cooldown = p.powerups.rapid ? 150 : (p.team === 'blue' ? 400 : 1200);
+            if (now - p.lastShot > cooldown) {
+                const center = p.getCenter();
+                const angles = p.powerups.triple ? [p.angle - 0.2, p.angle, p.angle + 0.2] : [p.angle];
+                angles.forEach(a => bullets.push(new Bullet(center.x, center.y, a, p.team)));
+                
+                if (p.team === 'blue') {
+                    document.getElementById('snd-shoot').currentTime = 0;
+                    document.getElementById('snd-shoot').play();
+                }
+                p.lastShot = now;
+            }
+        }
+
+        canvas.addEventListener('mousedown', () => {
+            if (!gameState.running) return;
+            fireBullet(players[0]);
+        });
+
+        let screenShake = 0;
+
+        function gameLoop() {
+            if (!gameState.running) return;
+
+            const now = Date.now();
+            // Spawn Powerups
+            if (now - lastPowerupSpawn > 10000 && powerups.length < 3) {
+                const types = ['shield', 'triple', 'rapid', 'speed'];
+                const type = types[Math.floor(Math.random() * types.length)];
+                powerups.push(new Powerup(200 + Math.random() * 600, 100 + Math.random() * 400, type));
+                lastPowerupSpawn = now;
+            }
+
+            // Update
+            players.forEach(p => {
+                p.update();
+                // Powerup collection
+                for (let i = powerups.length - 1; i >= 0; i--) {
+                    if (checkRectCollision(p, powerups[i])) {
+                        p.powerups[powerups[i].type] = Date.now() + 10000;
+                        powerups.splice(i, 1);
+                    }
+                }
+            });
+            if (screenShake > 0) screenShake *= 0.9;
+            
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const b = bullets[i];
+                b.update();
+                
+                // Wall collision for bullets
+                let hitWall = false;
+                for (const w of walls) {
+                    if (b.x > w.x && b.x < w.x + w.w && b.y > w.y && b.y < w.y + w.h) {
+                        hitWall = true;
+                        break;
+                    }
+                }
+
+                if (b.life <= 0 || hitWall) {
+                    bullets.splice(i, 1);
+                    continue;
+                }
+                
+                players.forEach(p => {
+                    if (b.team !== p.team) {
+                        const dx = b.x - (p.x + p.w/2);
+                        const dy = b.y - (p.y + p.h/2);
+                        if (Math.sqrt(dx*dx + dy*dy) < 20) {
+                            p.respawn();
+                            screenShake = 15;
+                            if (p.team === 'red') blueFlag.picked = false;
+                            else redFlag.picked = false;
+                            bullets.splice(i, 1);
+                        }
+                    }
+                });
+            }
+
+            // Flag Logic
+            const bluePlayer = players[0];
+            const redPlayer = players[1];
+
+            // Blue player picks up Red flag
+            if (!redFlag.picked && checkRectCollision(bluePlayer, {x: redFlag.x, y: redFlag.y, w:30, h:30})) {
+                redFlag.picked = true;
+                bluePlayer.hasFlag = true;
+            }
+            // Red player picks up Blue flag
+            if (!blueFlag.picked && checkRectCollision(redPlayer, {x: blueFlag.x, y: blueFlag.y, w:30, h:30})) {
+                blueFlag.picked = true;
+                redPlayer.hasFlag = true;
+            }
+
+            // Scoring
+            if (bluePlayer.hasFlag && checkRectCollision(bluePlayer, blueBase)) {
+                gameState.score.blue++;
+                bluePlayer.hasFlag = false;
+                redFlag.picked = false;
+                document.getElementById('snd-cap').play();
+                blueScoreEl.innerText = `BLUE: ${gameState.score.blue}`;
+            }
+            if (redPlayer.hasFlag && checkRectCollision(redPlayer, redBase)) {
+                gameState.score.red++;
+                redPlayer.hasFlag = false;
+                blueFlag.picked = false;
+                document.getElementById('snd-cap').play();
+                redScoreEl.innerText = `RED: ${gameState.score.red}`;
+            }
+
+            // Draw
+            ctx.save();
+            if (screenShake > 0.5) {
+                ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
+            }
+            ctx.fillStyle = '#0a0a0f';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Floor Tiling
+            for (let x = 0; x < canvas.width; x += TILE_SIZE) {
+                for (let y = 0; y < canvas.height; y += TILE_SIZE) {
+                    ctx.drawImage(images.floor, x, y, TILE_SIZE, TILE_SIZE);
+                    ctx.strokeStyle = 'rgba(0, 255, 204, 0.05)';
+                    ctx.strokeRect(x, y, TILE_SIZE, TILE_SIZE);
+                }
+            }
+
+            // Bases with Ambient Glow
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = '#00d4ff';
+            ctx.fillStyle = 'rgba(0, 212, 255, 0.15)';
+            ctx.fillRect(blueBase.x, blueBase.y, blueBase.w, blueBase.h);
+            ctx.shadowColor = '#ff2a6d';
+            ctx.fillStyle = 'rgba(255, 42, 109, 0.15)';
+            ctx.fillRect(redBase.x, redBase.y, redBase.w, redBase.h);
+            ctx.shadowBlur = 0;
+
+            walls.forEach(w => {
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = 'rgba(0, 255, 204, 0.3)';
+                ctx.drawImage(images.wall, w.x, w.y, w.w, w.h);
+            });
+            ctx.shadowBlur = 0;
+
+            powerups.forEach(pup => pup.draw());
+            
+            if (!blueFlag.picked) ctx.drawImage(images.blueFlag, blueFlag.x, blueFlag.y, 30, 30);
+            if (!redFlag.picked) ctx.drawImage(images.redFlag, redFlag.x, redFlag.y, 30, 30);
+
+            players.forEach(p => p.draw());
+            bullets.forEach(b => b.draw());
+
+            ctx.restore();
+            requestAnimationFrame(gameLoop);
+        }
+    </script>
+</body>
+</html>
