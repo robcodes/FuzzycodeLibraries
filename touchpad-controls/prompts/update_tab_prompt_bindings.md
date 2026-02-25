@@ -103,7 +103,10 @@ Rules for axes/actions (apply from first principles):
 - Every action object must include `action_id` as a semantic slug (lowercase `a-z`, `0-9`, `_`, `-`), e.g. `kick`, `special`, `dash-attack`, `pause-menu`.
 - `action_id` should describe gameplay meaning (what it does), not physical position (`left-button`, `right-button`) and not generic role names unless semantics are truly unknown.
 - If two actions are symmetric opposites (rotate left/right, previous/next, zoom in/out, lane up/down), map them to secondary + tertiary and set pair_id + pair_position (left/right).
-- If the game has pause/start/menu semantics (Pause, Start, Menu, Resume/Menu toggle), map that control to the `pause` action with an appropriate `action_id` like `pause-menu` or `start-menu`.
+- Treat high-level state-transition controls as utility pause/start semantics and map them to the `pause` action.
+- State-transition controls include Pause, Start, Resume, Continue, Retry/Restart, Play Again, Unpause, and Menu toggles.
+- Do this even when there is no explicit `pause` variable: if a key is only used to transition between game states (menu, intro, paused, game over, victory, round end), classify it as `pause`.
+- Choose an `action_id` that matches the transition meaning (for example `pause-menu`, `start-menu`, `resume-game`, `restart-round`, `play-again`).
 - Use movement for heading/rotation and forward/back drive controls. Use aim only for a separate targeting axis.
 - control_space values:
   - vector: true 2D direction (diagonals are meaningful).

@@ -128,7 +128,10 @@ Rules:
 - If a core action requires holding two directions together with independent timing (e.g., turn + thrust), do not put them on a single axis. Split into `rate` and `magnitude` axes and set `simultaneous: true` on those axes if they are commonly held together.
 - If `direction_mode` would be `cardinal` but the game still requires holding two directions together as a core mechanic, that is a sign the input is actually multiple axes; split into separate axes instead of returning a single `cardinal` axis.
 - If two actions are symmetric opposites (rotate left/right, previous/next, zoom in/out, lane up/down), map them to `secondary` + `tertiary` and set `pair_id` (shared string) plus `pair_position: "left"` / `"right"`.
-- If the game has pause/start/menu semantics (Pause, Start, Menu, Resume/Menu toggle), map that control to `actions.pause` with an appropriate `action_id` like `pause-menu` or `start-menu`.
+- Treat high-level state-transition controls as utility pause/start semantics and map them to `actions.pause`.
+- State-transition controls include Pause, Start, Resume, Continue, Retry/Restart, Play Again, Unpause, and Menu toggles.
+- Do this even when there is no explicit `pause` variable: if a key is only used to transition between game states (menu, intro, paused, game over, victory, round end), classify it as `actions.pause`.
+- Choose an `action_id` that matches the transition meaning (for example `pause-menu`, `start-menu`, `resume-game`, `restart-round`, `play-again`).
 - If the game has more actions than slots, pick the most important ones and mention omitted actions in `notes`.
 - If any directional or rate controls exist, they must appear in `axes` (do not omit them and put them only in `notes`).
 - If multiple keys map to the same action, pick the primary mapping and mention alternates in `notes`.

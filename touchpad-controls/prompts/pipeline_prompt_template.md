@@ -35,10 +35,11 @@ Return **only** a JSON object (no code fences, no extra text) that matches this 
     }
   ],
   "actions": {
-    "jump": { "keys": "Space", "behavior": "discrete", "interaction": "tap", "simultaneous": true },
-    "primary": { "keys": "KeyJ", "behavior": "continuous", "interaction": "hold", "simultaneous": true },
+    "jump": { "keys": "Space", "action_id": "jump", "behavior": "discrete", "interaction": "tap", "simultaneous": true },
+    "primary": { "keys": "KeyJ", "action_id": "primary-attack", "behavior": "continuous", "interaction": "hold", "simultaneous": true },
     "secondary": {
       "keys": "KeyQ",
+      "action_id": "rotate-left",
       "behavior": "discrete",
       "interaction": "tap",
       "simultaneous": false,
@@ -47,15 +48,16 @@ Return **only** a JSON object (no code fences, no extra text) that matches this 
     },
     "tertiary": {
       "keys": "KeyW",
+      "action_id": "rotate-right",
       "behavior": "discrete",
       "interaction": "tap",
       "simultaneous": false,
       "pair_id": "rotate",
       "pair_position": "right"
     },
-    "modifier": { "keys": "ShiftLeft", "behavior": "continuous", "interaction": "hold", "simultaneous": true },
-    "pause": { "keys": "Escape", "behavior": "discrete", "interaction": "tap", "simultaneous": false },
-    "magnitude": { "keys": "ArrowUp", "behavior": "continuous", "interaction": "hold", "simultaneous": true }
+    "modifier": { "keys": "ShiftLeft", "action_id": "sprint", "behavior": "continuous", "interaction": "hold", "simultaneous": true },
+    "pause": { "keys": "Escape", "action_id": "pause-menu", "behavior": "discrete", "interaction": "tap", "simultaneous": false },
+    "magnitude": { "keys": "ArrowUp", "action_id": "thrust", "behavior": "continuous", "interaction": "hold", "simultaneous": true }
   },
   "notes": "optional short note if needed"
 }
@@ -70,6 +72,8 @@ Rules:
 - Use `movement` for heading/rotation and forward/back drive controls. Use `aim` only for an independent targeting axis.
 - `axes.priority` must be `primary` or `secondary` when there is more than one axis with the same usage.
 - `actions` keys must be one of: `jump`, `primary`, `secondary`, `tertiary`, `modifier`, `pause`, `magnitude`.
+- Every action object must include `action_id` as a semantic slug (lowercase `a-z`, `0-9`, `_`, `-`), e.g. `kick`, `special`, `dash-attack`, `pause-menu`.
+- `action_id` should describe gameplay meaning (what it does), not physical position (`left-button`, `right-button`) and not generic role names unless semantics are truly unknown.
 - `control_space` values:
   - `vector`: true 2D direction (diagonals are meaningful).
   - `rate`: heading/steering change (left/right).
@@ -100,6 +104,10 @@ Rules:
 - If a core action requires holding two directions together with independent timing (e.g., turn + thrust), do not put them on a single axis. Split into `rate` and `magnitude` axes and set `simultaneous: true` on those axes if they are commonly held together.
 - If `direction_mode` would be `cardinal` but the game still requires holding two directions together as a core mechanic, that is a sign the input is actually multiple axes; split into separate axes instead of returning a single `cardinal` axis.
 - If two actions are symmetric opposites (rotate left/right, previous/next, zoom in/out, lane up/down), map them to `secondary` + `tertiary` and set `pair_id` (shared string) plus `pair_position: "left"` / `"right"`.
+- Treat high-level state-transition controls as utility pause/start semantics and map them to `actions.pause`.
+- State-transition controls include Pause, Start, Resume, Continue, Retry/Restart, Play Again, Unpause, and Menu toggles.
+- Do this even when there is no explicit `pause` variable: if a key is only used to transition between game states (menu, intro, paused, game over, victory, round end), classify it as `actions.pause`.
+- Choose an `action_id` that matches the transition meaning (for example `pause-menu`, `start-menu`, `resume-game`, `restart-round`, `play-again`).
 - If the game has more actions than slots, pick the most important ones and mention omitted actions in `notes`.
 - If any directional or rate controls exist, they must appear in `axes` (do not omit them and put them only in `notes`).
 - If multiple keys map to the same action, pick the primary mapping and mention alternates in `notes`.
