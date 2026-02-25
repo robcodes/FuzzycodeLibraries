@@ -57,6 +57,7 @@
                 --touchpad-foreground-blend: normal;
                 --touchpad-label-color: #E2E8F0;
                 --touchpad-label-size: 12px;
+                --touchpad-backdrop-filter: blur(12px) saturate(180%);
             }
 
             .touchpad {
@@ -84,8 +85,8 @@
                 color: transparent;
                 z-index: 9999;
                 overflow: visible;
-                backdrop-filter: blur(12px) saturate(180%);
-                -webkit-backdrop-filter: blur(12px) saturate(180%);
+                backdrop-filter: var(--touchpad-backdrop-filter);
+                -webkit-backdrop-filter: var(--touchpad-backdrop-filter);
                 transition:
                     transform 120ms cubic-bezier(0.2, 0, 0, 1),
                     box-shadow 150ms ease,
@@ -160,6 +161,17 @@
                 font-size: 14px;
             }
 
+            .touchpad-utility-pause {
+                z-index: 10001;
+                --touchpad-bg: rgba(2, 6, 23, 0.58);
+                --touchpad-border: 1px solid rgba(255,255,255,0.34);
+                --touchpad-shadow: 0 6px 16px rgba(2, 6, 23, 0.5);
+                --touchpad-shadow-active: 0 3px 10px rgba(2, 6, 23, 0.6);
+                --touchpad-icon-size: 54%;
+                --touchpad-icon-opacity: 0.92;
+                --touchpad-backdrop-filter: blur(8px) saturate(125%);
+            }
+
             .touchpad .nipple,
             .touchpad .nipple * {
                 overflow: visible;
@@ -197,6 +209,27 @@
 
     const ICON_COLOR_DEFAULT = "#E2E8F0";
     const ICON_STROKE = 4;
+    const SKIN_THEME_KEYS = [
+        "iconColor",
+        "iconOpacity",
+        "iconScale",
+        "labelMode",
+        "labelColor",
+        "labelSize",
+        "background",
+        "backgroundImage",
+        "backgroundBlend",
+        "backgroundSize",
+        "backgroundPosition",
+        "foregroundImage",
+        "foregroundOpacity",
+        "foregroundSize",
+        "foregroundBlend",
+        "border",
+        "shadow",
+        "shadowActive",
+        "backdropFilter"
+    ];
 
     const svgToDataUri = (svg) => {
         const encoded = encodeURIComponent(svg)
@@ -312,7 +345,11 @@
                 foregroundImage: null,
                 foregroundOpacity: 0.8,
                 foregroundSize: "60%",
-                foregroundBlend: "normal"
+                foregroundBlend: "normal",
+                border: null,
+                shadow: null,
+                shadowActive: null,
+                backdropFilter: null
             };
         }
         return {
@@ -330,7 +367,11 @@
             foregroundImage: theme.foregroundImage || null,
             foregroundOpacity: typeof theme.foregroundOpacity === "number" ? theme.foregroundOpacity : 0.8,
             foregroundSize: theme.foregroundSize || "60%",
-            foregroundBlend: theme.foregroundBlend || "normal"
+            foregroundBlend: theme.foregroundBlend || "normal",
+            border: theme.border || null,
+            shadow: theme.shadow || null,
+            shadowActive: theme.shadowActive || null,
+            backdropFilter: theme.backdropFilter || null
         };
     };
 
@@ -343,6 +384,17 @@
         if (!value) return null;
         if (value.includes("url(")) return value;
         return `url(\"${value}\")`;
+    };
+
+    const normalizeActionId = (value) => {
+        if (typeof value !== "string") return null;
+        const trimmed = value.trim().toLowerCase();
+        if (!trimmed) return null;
+        const slug = trimmed
+            .replace(/[^a-z0-9_-]+/g, "-")
+            .replace(/-+/g, "-")
+            .replace(/^-|-$/g, "");
+        return slug || null;
     };
 
     const applyThemeVars = (element, theme) => {
@@ -362,6 +414,18 @@
             element.style.setProperty("--touchpad-foreground-size", theme.foregroundSize || "60%");
             element.style.setProperty("--touchpad-foreground-blend", theme.foregroundBlend || "normal");
         }
+        if (theme.border) {
+            element.style.setProperty("--touchpad-border", theme.border);
+        }
+        if (theme.shadow) {
+            element.style.setProperty("--touchpad-shadow", theme.shadow);
+        }
+        if (theme.shadowActive) {
+            element.style.setProperty("--touchpad-shadow-active", theme.shadowActive);
+        }
+        if (theme.backdropFilter) {
+            element.style.setProperty("--touchpad-backdrop-filter", theme.backdropFilter);
+        }
         if (theme.iconOpacity != null) {
             element.style.setProperty("--touchpad-icon-opacity", String(theme.iconOpacity));
         }
@@ -373,6 +437,160 @@
         }
         if (theme.labelSize) {
             element.style.setProperty("--touchpad-label-size", `${theme.labelSize}px`);
+        }
+    };
+
+    const pickThemeKeys = (source) => {
+        if (!source || typeof source !== "object") return null;
+        const out = {};
+        SKIN_THEME_KEYS.forEach((key) => {
+            if (source[key] != null) {
+                out[key] = source[key];
+            }
+        });
+        return Object.keys(out).length ? out : null;
+    };
+
+    const normalizeSkinTheme = (value) => {
+        if (!value) return null;
+        if (typeof value === "string") {
+            return { foregroundImage: value };
+        }
+        if (typeof value !== "object") return null;
+
+        const topLevelTheme = pickThemeKeys(value) || {};
+        const nestedTheme = pickThemeKeys(value.theme) || {};
+        const merged = Object.assign({}, topLevelTheme, nestedTheme);
+
+        if (value.image && merged.foregroundImage == null) {
+            merged.foregroundImage = value.image;
+        }
+        if (value.background && merged.background == null) {
+            merged.background = value.background;
+        }
+        if (value.backgroundImage && merged.backgroundImage == null) {
+            merged.backgroundImage = value.backgroundImage;
+        }
+
+        return Object.keys(merged).length ? merged : null;
+    };
+
+    const normalizeJoystickSkin = (skin) => {
+        if (!skin || typeof skin !== "object") return null;
+
+        const baseImage = skin.baseImage || skin.backgroundImage || skin.base || null;
+        const knobImage = skin.knobImage || skin.foregroundImage || skin.knob || null;
+        const hideShell = typeof skin.hideShell === "boolean"
+            ? skin.hideShell
+            : !!(baseImage || knobImage);
+
+        if (!baseImage && !knobImage && hideShell !== true) return null;
+
+        return {
+            baseImage,
+            knobImage,
+            baseSize: skin.baseSize || "contain",
+            knobSize: skin.knobSize || "contain",
+            basePosition: skin.basePosition || "center",
+            knobPosition: skin.knobPosition || "center",
+            baseShadow: skin.baseShadow || null,
+            knobShadow: skin.knobShadow || null,
+            hideShell
+        };
+    };
+
+    const normalizeSkin = (skin) => {
+        if (!skin || typeof skin !== "object") return null;
+
+        const roles = {};
+        const roleEntries = skin.roles && typeof skin.roles === "object" ? skin.roles : {};
+        safeEntries(roleEntries).forEach(([role, value]) => {
+            const theme = normalizeSkinTheme(value);
+            if (theme) roles[role] = theme;
+        });
+
+        const actions = {};
+        const actionEntries = skin.actions && typeof skin.actions === "object" ? skin.actions : {};
+        safeEntries(actionEntries).forEach(([actionId, value]) => {
+            const normalizedActionId = normalizeActionId(actionId);
+            if (!normalizedActionId) return;
+            const theme = normalizeSkinTheme(value);
+            if (theme) actions[normalizedActionId] = theme;
+        });
+
+        const buttonFallback = normalizeSkinTheme(skin.buttonFallback);
+        const joystick = normalizeJoystickSkin(skin.joystick);
+        const hideDefaultIcons = skin.hideDefaultIcons === true;
+
+        if (!hideDefaultIcons && !joystick && !buttonFallback && !Object.keys(roles).length && !Object.keys(actions).length) {
+            return null;
+        }
+
+        return {
+            hideDefaultIcons,
+            joystick,
+            buttonFallback,
+            roles,
+            actions
+        };
+    };
+
+    const resolveSkinThemeForButton = (skin, btn, type) => {
+        if (!skin || typeof skin !== "object") return null;
+        const role = btn && btn.role ? btn.role : null;
+        const actionId = normalizeActionId(
+            (btn && (btn.actionId || btn.action_id)) ||
+            (btn && btn.meta && (btn.meta.action_id || btn.meta.actionId)) ||
+            ""
+        );
+
+        const out = {};
+        if (skin.hideDefaultIcons) {
+            out.iconOpacity = 0;
+        }
+        if (type !== "joystick" && skin.buttonFallback) {
+            Object.assign(out, skin.buttonFallback);
+        }
+        if (role && skin.roles && skin.roles[role]) {
+            Object.assign(out, skin.roles[role]);
+        }
+        if (actionId && skin.actions && skin.actions[actionId]) {
+            Object.assign(out, skin.actions[actionId]);
+        }
+        return Object.keys(out).length ? out : null;
+    };
+
+    const applyJoystickShellVars = (element, joystickSkin) => {
+        if (!element || !joystickSkin || !joystickSkin.hideShell) return;
+        element.style.setProperty("--touchpad-bg", "transparent");
+        element.style.setProperty("--touchpad-bg-image", "none");
+        element.style.setProperty("--touchpad-border", "0");
+        element.style.setProperty("--touchpad-shadow", "none");
+        element.style.setProperty("--touchpad-shadow-active", "none");
+        element.style.setProperty("--touchpad-backdrop-filter", "none");
+    };
+
+    const applyJoystickSkinToDom = (element, joystickSkin) => {
+        if (!element || !joystickSkin) return;
+        const back = element.querySelector(".nipple .back");
+        const front = element.querySelector(".nipple .front");
+
+        if (back && joystickSkin.baseImage) {
+            back.style.setProperty("background-image", normalizeImageValue(joystickSkin.baseImage), "important");
+            back.style.setProperty("background-repeat", "no-repeat", "important");
+            back.style.setProperty("background-position", joystickSkin.basePosition || "center", "important");
+            back.style.setProperty("background-size", joystickSkin.baseSize || "contain", "important");
+            back.style.setProperty("border", "0", "important");
+            back.style.setProperty("box-shadow", joystickSkin.baseShadow || "none", "important");
+        }
+
+        if (front && joystickSkin.knobImage) {
+            front.style.setProperty("background-image", normalizeImageValue(joystickSkin.knobImage), "important");
+            front.style.setProperty("background-repeat", "no-repeat", "important");
+            front.style.setProperty("background-position", joystickSkin.knobPosition || "center", "important");
+            front.style.setProperty("background-size", joystickSkin.knobSize || "contain", "important");
+            front.style.setProperty("border", "0", "important");
+            front.style.setProperty("box-shadow", joystickSkin.knobShadow || "none", "important");
         }
     };
 
@@ -653,8 +871,16 @@
                 else if (key === "granularity" && allowedGranularity.has(value)) cleaned[key] = value;
                 else if (key === "pair_id" && typeof value === "string") cleaned[key] = value;
                 else if (key === "pair_position" && allowedPairPosition.has(value)) cleaned[key] = value;
+                else if ((key === "action_id" || key === "actionId") && typeof value === "string") {
+                    const actionId = normalizeActionId(value);
+                    if (actionId) cleaned.action_id = actionId;
+                }
                 else if (key === "kind" && typeof value === "string") cleaned[key] = value;
             });
+            const fallbackActionId = normalizeActionId(action);
+            if (fallbackActionId && !cleaned.action_id) {
+                cleaned.action_id = fallbackActionId;
+            }
             if (Object.keys(cleaned).length) {
                 sanitized[action] = cleaned;
             }
@@ -668,6 +894,8 @@
             ["behavior", "interaction", "simultaneous", "control_space", "activation", "direction_mode", "granularity", "pair_id", "pair_position"].forEach((field) => {
                 if (field in spec) meta[field] = spec[field];
             });
+            const actionId = normalizeActionId(spec.action_id || spec.actionId || "");
+            if (actionId) meta.action_id = actionId;
         }
         if (kind) meta.kind = kind;
         return meta;
@@ -848,7 +1076,7 @@
         return keyMap;
     };
 
-    const createNipple = (element, keys) => {
+    const createNipple = (element, keys, joystickSkin = null) => {
         if (typeof nipplejs === "undefined") {
             throw new Error(
                 "[touchpad_controls] nipplejs is required to create joystick controls. " +
@@ -886,6 +1114,12 @@
         }
 
         const manager = nipplejs.create(options);
+        const applySkin = () => applyJoystickSkinToDom(element, joystickSkin);
+        applySkin();
+        if (typeof window !== "undefined" && typeof window.setTimeout === "function") {
+            window.setTimeout(applySkin, 0);
+            window.setTimeout(applySkin, 60);
+        }
 
         const activeKeys = {};
         const activeDirections = new Set();
@@ -904,6 +1138,7 @@
 
         manager.on("start", () => {
             element.classList.add("is-active");
+            applySkin();
         });
 
         const syncDirections = (directionsSet) => {
@@ -1038,6 +1273,7 @@
 
         const root = config.root || document.body || document.documentElement;
         const baseTheme = normalizeTheme(config.theme);
+        const skin = normalizeSkin(config.skin);
         const buttons = Array.isArray(config.buttons) ? config.buttons : [];
 
         const touchpads = [];
@@ -1046,11 +1282,15 @@
         buttons.forEach((btn) => {
             if (!btn) return;
             const buttonKeys = getButtonKeys(btn);
-
-            const theme = mergeTheme(baseTheme, btn.theme);
             const touchpad = document.createElement("div");
             touchpad.id = btn.id || "";
             touchpad.className = "touchpad";
+            const buttonActionId = normalizeActionId(
+                btn.actionId ||
+                btn.action_id ||
+                (btn.meta && (btn.meta.action_id || btn.meta.actionId)) ||
+                ""
+            );
 
             if (btn.className) {
                 touchpad.className += " " + btn.className;
@@ -1073,6 +1313,10 @@
                 }
             }
 
+            const skinTheme = resolveSkinThemeForButton(skin, btn, type);
+            const themeSeed = skinTheme ? Object.assign({}, baseTheme, skinTheme) : baseTheme;
+            const theme = mergeTheme(themeSeed, btn.theme);
+
             const labelMode = btn.labelMode || theme.labelMode || "none";
             const labelText = type === "button" ? resolveLabelText(btn, labelMode) : "";
             if (labelText) {
@@ -1088,6 +1332,9 @@
                 : (labelText || (typeof buttonKeys === "string" ? keyLabel(buttonKeys) : ""));
             if (ariaLabel) {
                 touchpad.setAttribute("aria-label", ariaLabel);
+            }
+            if (buttonActionId) {
+                touchpad.dataset.touchpadActionId = buttonActionId;
             }
 
             const sectionName = btn.section;
@@ -1130,6 +1377,9 @@
             });
 
             applyThemeVars(touchpad, theme);
+            if (type === "joystick" && skin && skin.joystick) {
+                applyJoystickShellVars(touchpad, skin.joystick);
+            }
 
             const showIcon = labelMode !== "text" && labelMode !== "key";
             if (showIcon) {
@@ -1148,13 +1398,19 @@
                 touchpad.classList.add("touchpad--button");
             }
 
-            const tp = { element: touchpad, keys: buttonKeys, type: type };
+            const tp = {
+                element: touchpad,
+                keys: buttonKeys,
+                type: type,
+                actionId: buttonActionId,
+                joystickSkin: type === "joystick" && skin ? skin.joystick : null
+            };
             touchpads.push(tp);
         });
 
         touchpads.forEach((tp) => {
             if (tp.type === "joystick") {
-                const manager = createNipple(tp.element, tp.keys);
+                const manager = createNipple(tp.element, tp.keys, tp.joystickSkin);
                 if (manager) nippleManagers.push(manager);
             } else {
                 createButton(tp.element, tp.keys);
@@ -1228,8 +1484,9 @@
         const secondary = bindings.secondary || bindings.attack || null;
         const tertiary = bindings.tertiary || (bindings.shoot && bindings.shoot !== primary ? bindings.shoot : null) || null;
         const modifier = bindings.modifier || bindings.run || null;
+        const pause = bindings.pause || bindings.start || bindings.menu || null;
 
-        return { move, aim, jump, magnitude, primary, secondary, tertiary, modifier };
+        return { move, aim, jump, magnitude, primary, secondary, tertiary, modifier, pause };
     };
 
     const normalizeActionMeta = (actionMeta = {}) => {
@@ -1359,6 +1616,7 @@
             y: spec.y,
             size: spec.size,
             role: spec.role,
+            actionId: spec.actionId || null,
             type: spec.type,
             meta: spec.meta || null,
             icon: spec.icon || null,
@@ -1409,6 +1667,7 @@
                 id: primary.role,
                 keys: primary.keys,
                 role: primary.role,
+                actionId: primary.actionId || null,
                 x: primaryPos.x,
                 y: primaryPos.y,
                 size: primarySize,
@@ -1427,6 +1686,7 @@
                     id: secondary.role,
                     keys: secondary.keys,
                     role: secondary.role,
+                    actionId: secondary.actionId || null,
                     x: secondaryPos.x,
                     y: secondaryPos.y,
                     size: secondarySize,
@@ -1446,6 +1706,7 @@
                     id: tertiary.role,
                     keys: tertiary.keys,
                     role: tertiary.role,
+                    actionId: tertiary.actionId || null,
                     x: tertiaryPos.x,
                     y: tertiaryPos.y,
                     size: tertiarySize,
@@ -1465,6 +1726,7 @@
                     id: modifier.role,
                     keys: modifier.keys,
                     role: modifier.role,
+                    actionId: modifier.actionId || null,
                     x: modifierPos.x,
                     y: modifierPos.y,
                     size: modifierSize,
@@ -1485,6 +1747,7 @@
                 id: action.role,
                 keys: action.keys,
                 role: action.role,
+                actionId: action.actionId || null,
                 x: clamped.x,
                 y: clamped.y,
                 size,
@@ -1557,14 +1820,30 @@
             const signature = JSON.stringify(keys);
             if (usedKeys.has(signature)) return;
             usedKeys.add(signature);
+            const roleMeta = actionMeta && actionMeta[role] ? actionMeta[role] : null;
+            const actionId = normalizeActionId(
+                (roleMeta && (roleMeta.action_id || roleMeta.actionId)) || role
+            );
             actions.push({
                 role,
                 keys,
-                meta: actionMeta && actionMeta[role] ? actionMeta[role] : null
+                meta: roleMeta,
+                actionId
             });
         };
 
         roleOrder.forEach((role) => addAction(role, bindings[role]));
+        const pauseMeta = actionMeta && actionMeta.pause ? actionMeta.pause : null;
+        const pauseAction = bindings.pause
+            ? {
+                role: "pause",
+                keys: bindings.pause,
+                meta: pauseMeta,
+                actionId: normalizeActionId(
+                    (pauseMeta && (pauseMeta.action_id || pauseMeta.actionId)) || "pause"
+                )
+            }
+            : null;
 
         actions.forEach((action, index) => {
             const meta = action.meta || {};
@@ -1594,7 +1873,7 @@
             y: metrics.bottomY - metrics.baseSize / 2 - metrics.verticalOffset
         };
 
-        if (!actions.length && !hasDirectionalKeys(moveKeys) && !hasDirectionalKeys(bindings.aim)) {
+        if (!actions.length && !hasDirectionalKeys(moveKeys) && !hasDirectionalKeys(bindings.aim) && !pauseAction) {
             return buttons;
         }
 
@@ -1762,6 +2041,30 @@
             }
         }
 
+        if (pauseAction) {
+            const pauseSize = clamp(metrics.miniActionSize * 0.8, 40, 64);
+            const utilityInset = clamp(metrics.edgePadding * 0.2, 4, 8);
+            const pausePos = clampPosition({
+                x: metrics.width - metrics.safeArea.right - utilityInset - pauseSize / 2,
+                y: metrics.safeArea.top + utilityInset + pauseSize / 2
+            }, pauseSize, metrics);
+            buttons.push(makeButton({
+                id: "pause",
+                keys: pauseAction.keys,
+                role: "pause",
+                actionId: pauseAction.actionId || null,
+                x: pausePos.x,
+                y: pausePos.y,
+                size: pauseSize,
+                type: "button",
+                meta: pauseAction.meta || null,
+                classList: ["touchpad-role-pause", "touchpad-utility-pause"],
+                style: {
+                    opacity: 0.76
+                }
+            }));
+        }
+
         return buttons;
     };
 
@@ -1788,6 +2091,7 @@
             buttons: buttons.map((btn) => ({
                 id: btn.id || null,
                 role: btn.role || null,
+                actionId: btn.actionId || null,
                 type: btn.type || (btn.keys && typeof btn.keys === "object" ? "joystick" : "button"),
                 keys: btn.keys || null,
                 x: roundLayoutValue(btn.x),
@@ -1847,7 +2151,12 @@
             var removeGesturePrevention = createGesturePrevention({ excludeSelectors });
         }
 
-        let instance = createTouchpadControls({ root, buttons });
+        let instance = createTouchpadControls({
+            root,
+            buttons,
+            theme: config.theme,
+            skin: config.skin
+        });
         let resizeTimer = null;
 
         const rebuild = () => {
@@ -1859,7 +2168,12 @@
                 console.info("[touchpad_controls] layout", summarizeLayout(nextLayout));
             }
             const nextButtons = hasCustomButtons ? config.buttons : nextLayout.buttons;
-            instance = createTouchpadControls({ root, buttons: nextButtons });
+            instance = createTouchpadControls({
+                root,
+                buttons: nextButtons,
+                theme: config.theme,
+                skin: config.skin
+            });
         };
 
         const handleResize = () => {
@@ -1908,7 +2222,10 @@
             clampPosition,
             summarizeLayout,
             extractBindingsFromAxesActions,
-            resolveBindingsAndMeta
+            resolveBindingsAndMeta,
+            normalizeActionId,
+            normalizeSkin,
+            resolveSkinThemeForButton
         }
     };
 }));
