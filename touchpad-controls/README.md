@@ -143,6 +143,15 @@ Prompt URL note: update-tab prompts now use `{{TOUCHPAD_LIBRARY_URL}}` and `{{NI
 tokens so the host app can inject local cache-busted static URLs.
 
 ## Tooling and workflows
+### 0) Sync vendored copies across services
+From repo root:
+```bash
+python3 scripts/vendor_touchpad_assets.py --check
+python3 scripts/vendor_touchpad_assets.py --apply
+```
+This keeps vendored runtime/prompt files in `FuzzyCode/` and `FuzzycodePagesFlaskServer/`
+byte-identical to the canonical sources in `FuzzycodeLibraries/touchpad-controls/`.
+
 ### 1) Automated pipeline (preferred)
 `update_to_auto_touchpad_support.py` runs the LLM and injects controls:
 ```bash

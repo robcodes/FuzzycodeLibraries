@@ -476,6 +476,17 @@ def detect_discrete_move(source_html: str, bindings: dict, action_meta: dict) ->
     return True
 
 
+def normalize_action_id(value) -> Optional[str]:
+    if not isinstance(value, str):
+        return None
+    trimmed = value.strip().lower()
+    if not trimmed:
+        return None
+    slug = re.sub(r"[^a-z0-9_-]+", "-", trimmed)
+    slug = re.sub(r"-+", "-", slug).strip("-")
+    return slug or None
+
+
 def sanitize_action_meta(action_meta: dict) -> dict:
     if not isinstance(action_meta, dict):
         return {}
@@ -515,6 +526,13 @@ def sanitize_action_meta(action_meta: dict) -> dict:
                 cleaned[key] = value
             elif key == "pair_position" and value in allowed_pair_position:
                 cleaned[key] = value
+            elif key in {"action_id", "actionId"} and isinstance(value, str):
+                action_id = normalize_action_id(value)
+                if action_id:
+                    cleaned["action_id"] = action_id
+        fallback_action_id = normalize_action_id(action)
+        if fallback_action_id and "action_id" not in cleaned:
+            cleaned["action_id"] = fallback_action_id
         if cleaned:
             sanitized[action] = cleaned
     return sanitized
@@ -536,6 +554,9 @@ def extract_meta(spec: dict, kind: str) -> dict:
         ):
             if field in spec:
                 meta[field] = spec[field]
+        action_id = normalize_action_id(spec.get("action_id") or spec.get("actionId"))
+        if action_id:
+            meta["action_id"] = action_id
     if kind:
         meta["kind"] = kind
     return meta

@@ -18,13 +18,16 @@ const result = buildLayout({
         }
     ],
     actions: {
-        jump: { keys: "Space", behavior: "discrete", interaction: "tap", simultaneous: true }
+        jump: { keys: "Space", action_id: "jump", behavior: "discrete", interaction: "tap", simultaneous: true }
     },
     viewport: { width: 800, height: 600, safeArea: { top: 0, right: 0, bottom: 0, left: 0 } }
 });
 
 assert(result.bindings.move.left === "ArrowLeft", "analysis axes should map to bindings.move");
 assert(result.bindings.jump === "Space", "analysis actions should map to bindings.jump");
+assert(result.actionMeta.jump.action_id === "jump", "analysis action_id should map to actionMeta");
 assert(result.buttons.length > 0, "buttons should be generated from analysis input");
+const jumpButton = result.buttons.find((btn) => btn.role === "jump");
+assert(jumpButton && jumpButton.actionId === "jump", "jump action_id should map to rendered button");
 
 console.log("Analysis-input mapping test passed.");

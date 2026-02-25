@@ -21,6 +21,20 @@ These are saved as regression configs in `test_cases/gold_standard_configs`.
 ## Issues (investigate and improve)
 - Cookie Monster Munch: Movement is direction-latched and cardinal. Keydown sets `nextDir` with no keyup handling, and movement continues on the grid without holding. From first principles: direction is a discrete selection (cardinal, mutually exclusive), and the thumb should choose one direction at a time. LLM should mark `activation: latch`, `direction_mode: cardinal`, and avoid `vector`/`simultaneous` so the library picks a digital D-pad.
 
+## Undecided design note: action overflow in auto layout
+- Case observed: config provided `movement` joystick plus six actions (`jump`, `primary`, `secondary`, `tertiary`, `modifier`, `pause`), but UI rendered joystick + only four action buttons.
+- Current behavior (as implemented): auto-layout action clustering effectively caps rendered gameplay actions at four in common layouts; extra actions are dropped by position slots. `pause` is currently treated outside the core normalized gameplay action set and is not guaranteed to render in this cluster.
+- Why this happened in practice:
+  - Auto cluster places `actions[0..3]` only in non-paired path.
+  - Action scoring/order can prioritize `jump/primary/secondary/tertiary`, leaving `modifier` dropped.
+  - `pause` is utility-like and not part of the main normalized action role return.
+- Potential handling options (undecided for now):
+  - Keep auto mode intentionally capped at 4 gameplay buttons; treat `pause` as separate utility UI.
+  - Add deterministic pruning policy in pipeline: keep top 4 gameplay actions, record dropped roles in `notes`.
+  - Avoid key overlap where possible (example: avoid mapping both `move.up` and `jump` to the same key unless intentional).
+  - For games that truly need 5+ gameplay actions, require explicit `buttons: [...]` custom layout instead of pure auto clustering.
+  - Optionally add a secondary utility rail or long-press/swap mode for overflow actions in a future version.
+
 ## Special cases (record only for now)
 - Bogglebeast Quest: Many keys; some weren’t detected. Improve extraction later.
 - Bible Typerunner: Typing game; needs a full keyboard or input focus helper.

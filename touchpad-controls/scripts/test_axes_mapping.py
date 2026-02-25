@@ -146,6 +146,21 @@ def test_simultaneous_preserved():
     check(meta["move"]["simultaneous"] is True, "simultaneous should be preserved")
 
 
+def test_action_id_preserved():
+    data = {
+        "axes": [],
+        "actions": {
+            "secondary": {
+                "keys": "KeyG",
+                "action_id": "Kick"
+            }
+        }
+    }
+    bindings, meta = extract_bindings_from_axes_actions(data)
+    check(bindings["secondary"] == "KeyG", "secondary key should be mapped")
+    check(meta["secondary"]["action_id"] == "kick", "action_id should be normalized and preserved")
+
+
 def main():
     test_movement_and_aim()
     test_single_aim_becomes_move()
@@ -154,6 +169,7 @@ def main():
     test_activation_direction_mode()
     test_granularity_preserved()
     test_simultaneous_preserved()
+    test_action_id_preserved()
     print("All axes mapping tests passed.")
 
 
