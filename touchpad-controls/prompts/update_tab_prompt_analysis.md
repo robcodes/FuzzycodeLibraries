@@ -1,6 +1,6 @@
 # Task: Inject TouchpadControls using core analysis rules
 
-Use this "https://aws.fuzzycode.dev/fuzzycode_assets/touchpad-controls.js?v2" to add touchpad controls to the game.
+Use this "{{TOUCHPAD_LIBRARY_URL}}" to add touchpad controls to the game.
 
 You are editing a single-page HTML game. Your job:
 1) Identify the keyboard controls used by the game.
@@ -16,8 +16,8 @@ Rules:
 - Keep defaults: do not set theme unless explicitly needed.
 
 Required script tags to inject:
-<script src="https://cdn.jsdelivr.net/npm/nipplejs@0.10.2/dist/nipplejs.js" crossorigin="anonymous"></script>
-<script src="https://aws.fuzzycode.dev/fuzzycode_assets/touchpad-controls.js?v2"></script>
+<script src="{{NIPPLEJS_CDN_URL}}" crossorigin="anonymous"></script>
+<script src="{{TOUCHPAD_LIBRARY_URL}}"></script>
 
 Then inject a config block like this (fill in axes/actions from your analysis):
 <script>
@@ -60,10 +60,11 @@ Touchpad config schema (deterministic JSON):
     }
   ],
   "actions": {
-    "jump": { "keys": "Space", "behavior": "discrete", "interaction": "tap", "simultaneous": true },
-    "primary": { "keys": "KeyJ", "behavior": "continuous", "interaction": "hold", "simultaneous": true },
+    "jump": { "keys": "Space", "action_id": "jump", "behavior": "discrete", "interaction": "tap", "simultaneous": true },
+    "primary": { "keys": "KeyJ", "action_id": "primary-attack", "behavior": "continuous", "interaction": "hold", "simultaneous": true },
     "secondary": {
       "keys": "KeyQ",
+      "action_id": "rotate-left",
       "behavior": "discrete",
       "interaction": "tap",
       "simultaneous": false,
@@ -72,15 +73,16 @@ Touchpad config schema (deterministic JSON):
     },
     "tertiary": {
       "keys": "KeyW",
+      "action_id": "rotate-right",
       "behavior": "discrete",
       "interaction": "tap",
       "simultaneous": false,
       "pair_id": "rotate",
       "pair_position": "right"
     },
-    "modifier": { "keys": "ShiftLeft", "behavior": "continuous", "interaction": "hold", "simultaneous": true },
-    "pause": { "keys": "Escape", "behavior": "discrete", "interaction": "tap", "simultaneous": false },
-    "magnitude": { "keys": "ArrowUp", "behavior": "continuous", "interaction": "hold", "simultaneous": true }
+    "modifier": { "keys": "ShiftLeft", "action_id": "sprint", "behavior": "continuous", "interaction": "hold", "simultaneous": true },
+    "pause": { "keys": "Escape", "action_id": "pause-menu", "behavior": "discrete", "interaction": "tap", "simultaneous": false },
+    "magnitude": { "keys": "ArrowUp", "action_id": "thrust", "behavior": "continuous", "interaction": "hold", "simultaneous": true }
   },
   "notes": "optional short note if needed"
 }
@@ -94,6 +96,8 @@ Rules:
 - Use `movement` for heading/rotation and forward/back drive controls. Use `aim` only for an independent targeting axis.
 - `axes.priority` must be `primary` or `secondary` when there is more than one axis with the same usage.
 - `actions` keys must be one of: `jump`, `primary`, `secondary`, `tertiary`, `modifier`, `pause`, `magnitude`.
+- Every action object must include `action_id` as a semantic slug (lowercase `a-z`, `0-9`, `_`, `-`), e.g. `kick`, `special`, `dash-attack`, `pause-menu`.
+- `action_id` should describe gameplay meaning (what it does), not physical position (`left-button`, `right-button`) and not generic role names unless semantics are truly unknown.
 - `control_space` values:
   - `vector`: true 2D direction (diagonals are meaningful).
   - `rate`: heading/steering change (left/right).
@@ -124,6 +128,7 @@ Rules:
 - If a core action requires holding two directions together with independent timing (e.g., turn + thrust), do not put them on a single axis. Split into `rate` and `magnitude` axes and set `simultaneous: true` on those axes if they are commonly held together.
 - If `direction_mode` would be `cardinal` but the game still requires holding two directions together as a core mechanic, that is a sign the input is actually multiple axes; split into separate axes instead of returning a single `cardinal` axis.
 - If two actions are symmetric opposites (rotate left/right, previous/next, zoom in/out, lane up/down), map them to `secondary` + `tertiary` and set `pair_id` (shared string) plus `pair_position: "left"` / `"right"`.
+- If the game has pause/start/menu semantics (Pause, Start, Menu, Resume/Menu toggle), map that control to `actions.pause` with an appropriate `action_id` like `pause-menu` or `start-menu`.
 - If the game has more actions than slots, pick the most important ones and mention omitted actions in `notes`.
 - If any directional or rate controls exist, they must appear in `axes` (do not omit them and put them only in `notes`).
 - If multiple keys map to the same action, pick the primary mapping and mention alternates in `notes`.

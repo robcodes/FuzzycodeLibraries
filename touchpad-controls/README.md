@@ -50,8 +50,8 @@ Minimal example (actual output should include only used fields):
     }
   ],
   "actions": {
-    "jump": { "keys": "Space", "behavior": "discrete", "interaction": "tap", "simultaneous": true },
-    "primary": { "keys": "KeyJ", "behavior": "continuous", "interaction": "hold", "simultaneous": true }
+    "jump": { "keys": "Space", "action_id": "jump", "behavior": "discrete", "interaction": "tap", "simultaneous": true },
+    "primary": { "keys": "KeyJ", "action_id": "primary-attack", "behavior": "continuous", "interaction": "hold", "simultaneous": true }
   }
 }
 ```
@@ -65,6 +65,7 @@ Minimal example (actual output should include only used fields):
 - **simultaneous**:
   - axes: directions are commonly held together during core play.
   - actions: action often held while other actions are used.
+- **action_id** (actions): semantic action slug (`kick`, `special`, `dash-attack`) used for stable skin mapping.
 - **pair_id / pair_position** (actions): link symmetric pairs for side-by-side layout.
 
 ## Layout logic (library-owned)
@@ -75,6 +76,7 @@ Minimal example (actual output should include only used fields):
   separate controls; never couple them as a single 2D stick.
 - **Paired actions**: if `pair_id` is present on `secondary`/`tertiary`, render them side-by-side
   above the primary action for ergonomic symmetry.
+- **Pause utility**: when a `pause` binding exists, render a small low-opacity utility button at top-center.
 
 See: `docs/TOUCHPAD_LIBRARY_VISION.md`, `docs/ANALYSIS_AXIS_DECOUPLING.md`
 
@@ -86,6 +88,47 @@ The library accepts either:
 The runtime normalizes analysis input into bindings/actionMeta so prompt-only edits can work
 without the Python pipeline.
 
+## Skinning API (first-class)
+Use `skin` for image-based control styling without custom CSS selectors:
+
+```js
+TouchpadControls.create({
+  axes: [...],
+  actions: {...},
+  skin: {
+    hideDefaultIcons: true,
+    joystick: {
+      baseImage: "https://images.fuzzycode.dev/.../joystick-base.png",
+      knobImage: "https://images.fuzzycode.dev/.../joystick-knob.png"
+    },
+    buttonFallback: {
+      background: "radial-gradient(135% 135% at 25% 20%, rgba(255,255,255,0.18), rgba(0,0,0,0.7))",
+      border: "1px solid rgba(255,255,255,0.35)",
+      shadow: "0 8px 20px rgba(0,0,0,0.55)",
+      shadowActive: "0 3px 10px rgba(0,0,0,0.75)"
+    },
+    roles: {
+      primary: { image: "https://images.fuzzycode.dev/.../punch.png" },
+      secondary: { image: "https://images.fuzzycode.dev/.../special.png" },
+      tertiary: { image: "https://images.fuzzycode.dev/.../kick.png" },
+      modifier: { image: "https://images.fuzzycode.dev/.../super.png" }
+    },
+    actions: {
+      kick: { image: "https://images.fuzzycode.dev/.../kick.png" },
+      special: { image: "https://images.fuzzycode.dev/.../special.png" }
+    }
+  }
+});
+```
+
+Notes:
+- `skin.roles.<role>.image` maps to each button's foreground image.
+- `skin.actions.<action_id>.image` maps by semantic action slug and overrides role skinning when both are present.
+- For utility pause styling, target `action_id` (for example `pause-menu`) via `skin.actions.pause-menu` and set transparent `background`/`border`/`shadow` if you want an icon-only button.
+- `skin.buttonFallback` applies to non-joystick buttons before role-specific overrides.
+- `skin.joystick` supports `baseImage`, `knobImage`, optional `baseSize`/`knobSize`, and `hideShell`.
+- `theme` and per-button `theme` still work; per-button `theme` has final priority.
+
 ## Prompts (keep in sync)
 The **canonical** prompt lives at:
 - `prompts/pipeline_prompt_template.md` (used by the Python script)
@@ -96,8 +139,8 @@ Update-tab editing (same semantics, different injection instructions):
 
 Rule: the semantics/rules section must stay identical to the canonical prompt. Only the
 injection instructions differ.
-CDN note: prompts currently reference `https://aws.fuzzycode.dev/fuzzycode_assets/touchpad-controls.js?v2`
-for cache busting.
+Prompt URL note: update-tab prompts now use `{{TOUCHPAD_LIBRARY_URL}}` and `{{NIPPLEJS_CDN_URL}}`
+tokens so the host app can inject local cache-busted static URLs.
 
 ## Tooling and workflows
 ### 1) Automated pipeline (preferred)
