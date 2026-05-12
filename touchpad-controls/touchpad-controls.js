@@ -30,6 +30,25 @@
     const STYLE_ID = "touchpad-controls-style";
     const MIN_TOUCH_TARGET = 48;
 
+    class TouchpadControlsConfigError extends Error {
+        constructor(errors) {
+            const first = Array.isArray(errors) && errors.length ? errors[0] : {};
+            const path = first.path || "config";
+            const value = Object.prototype.hasOwnProperty.call(first, "value")
+                ? `\nReceived: ${JSON.stringify(first.value)}`
+                : "";
+            const help = first.help ? `\nFix: ${first.help}` : "";
+            super(
+                "[touchpad_controls] Invalid TouchpadControls config at " + path + "." +
+                value +
+                help
+            );
+            this.name = "TouchpadControlsConfigError";
+            this.code = first.code || "INVALID_TOUCHPAD_CONFIG";
+            this.details = errors || [];
+        }
+    }
+
     const injectTouchpadStyles = () => {
         if (typeof document === "undefined") return;
         if (document.getElementById(STYLE_ID)) return;
@@ -845,6 +864,148 @@
         } else if (typeof document !== "undefined") {
             document.dispatchEvent(event);
         }
+    };
+
+    const addConfigError = (errors, path, code, value, help) => {
+        errors.push({ path, code, value, help });
+    };
+
+    const validateKeyString = (value, path, errors) => {
+        if (value !== value.trim()) {
+            addConfigError(
+                errors,
+                path,
+                "INVALID_KEY_CODE_WHITESPACE",
+                value,
+                "Use a single KeyboardEvent.code string without leading or trailing whitespace, for example \"KeyF\"."
+            );
+            return;
+        }
+        if (!value) {
+            addConfigError(
+                errors,
+                path,
+                "INVALID_KEY_CODE_EMPTY",
+                value,
+                "Use a non-empty KeyboardEvent.code string, for example \"KeyF\" or \"Space\"."
+            );
+            return;
+        }
+        if (value.indexOf(",") !== -1) {
+            addConfigError(
+                errors,
+                path,
+                "INVALID_KEY_CODE_COMMA_LIST",
+                value,
+                "Do not comma-separate alternate keys. Use one key such as \"KeyF\". Use an array like [\"KeyF\", \"ShiftRight\"] only when this one control should press both keys at the same time."
+            );
+            return;
+        }
+        if (/\s/.test(value) && value !== " ") {
+            addConfigError(
+                errors,
+                path,
+                "INVALID_KEY_CODE_SPACED_LIST",
+                value,
+                "Do not combine key codes with spaces. Use one key string, or an array for a deliberate multi-key press."
+            );
+            return;
+        }
+        if (value.indexOf("+") !== -1) {
+            addConfigError(
+                errors,
+                path,
+                "INVALID_KEY_CODE_CHORD_STRING",
+                value,
+                "Do not write key chords as a string. Use an array like [\"ShiftLeft\", \"KeyF\"] only when this one control should press both keys at the same time."
+            );
+        }
+    };
+
+    const validateKeySpec = (value, path, errors) => {
+        if (typeof value === "string") {
+            validateKeyString(value, path, errors);
+            return;
+        }
+        if (Array.isArray(value)) {
+            value.forEach((item, index) => {
+                validateKeySpec(item, `${path}[${index}]`, errors);
+            });
+            return;
+        }
+        if (value && typeof value === "object") {
+            ["left", "right", "up", "down", "key"].forEach((field) => {
+                if (Object.prototype.hasOwnProperty.call(value, field) && value[field] != null) {
+                    validateKeySpec(value[field], `${path}.${field}`, errors);
+                }
+            });
+            return;
+        }
+        if (value == null) return;
+        addConfigError(
+            errors,
+            path,
+            "INVALID_KEY_CODE_TYPE",
+            value,
+            "Key values must be KeyboardEvent.code strings, arrays of strings, or directional key objects."
+        );
+    };
+
+    const validateConfig = (config = {}) => {
+        const errors = [];
+        if (!config || typeof config !== "object") {
+            addConfigError(
+                errors,
+                "config",
+                "INVALID_CONFIG_TYPE",
+                config,
+                "Pass an object to TouchpadControls.create(...)."
+            );
+            return { ok: false, errors };
+        }
+
+        if (config.bindings && typeof config.bindings === "object") {
+            Object.entries(config.bindings).forEach(([role, value]) => {
+                validateKeySpec(value, `bindings.${role}`, errors);
+            });
+        }
+
+        if (config.actions && typeof config.actions === "object") {
+            Object.entries(config.actions).forEach(([role, spec]) => {
+                const value = spec && typeof spec === "object" && Object.prototype.hasOwnProperty.call(spec, "keys")
+                    ? spec.keys
+                    : spec && typeof spec === "object" && Object.prototype.hasOwnProperty.call(spec, "key")
+                        ? spec.key
+                        : spec;
+                validateKeySpec(value, `actions.${role}.keys`, errors);
+            });
+        }
+
+        if (Array.isArray(config.axes)) {
+            config.axes.forEach((axis, index) => {
+                if (axis && typeof axis === "object" && Object.prototype.hasOwnProperty.call(axis, "keys")) {
+                    validateKeySpec(axis.keys, `axes[${index}].keys`, errors);
+                }
+            });
+        }
+
+        if (Array.isArray(config.buttons)) {
+            config.buttons.forEach((button, index) => {
+                if (button && typeof button === "object" && Object.prototype.hasOwnProperty.call(button, "keys")) {
+                    validateKeySpec(button.keys, `buttons[${index}].keys`, errors);
+                }
+            });
+        }
+
+        return { ok: errors.length === 0, errors };
+    };
+
+    const assertValidConfig = (config) => {
+        const result = validateConfig(config);
+        if (!result.ok) {
+            throw new TouchpadControlsConfigError(result.errors);
+        }
+        return result;
     };
 
     const sanitizeActionMeta = (actionMeta) => {
@@ -2069,6 +2230,7 @@
     };
 
     const buildLayout = (config = {}) => {
+        assertValidConfig(config);
         const resolved = resolveBindingsAndMeta(config);
         const normalized = normalizeBindings(resolved.bindings || {});
         const actionMeta = normalizeActionMeta(resolved.actionMeta || {});
@@ -2216,6 +2378,8 @@
         parseKeys,
         simulateKeyEvent,
         resolveKeyDescriptor,
+        validateConfig,
+        TouchpadControlsConfigError,
         _internal: {
             buildButtonsForLayout,
             normalizeBindings,

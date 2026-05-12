@@ -30,6 +30,16 @@ python3 scripts/run_testcases.py --games-dir test_cases/games/top_voted --output
 python3 scripts/run_testcases.py --dry-run
 ```
 
+`run_testcases.py` validates each generated output with `scripts/validate_touchpad_configs.py`.
+This catches configs with runtime-invalid key strings such as `"KeyF, ShiftRight"` before they
+are accepted into eval outputs.
+
+You can also validate saved outputs or gold configs directly:
+```bash
+python3 scripts/validate_touchpad_configs.py test_cases/outputs/top_voted/*.html
+python3 scripts/validate_touchpad_configs.py test_cases/gold_standard_configs/*.json
+```
+
 ## Refresh gold standards
 Make sure you have generated outputs first:
 ```bash

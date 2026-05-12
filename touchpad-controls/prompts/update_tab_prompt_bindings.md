@@ -130,3 +130,4 @@ Rules for axes/actions (apply from first principles):
 - If a core action requires holding two directions together with independent timing, split into rate + magnitude axes and set simultaneous=true on those axes.
 - If direction_mode=cardinal or activation=latch, directions are mutually exclusive, so set simultaneous=false (or omit it).
 - If multiple keys map to the same action, pick the primary and mention alternates in notes.
+- Never put multiple key codes in one string. Invalid: `"KeyF, ShiftRight"`. Use exactly one KeyboardEvent.code string for each action, or a JSON array such as `["KeyF", "ShiftRight"]` only when the control should press both keys at the same time.

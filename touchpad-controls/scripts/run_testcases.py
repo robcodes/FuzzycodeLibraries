@@ -103,6 +103,14 @@ def main() -> None:
         result = subprocess.run(command, cwd=str(root))
         if result.returncode != 0:
             raise SystemExit(result.returncode)
+        validate_command = [
+            sys.executable,
+            str(root / "scripts" / "validate_touchpad_configs.py"),
+            str(output_path)
+        ]
+        validate_result = subprocess.run(validate_command, cwd=str(root))
+        if validate_result.returncode != 0:
+            raise SystemExit(validate_result.returncode)
 
 
 if __name__ == "__main__":
