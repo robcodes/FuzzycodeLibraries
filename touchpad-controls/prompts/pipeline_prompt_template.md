@@ -106,9 +106,11 @@ Rules:
 - If a core action requires holding two directions together with independent timing (e.g., turn + thrust), do not put them on a single axis. Split into `rate` and `magnitude` axes and set `simultaneous: true` on those axes if they are commonly held together.
 - If `direction_mode` would be `cardinal` but the game still requires holding two directions together as a core mechanic, that is a sign the input is actually multiple axes; split into separate axes instead of returning a single `cardinal` axis.
 - If two actions are symmetric opposites (rotate left/right, previous/next, zoom in/out, lane up/down), map them to `secondary` + `tertiary` and set `pair_id` (shared string) plus `pair_position: "left"` / `"right"`.
-- Treat high-level state-transition controls as utility pause/start semantics and map them to `actions.pause`.
+- Required keyboard state-transition controls are must-map utility actions. If a key is needed to start, resume, continue, pause, unpause, open/close a menu, retry/restart, or play again, map it to `actions.pause`.
 - State-transition controls include Pause, Start, Resume, Continue, Retry/Restart, Play Again, Unpause, and Menu toggles.
-- Do this even when there is no explicit `pause` variable: if a key is only used to transition between game states (menu, intro, paused, game over, victory, round end), classify it as `actions.pause`.
+- Do this even when there is no explicit `pause` variable and even when the key only matters outside active gameplay: if a key transitions between game states (menu, intro, paused, game over, victory, round end), classify it as `actions.pause`.
+- Do not omit a required state-transition key because the gameplay action cluster is full; `actions.pause` renders in the utility area outside the main cluster.
+- Only omit state-transition keys when the transition is already reachable through a visible click/touch UI and the keyboard key is merely optional.
 - Choose an `action_id` that matches the transition meaning (for example `pause-menu`, `start-menu`, `resume-game`, `restart-round`, `play-again`).
 - For meter-gated, cooldown-gated, charged, rare, super, or ultimate abilities, still include them as gameplay actions. Use a semantic `action_id` such as `super`, `ultimate`, or `charged-special`; set `behavior: "discrete"` and `interaction: "tap"` when activation is one-shot.
 - Include all important player gameplay actions even when there are many; the library owns overflow placement for rare discrete actions.

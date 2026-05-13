@@ -85,6 +85,9 @@ Minimal example (actual output should include only used fields):
   above the primary action for ergonomic symmetry.
 - **Pause utility**: when a `pause` binding exists, render a small low-opacity utility button in
   the top utility strip.
+- **Required state transitions**: keyboard-only start/resume/restart/play-again/pause/menu
+  controls should be emitted as `actions.pause` even when they only matter outside active
+  gameplay. Omit them only when the transition is already reachable through visible touch/click UI.
 
 See: `docs/TOUCHPAD_LIBRARY_VISION.md`, `docs/ANALYSIS_AXIS_DECOUPLING.md`
 
@@ -191,7 +194,7 @@ From `test_cases/CASE_NOTES.md`:
 - Mouse-only games need touch-to-mouse support (virtual cursor).
 - Typing games need full keyboard overlay or input focus handling.
 - Games with existing touch UI should be detected and avoided.
-- Contextual actions (restart/pause) should be labeled as utility to avoid prime space.
+- Contextual actions (restart/pause/play again) should be labeled as utility to avoid prime space.
 - Extremely complex games (RTS) likely require a different UX or skip.
 
 ## Key files

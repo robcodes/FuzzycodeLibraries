@@ -105,9 +105,11 @@ Rules for axes/actions (apply from first principles):
 - For meter-gated, cooldown-gated, charged, rare, super, or ultimate abilities, still include them as gameplay actions. Use a semantic action_id such as `super`, `ultimate`, or `charged-special`; set behavior=discrete and interaction=tap when activation is one-shot.
 - Include all important player gameplay actions even when there are many; the library owns overflow placement for rare discrete actions.
 - If two actions are symmetric opposites (rotate left/right, previous/next, zoom in/out, lane up/down), map them to secondary + tertiary and set pair_id + pair_position (left/right).
-- Treat high-level state-transition controls as utility pause/start semantics and map them to the `pause` action.
+- Required keyboard state-transition controls are must-map utility actions. If a key is needed to start, resume, continue, pause, unpause, open/close a menu, retry/restart, or play again, map it to the `pause` action.
 - State-transition controls include Pause, Start, Resume, Continue, Retry/Restart, Play Again, Unpause, and Menu toggles.
-- Do this even when there is no explicit `pause` variable: if a key is only used to transition between game states (menu, intro, paused, game over, victory, round end), classify it as `pause`.
+- Do this even when there is no explicit `pause` variable and even when the key only matters outside active gameplay: if a key transitions between game states (menu, intro, paused, game over, victory, round end), classify it as `pause`.
+- Do not omit a required state-transition key because the gameplay action cluster is full; `pause` renders in the utility area outside the main cluster.
+- Only omit state-transition keys when the transition is already reachable through a visible click/touch UI and the keyboard key is merely optional.
 - Choose an `action_id` that matches the transition meaning (for example `pause-menu`, `start-menu`, `resume-game`, `restart-round`, `play-again`).
 - Use movement for heading/rotation and forward/back drive controls. Use aim only for a separate targeting axis.
 - control_space values:
