@@ -118,7 +118,8 @@ Rules:
   - `vector`: diagonals are meaningful.
   - `cardinal`: only one direction at a time; diagonals are not meaningful.
 - If a key triggers a discrete jump/impulse (not continuous movement), represent it as `actions.jump`.
-- Do not duplicate a discrete/impulse/action key inside an axis. A key belongs in an axis only when holding it continuously controls the same movement variable as the other directions in that axis.
+- If the code has jump semantics (for example jump force, jump velocity, double jump, can-jump, grounded-jump checks, or a function/variable named jump), always include that key as `actions.jump` with `behavior: "discrete"` and `interaction: "tap"`. Do this even if the key was also considered for an axis; the library can then resolve the duplicate deterministically.
+- Prefer not to duplicate a discrete/impulse/action key inside an axis. A key belongs in an axis only when holding it continuously controls the same movement variable as the other directions in that axis.
 - If movement is step-based (grid/tile/turn), set `behavior: "discrete"` and `interaction: "tap"` or `"repeat"` for the relevant axis/action.
 - If movement direction is only set on `keydown` (no `keyup` handling for movement), or the game keeps moving after a tap, set `activation: "latch"` and `direction_mode: "cardinal"`. This can still be `behavior: "continuous"` if motion is smooth.
 - If movement is direction-latched (a tap sets direction/state until changed), set `activation: "latch"` and `direction_mode: "cardinal"`.

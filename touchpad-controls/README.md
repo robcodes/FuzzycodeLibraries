@@ -76,6 +76,8 @@ Minimal example (actual output should include only used fields):
   separate controls; never couple them as a single 2D stick.
 - **Duplicate axis/action keys**: if the same key is labeled as both an axis direction and a
   discrete/tap action, keep the action and remove that direction from the axis.
+- **Jump as explicit action**: when code has jump/impulse semantics, emit `actions.jump`
+  even if a model also placed the key in an axis; this gives deterministic cleanup enough context.
 - **Paired actions**: if `pair_id` is present on `secondary`/`tertiary`, render them side-by-side
   above the primary action for ergonomic symmetry.
 - **Pause utility**: when a `pause` binding exists, render a small low-opacity utility button at top-center.

@@ -125,7 +125,8 @@ Rules for axes/actions (apply from first principles):
   - fine: small, continuous increments (pixel/velocity integration).
   - coarse: large, quantized steps (grid/tile/lane jumps).
 - If movement is step-based (grid/tile/turn), set behavior=discrete and interaction=tap or repeat.
-- Do not duplicate a discrete/impulse/action key inside an axis. A key belongs in an axis only when holding it continuously controls the same movement variable as the other directions in that axis.
+- If the code has jump semantics (for example jump force, jump velocity, double jump, can-jump, grounded-jump checks, or a function/variable named jump), always include that key as jump with behavior=discrete and interaction=tap. Do this even if the key was also considered for an axis; the library can then resolve the duplicate deterministically.
+- Prefer not to duplicate a discrete/impulse/action key inside an axis. A key belongs in an axis only when holding it continuously controls the same movement variable as the other directions in that axis.
 - If movement direction is only set on keydown (no keyup handling) or movement continues after a tap, set activation=latch and direction_mode=cardinal (even if movement is continuous).
 - If diagonals are not meaningful or only one direction is intended at a time, set direction_mode=cardinal.
 - If a core action requires holding two directions together with independent timing, split into rate + magnitude axes and set simultaneous=true on those axes.
