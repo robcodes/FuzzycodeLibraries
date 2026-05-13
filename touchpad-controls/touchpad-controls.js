@@ -2452,6 +2452,38 @@
         return summary;
     };
 
+    const isDefaultInteractiveTarget = (target) => {
+        const interactiveTags = ["SELECT", "OPTION", "BUTTON", "INPUT", "TEXTAREA", "A", "LABEL", "SUMMARY"];
+        const doc = typeof document === "undefined" ? null : document;
+        let node = target;
+
+        while (node && node !== doc) {
+            if (node.nodeType !== 1) {
+                node = node.parentElement || node.parentNode;
+                continue;
+            }
+
+            const tagName = node.tagName;
+            if (tagName && interactiveTags.includes(String(tagName).toUpperCase())) return true;
+            if (typeof node.onclick === "function") return true;
+            if (node.isContentEditable) return true;
+
+            const role = typeof node.getAttribute === "function" ? node.getAttribute("role") : null;
+            if (role && ["button", "link", "menuitem", "option", "tab"].includes(String(role).toLowerCase())) {
+                return true;
+            }
+
+            if (typeof node.hasAttribute === "function") {
+                if (node.hasAttribute("tabindex")) return true;
+                if (node.hasAttribute("data-touchpad-allow-default")) return true;
+            }
+
+            node = node.parentElement || node.parentNode;
+        }
+
+        return false;
+    };
+
     const createGesturePrevention = (options = {}) => {
         if (typeof document === "undefined") return () => {};
 
@@ -2464,9 +2496,7 @@
                 return;
             }
 
-            const tagName = target.tagName;
-            const blockedTags = ["SELECT", "OPTION", "BUTTON", "INPUT", "TEXTAREA", "A"];
-            if (tagName && blockedTags.includes(tagName)) return;
+            if (isDefaultInteractiveTarget(target)) return;
 
             if (extraExclusions.some((selector) => target.closest && target.closest(selector))) return;
 
@@ -2592,7 +2622,9 @@
             resolveBindingsAndMeta,
             normalizeActionId,
             normalizeSkin,
-            resolveSkinThemeForButton
+            resolveSkinThemeForButton,
+            isDefaultInteractiveTarget,
+            createGesturePrevention
         }
     };
 }));
