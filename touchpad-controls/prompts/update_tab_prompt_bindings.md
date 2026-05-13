@@ -18,8 +18,7 @@ Required script tags to inject:
 <script src="{{TOUCHPAD_LIBRARY_URL}}"></script>
 
 Copy the required script `src` values exactly. Do not alter, decode, re-encode, or reconstruct
-the URLs. The nipplejs package version is exactly `nipplejs@0.10.2`; never write
-`nipplejs@.0.10.2` or any other variant.
+the URLs.
 
 Then inject a config block like this (fill in bindings/actionMeta from your analysis):
 <script>
