@@ -1655,6 +1655,79 @@
         return actionMeta;
     };
 
+    const cloneDirectionalKeys = (keyMap) => ({
+        left: keyMap && keyMap.left ? keyMap.left : null,
+        right: keyMap && keyMap.right ? keyMap.right : null,
+        up: keyMap && keyMap.up ? keyMap.up : null,
+        down: keyMap && keyMap.down ? keyMap.down : null,
+        key: keyMap && keyMap.key ? keyMap.key : null
+    });
+
+    const singleActionKey = (keys) => {
+        if (typeof keys === "string") return keys;
+        if (Array.isArray(keys) && keys.length === 1 && typeof keys[0] === "string") return keys[0];
+        if (keys && typeof keys === "object" && typeof keys.key === "string") return keys.key;
+        return null;
+    };
+
+    const actionPrefersButtonOverAxis = (role, meta = {}) => {
+        const actionId = normalizeActionId((meta && (meta.action_id || meta.actionId)) || role);
+        return (
+            role === "jump" ||
+            role === "pause" ||
+            actionId === "jump" ||
+            actionId === "pause" ||
+            meta.behavior === "discrete" ||
+            meta.interaction === "tap"
+        );
+    };
+
+    const resolveDuplicateAxisActionKeys = (bindings = {}, actionMeta = {}) => {
+        const nextBindings = Object.assign({}, bindings);
+        const warnings = [];
+        const actionRoles = ["jump", "magnitude", "primary", "secondary", "tertiary", "modifier", "pause"];
+        const actionKeys = [];
+
+        actionRoles.forEach((role) => {
+            const key = singleActionKey(bindings[role]);
+            const meta = actionMeta && actionMeta[role] ? actionMeta[role] : {};
+            if (!key || !actionPrefersButtonOverAxis(role, meta)) return;
+            actionKeys.push({ role, key });
+        });
+
+        if (!actionKeys.length) return { bindings: nextBindings, warnings };
+
+        ["move", "aim"].forEach((axisRole) => {
+            const keyMap = bindings[axisRole];
+            if (!keyMap || typeof keyMap !== "object") return;
+            const cleaned = cloneDirectionalKeys(keyMap);
+            let changed = false;
+
+            ["left", "right", "up", "down"].forEach((direction) => {
+                const axisKey = cleaned[direction];
+                if (!axisKey) return;
+                const action = actionKeys.find((candidate) => candidate.key === axisKey);
+                if (!action) return;
+                cleaned[direction] = null;
+                changed = true;
+                warnings.push({
+                    code: "DUPLICATE_AXIS_ACTION_KEY_RESOLVED",
+                    key: axisKey,
+                    axis: axisRole,
+                    direction,
+                    action: action.role,
+                    message: `TouchpadControls kept ${axisKey} as actions.${action.role} and removed it from ${axisRole}.${direction} because the action is discrete/tap-like.`
+                });
+            });
+
+            if (changed) {
+                nextBindings[axisRole] = cleaned;
+            }
+        });
+
+        return { bindings: nextBindings, warnings };
+    };
+
     const hasDirectionalKeys = (keyMap) => !!(keyMap && (keyMap.left || keyMap.right || keyMap.up || keyMap.down));
 
     const deriveAxisKeys = (keyMap, meta) => {
@@ -2234,10 +2307,13 @@
         const resolved = resolveBindingsAndMeta(config);
         const normalized = normalizeBindings(resolved.bindings || {});
         const actionMeta = normalizeActionMeta(resolved.actionMeta || {});
-        const layout = chooseLayout(normalized, config.layout, actionMeta);
+        const duplicateResolution = resolveDuplicateAxisActionKeys(normalized, actionMeta);
+        const effectiveBindings = duplicateResolution.bindings || normalized;
+        const warnings = duplicateResolution.warnings || [];
+        const layout = chooseLayout(effectiveBindings, config.layout, actionMeta);
         const metrics = getLayoutMetrics(config.viewport, config);
-        const buttons = buildButtonsForLayout(layout, normalized, metrics, actionMeta);
-        return { layout, buttons, metrics, bindings: normalized, actionMeta };
+        const buttons = buildButtonsForLayout(layout, effectiveBindings, metrics, actionMeta);
+        return { layout, buttons, metrics, bindings: effectiveBindings, actionMeta, warnings };
     };
 
     const roundLayoutValue = (value) => {
@@ -2248,7 +2324,7 @@
     const summarizeLayout = (layoutConfig) => {
         if (!layoutConfig || typeof layoutConfig !== "object") return null;
         const buttons = Array.isArray(layoutConfig.buttons) ? layoutConfig.buttons : [];
-        return {
+        const summary = {
             layout: layoutConfig.layout || null,
             buttons: buttons.map((btn) => ({
                 id: btn.id || null,
@@ -2261,6 +2337,10 @@
                 size: roundLayoutValue(btn.size)
             }))
         };
+        if (Array.isArray(layoutConfig.warnings) && layoutConfig.warnings.length) {
+            summary.warnings = layoutConfig.warnings;
+        }
+        return summary;
     };
 
     const createGesturePrevention = (options = {}) => {
@@ -2301,6 +2381,18 @@
 
     const create = (config = {}) => {
         const layoutConfig = buildLayout(config);
+        const loggedWarnings = new Set();
+        const logWarnings = (layout) => {
+            if (!layout || !Array.isArray(layout.warnings) || !layout.warnings.length) return;
+            if (typeof console === "undefined" || typeof console.warn !== "function") return;
+            layout.warnings.forEach((warning) => {
+                const message = warning && warning.message ? warning.message : String(warning);
+                if (loggedWarnings.has(message)) return;
+                loggedWarnings.add(message);
+                console.warn("[touchpad_controls]", message);
+            });
+        };
+        logWarnings(layoutConfig);
         if (config.debug && typeof console !== "undefined" && typeof console.info === "function") {
             console.info("[touchpad_controls] layout", summarizeLayout(layoutConfig));
         }
@@ -2326,6 +2418,7 @@
                 instance.destroy();
             }
             const nextLayout = buildLayout(config);
+            logWarnings(nextLayout);
             if (config.debug && typeof console !== "undefined" && typeof console.info === "function") {
                 console.info("[touchpad_controls] layout", summarizeLayout(nextLayout));
             }
@@ -2383,6 +2476,7 @@
         _internal: {
             buildButtonsForLayout,
             normalizeBindings,
+            resolveDuplicateAxisActionKeys,
             clampPosition,
             summarizeLayout,
             extractBindingsFromAxesActions,

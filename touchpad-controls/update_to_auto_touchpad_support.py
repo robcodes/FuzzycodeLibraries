@@ -690,6 +690,70 @@ def extract_bindings_from_axes_actions(data: dict) -> Tuple[Optional[dict], Opti
     return bindings, action_meta
 
 
+def single_action_key(keys) -> Optional[str]:
+    if isinstance(keys, str):
+        return keys
+    if isinstance(keys, list) and len(keys) == 1 and isinstance(keys[0], str):
+        return keys[0]
+    if isinstance(keys, dict) and isinstance(keys.get("key"), str):
+        return keys["key"]
+    return None
+
+
+def action_prefers_button_over_axis(role: str, meta: dict) -> bool:
+    meta = meta if isinstance(meta, dict) else {}
+    action_id = normalize_action_id(meta.get("action_id") or meta.get("actionId") or role)
+    return (
+        role in {"jump", "pause"}
+        or action_id in {"jump", "pause"}
+        or meta.get("behavior") == "discrete"
+        or meta.get("interaction") == "tap"
+    )
+
+
+def resolve_duplicate_axis_action_keys(bindings: dict, action_meta: dict) -> tuple[dict, list[str]]:
+    if not isinstance(bindings, dict):
+        return {}, []
+    action_meta = action_meta if isinstance(action_meta, dict) else {}
+    next_bindings = dict(bindings)
+    warnings = []
+    action_keys = []
+
+    for role in ("jump", "magnitude", "primary", "secondary", "tertiary", "modifier", "pause"):
+        key = single_action_key(bindings.get(role))
+        meta = action_meta.get(role) or {}
+        if key and action_prefers_button_over_axis(role, meta):
+            action_keys.append((role, key))
+
+    if not action_keys:
+        return next_bindings, warnings
+
+    for axis_role in ("move", "aim"):
+        key_map = bindings.get(axis_role)
+        if not isinstance(key_map, dict):
+            continue
+        cleaned = dict(key_map)
+        changed = False
+        for direction in ("left", "right", "up", "down"):
+            axis_key = cleaned.get(direction)
+            if not axis_key:
+                continue
+            duplicate = next(((role, key) for role, key in action_keys if key == axis_key), None)
+            if not duplicate:
+                continue
+            action_role, key = duplicate
+            cleaned[direction] = None
+            changed = True
+            warnings.append(
+                f"TouchpadControls kept {key} as actions.{action_role} and removed it from "
+                f"{axis_role}.{direction} because the action is discrete/tap-like."
+            )
+        if changed:
+            next_bindings[axis_role] = cleaned
+
+    return next_bindings, warnings
+
+
 def main() -> None:
     args = parse_args()
 
@@ -774,6 +838,9 @@ def main() -> None:
             raise RuntimeError("No bindings found in Codex output.")
 
     action_meta = sanitize_action_meta(action_meta or {})
+    bindings, duplicate_warnings = resolve_duplicate_axis_action_keys(bindings, action_meta)
+    for warning in duplicate_warnings:
+        print(f"Warning: {warning}", file=sys.stderr)
 
     source_html = game_path.read_text()
     if detect_discrete_move(source_html, bindings, action_meta):

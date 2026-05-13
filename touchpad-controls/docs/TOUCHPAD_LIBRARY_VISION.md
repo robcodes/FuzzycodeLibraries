@@ -105,6 +105,8 @@ and placement and can be lightly overridden via config.
 - If an action is continuous and must be held, make it larger and closer to the thumb anchor.
 - If Up is discrete (jump), do not include it in the movement axis; expose it as a button.
 - If vertical is continuous (true up/down movement), keep it on the movement axis.
+- If a key is duplicated as both an axis direction and a discrete/tap action, prefer the action and
+  remove that direction from the axis.
 - If left/right are rate control and advance is magnitude control, do not couple them as a vector.
 - If a core action requires holding two directions together with independent timing, split into
   separate rate/magnitude axes; do not leave a single cardinal axis.

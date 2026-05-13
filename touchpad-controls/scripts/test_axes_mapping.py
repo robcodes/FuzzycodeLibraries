@@ -5,7 +5,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from update_to_auto_touchpad_support import extract_bindings_from_axes_actions  # noqa: E402
+from update_to_auto_touchpad_support import (  # noqa: E402
+    extract_bindings_from_axes_actions,
+    resolve_duplicate_axis_action_keys,
+    sanitize_action_meta,
+)
 
 
 def check(condition, message):
@@ -161,6 +165,33 @@ def test_action_id_preserved():
     check(meta["secondary"]["action_id"] == "kick", "action_id should be normalized and preserved")
 
 
+def test_duplicate_discrete_action_removed_from_axis():
+    data = {
+        "axes": [
+            {
+                "usage": "movement",
+                "priority": "primary",
+                "control_space": "vector",
+                "keys": {"left": "KeyA", "right": "KeyD", "up": "KeyW"}
+            }
+        ],
+        "actions": {
+            "jump": {
+                "keys": "KeyW",
+                "action_id": "jump",
+                "behavior": "discrete",
+                "interaction": "tap"
+            }
+        }
+    }
+    bindings, meta = extract_bindings_from_axes_actions(data)
+    meta = sanitize_action_meta(meta)
+    bindings, warnings = resolve_duplicate_axis_action_keys(bindings, meta)
+    check(bindings["move"]["up"] is None, "duplicate jump key should be removed from movement up")
+    check(bindings["jump"] == "KeyW", "duplicate key should remain as jump action")
+    check(warnings, "duplicate normalization should report a warning")
+
+
 def main():
     test_movement_and_aim()
     test_single_aim_becomes_move()
@@ -170,6 +201,7 @@ def main():
     test_granularity_preserved()
     test_simultaneous_preserved()
     test_action_id_preserved()
+    test_duplicate_discrete_action_removed_from_axis()
     print("All axes mapping tests passed.")
 
 

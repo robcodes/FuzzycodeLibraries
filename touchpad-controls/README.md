@@ -74,6 +74,8 @@ Minimal example (actual output should include only used fields):
 - **Joystick** when movement is vector/continuous/fine and diagonals matter.
 - **Axis decoupling**: if rate (heading) and magnitude (drive) are independent, split them into
   separate controls; never couple them as a single 2D stick.
+- **Duplicate axis/action keys**: if the same key is labeled as both an axis direction and a
+  discrete/tap action, keep the action and remove that direction from the axis.
 - **Paired actions**: if `pair_id` is present on `secondary`/`tertiary`, render them side-by-side
   above the primary action for ergonomic symmetry.
 - **Pause utility**: when a `pause` binding exists, render a small low-opacity utility button at top-center.
