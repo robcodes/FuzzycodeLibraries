@@ -102,6 +102,8 @@ Rules for axes/actions (apply from first principles):
 - actions keys must be one of: jump, primary, secondary, tertiary, modifier, pause, magnitude.
 - Every action object must include `action_id` as a semantic slug (lowercase `a-z`, `0-9`, `_`, `-`), e.g. `kick`, `special`, `dash-attack`, `pause-menu`.
 - `action_id` should describe gameplay meaning (what it does), not physical position (`left-button`, `right-button`) and not generic role names unless semantics are truly unknown.
+- For meter-gated, cooldown-gated, charged, rare, super, or ultimate abilities, still include them as gameplay actions. Use a semantic action_id such as `super`, `ultimate`, or `charged-special`; set behavior=discrete and interaction=tap when activation is one-shot.
+- Include all important player gameplay actions even when there are many; the library owns overflow placement for rare discrete actions.
 - If two actions are symmetric opposites (rotate left/right, previous/next, zoom in/out, lane up/down), map them to secondary + tertiary and set pair_id + pair_position (left/right).
 - Treat high-level state-transition controls as utility pause/start semantics and map them to the `pause` action.
 - State-transition controls include Pause, Start, Resume, Continue, Retry/Restart, Play Again, Unpause, and Menu toggles.

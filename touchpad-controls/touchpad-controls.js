@@ -191,6 +191,17 @@
                 --touchpad-backdrop-filter: blur(8px) saturate(125%);
             }
 
+            .touchpad-utility-overflow {
+                z-index: 10001;
+                --touchpad-bg: rgba(15, 23, 42, 0.68);
+                --touchpad-border: 1px solid rgba(255,255,255,0.28);
+                --touchpad-shadow: 0 6px 16px rgba(2, 6, 23, 0.5);
+                --touchpad-shadow-active: 0 3px 10px rgba(2, 6, 23, 0.6);
+                --touchpad-icon-size: 54%;
+                --touchpad-icon-opacity: 0.92;
+                --touchpad-backdrop-filter: blur(8px) saturate(125%);
+            }
+
             .touchpad .nipple,
             .touchpad .nipple * {
                 overflow: visible;
@@ -329,6 +340,10 @@
 
     const iconPause = (color) => svgToDataUri(
         `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect x="20" y="18" width="8" height="28" rx="2" fill="${color || ICON_COLOR_DEFAULT}"/><rect x="36" y="18" width="8" height="28" rx="2" fill="${color || ICON_COLOR_DEFAULT}"/></svg>`
+    );
+
+    const iconStar = (color) => svgToDataUri(
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path d="M32 10 L38.2 24.6 L54 26 L42 36.4 L45.6 52 L32 43.8 L18.4 52 L22 36.4 L10 26 L25.8 24.6 Z" fill="${color || ICON_COLOR_DEFAULT}"/></svg>`
     );
 
     const keyLabel = (key) => {
@@ -671,6 +686,11 @@
         const meta = btn.meta || null;
         const keys = getButtonKeys(btn);
         const role = btn.role;
+        const actionId = normalizeActionId(
+            (btn.actionId || btn.action_id) ||
+            (meta && (meta.action_id || meta.actionId)) ||
+            ""
+        );
 
         if (meta && meta.pair_position) {
             return iconTriangle(meta.pair_position === "right" ? "right" : "left", iconColor);
@@ -697,6 +717,9 @@
 
         if (role === "jump") return iconArrow("up", iconColor);
         if (role === "pause") return iconPause(iconColor);
+        if (actionId && /(^|[-_])(super|ultimate|limit|charged|meter|bomb|power)([-_]|$)/.test(actionId)) {
+            return iconStar(iconColor);
+        }
         if (role === "primary") return iconCircle(true, iconColor);
         if (role === "secondary") return iconCircle(false, iconColor);
         if (role === "tertiary") return iconSquare(iconColor);
@@ -1888,6 +1911,105 @@
         return null;
     };
 
+    const scoreUtilityOverflowCandidate = (action) => {
+        if (!action) return -Infinity;
+        const meta = action.meta || {};
+        const actionId = normalizeActionId(action.actionId || meta.action_id || meta.actionId || action.role || "");
+        const text = `${action.role || ""} ${actionId || ""}`.toLowerCase();
+        let score = 0;
+
+        if (action.role === "jump" || actionId === "jump") score -= 100;
+        if (action.role === "primary") score -= 40;
+        if (/(^|[-_\s])(super|ultimate|limit|limitbreak|charged|meter|bomb|power|powerup|ability)([-_\s]|$)/.test(text)) {
+            score += 50;
+        }
+        if (action.role === "modifier") score += 15;
+        if (meta.behavior === "discrete") score += 12;
+        if (meta.interaction === "tap") score += 12;
+        if (meta.behavior === "continuous") score -= 25;
+        if (meta.interaction === "hold") score -= 20;
+        if (meta.simultaneous === true) score -= 3;
+        if (/(^|[-_\s])(fire|shoot|attack|punch|kick|slash|melee)([-_\s]|$)/.test(text)) score -= 15;
+
+        return score;
+    };
+
+    const splitOverflowActions = (actions, mainCapacity) => {
+        if (!Array.isArray(actions) || actions.length <= mainCapacity) {
+            return { mainActions: actions || [], overflowActions: [] };
+        }
+
+        const overflowCount = actions.length - mainCapacity;
+        const candidates = actions
+            .map((action, index) => ({
+                action,
+                index,
+                overflowScore: scoreUtilityOverflowCandidate(action)
+            }))
+            .sort((a, b) => {
+                if (b.overflowScore !== a.overflowScore) return b.overflowScore - a.overflowScore;
+                return b.index - a.index;
+            });
+
+        const overflowSet = new Set(candidates.slice(0, overflowCount).map((candidate) => candidate.action));
+        return {
+            mainActions: actions.filter((action) => !overflowSet.has(action)),
+            overflowActions: actions.filter((action) => overflowSet.has(action))
+        };
+    };
+
+    const buildUtilityActionButtons = (utilityActions, metrics, warnings) => {
+        const buttons = [];
+        if (!Array.isArray(utilityActions) || !utilityActions.length) return buttons;
+
+        const size = clamp(metrics.miniActionSize * 0.8, 40, 64);
+        const gap = clamp(size * 0.18, 6, 10);
+        const utilityInset = clamp(metrics.edgePadding * 0.2, 4, 8);
+        const availableWidth = Math.max(
+            size,
+            metrics.width - metrics.safeArea.left - metrics.safeArea.right - utilityInset * 2
+        );
+        const maxVisible = Math.max(1, Math.floor((availableWidth + gap) / (size + gap)));
+        const visibleActions = utilityActions.slice(0, maxVisible);
+        const omittedActions = utilityActions.slice(maxVisible);
+        const y = metrics.safeArea.top + utilityInset + size / 2;
+
+        visibleActions.forEach((action, index) => {
+            const x = metrics.width - metrics.safeArea.right - utilityInset - size / 2 - index * (size + gap);
+            const pos = clampPosition({ x, y }, size, metrics);
+            const isPause = action.role === "pause";
+            buttons.push(makeButton({
+                id: action.role,
+                keys: action.keys,
+                role: action.role,
+                actionId: action.actionId || null,
+                x: pos.x,
+                y: pos.y,
+                size,
+                type: "button",
+                meta: action.meta || null,
+                classList: [
+                    "touchpad-role-" + action.role,
+                    isPause ? "touchpad-utility-pause" : "touchpad-utility-overflow"
+                ],
+                style: {
+                    opacity: isPause ? 0.76 : 0.82
+                }
+            }));
+        });
+
+        omittedActions.forEach((action) => {
+            warnings.push({
+                code: "ACTION_OVERFLOW_NOT_RENDERED",
+                role: action.role,
+                action_id: action.actionId || null,
+                message: `TouchpadControls could not render actions.${action.role} because the top utility strip is full.`
+            });
+        });
+
+        return buttons;
+    };
+
     const buildActionCluster = (anchor, actions, sizes, metrics) => {
         const buttons = [];
         if (!actions.length) return buttons;
@@ -2032,7 +2154,7 @@
         return buttons;
     };
 
-    const buildButtonsForLayout = (layout, bindings, metrics, actionMeta) => {
+    const buildButtonsForLayout = (layout, bindings, metrics, actionMeta, warnings = []) => {
         const buttons = [];
         const actions = [];
         const roleOrder = ["magnitude", "jump", "primary", "secondary", "tertiary", "modifier"];
@@ -2098,6 +2220,14 @@
             return a._index - b._index;
         });
 
+        const mainActionCapacity = layout === "dual-stick" && hasDirectionalKeys(bindings.aim) ? 1 : 4;
+        const overflowSplit = splitOverflowActions(actions, mainActionCapacity);
+        const mainActions = overflowSplit.mainActions;
+        const utilityActions = [
+            ...(pauseAction ? [pauseAction] : []),
+            ...overflowSplit.overflowActions
+        ];
+
         const leftAnchor = {
             x: metrics.safeArea.left + metrics.edgePadding + metrics.baseSize / 2,
             y: metrics.bottomY - metrics.baseSize / 2 - metrics.verticalOffset
@@ -2107,7 +2237,7 @@
             y: metrics.bottomY - metrics.baseSize / 2 - metrics.verticalOffset
         };
 
-        if (!actions.length && !hasDirectionalKeys(moveKeys) && !hasDirectionalKeys(bindings.aim) && !pauseAction) {
+        if (!mainActions.length && !hasDirectionalKeys(moveKeys) && !hasDirectionalKeys(bindings.aim) && !utilityActions.length) {
             return buttons;
         }
 
@@ -2151,7 +2281,7 @@
 
             const clusterButtons = buildActionCluster(
                 rightAnchor,
-                actions,
+                mainActions,
                 {
                     primary: metrics.actionSize,
                     secondary: metrics.smallActionSize,
@@ -2179,7 +2309,7 @@
 
             const clusterButtons = buildActionCluster(
                 rightAnchor,
-                actions,
+                mainActions,
                 {
                     primary: metrics.actionSize,
                     secondary: metrics.smallActionSize,
@@ -2226,26 +2356,27 @@
                     classList: ["touchpad-role-aim"]
                 }));
 
-                if (actions[0]) {
+                if (mainActions[0]) {
                     const fireSize = metrics.actionSize;
                     const firePos = clampPosition({
                         x: rightPos.x,
                         y: rightPos.y - (aimSize / 2 + metrics.spacing + fireSize / 2)
                     }, fireSize, metrics);
                     buttons.push(makeButton({
-                        id: actions[0].role,
-                        keys: actions[0].keys,
-                        role: actions[0].role,
+                        id: mainActions[0].role,
+                        keys: mainActions[0].keys,
+                        role: mainActions[0].role,
+                        actionId: mainActions[0].actionId || null,
                         x: firePos.x,
                         y: firePos.y,
                         size: fireSize,
-                        meta: actions[0].meta || null,
-                        classList: ["touchpad-role-" + actions[0].role]
+                        meta: mainActions[0].meta || null,
+                        classList: ["touchpad-role-" + mainActions[0].role]
                     }));
                 }
             }
         } else if (layout === "runner") {
-            const actionCount = Math.min(actions.length || 1, 4);
+            const actionCount = Math.min(mainActions.length || 1, 4);
             const slots = actionCount === 1
                 ? [0.5]
                 : actionCount === 2
@@ -2259,7 +2390,7 @@
             const bandY = metrics.bottomY - size / 2 - metrics.verticalOffset;
 
             for (let i = 0; i < actionCount; i += 1) {
-                const action = actions[i] || actions[0] || { role: "primary", keys: bindings.primary };
+                const action = mainActions[i] || mainActions[0] || { role: "primary", keys: bindings.primary };
                 const x = metrics.safeArea.left + metrics.edgePadding + availableWidth * slots[i];
                 const pos = clampPosition({ x, y: bandY }, size, metrics);
                 buttons.push(makeButton({
@@ -2275,29 +2406,7 @@
             }
         }
 
-        if (pauseAction) {
-            const pauseSize = clamp(metrics.miniActionSize * 0.8, 40, 64);
-            const utilityInset = clamp(metrics.edgePadding * 0.2, 4, 8);
-            const pausePos = clampPosition({
-                x: metrics.width - metrics.safeArea.right - utilityInset - pauseSize / 2,
-                y: metrics.safeArea.top + utilityInset + pauseSize / 2
-            }, pauseSize, metrics);
-            buttons.push(makeButton({
-                id: "pause",
-                keys: pauseAction.keys,
-                role: "pause",
-                actionId: pauseAction.actionId || null,
-                x: pausePos.x,
-                y: pausePos.y,
-                size: pauseSize,
-                type: "button",
-                meta: pauseAction.meta || null,
-                classList: ["touchpad-role-pause", "touchpad-utility-pause"],
-                style: {
-                    opacity: 0.76
-                }
-            }));
-        }
+        buttons.push(...buildUtilityActionButtons(utilityActions, metrics, warnings));
 
         return buttons;
     };
@@ -2312,7 +2421,7 @@
         const warnings = duplicateResolution.warnings || [];
         const layout = chooseLayout(effectiveBindings, config.layout, actionMeta);
         const metrics = getLayoutMetrics(config.viewport, config);
-        const buttons = buildButtonsForLayout(layout, effectiveBindings, metrics, actionMeta);
+        const buttons = buildButtonsForLayout(layout, effectiveBindings, metrics, actionMeta, warnings);
         return { layout, buttons, metrics, bindings: effectiveBindings, actionMeta, warnings };
     };
 

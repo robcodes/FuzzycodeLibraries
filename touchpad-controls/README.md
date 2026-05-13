@@ -78,9 +78,13 @@ Minimal example (actual output should include only used fields):
   discrete/tap action, keep the action and remove that direction from the axis.
 - **Jump as explicit action**: when code has jump/impulse semantics, emit `actions.jump`
   even if a model also placed the key in an axis; this gives deterministic cleanup enough context.
+- **Utility overflow**: rare discrete actions such as `action_id: "super"` stay configured as
+  gameplay actions; when the main thumb cluster is full, the library can place them in the top
+  utility strip instead of silently dropping them.
 - **Paired actions**: if `pair_id` is present on `secondary`/`tertiary`, render them side-by-side
   above the primary action for ergonomic symmetry.
-- **Pause utility**: when a `pause` binding exists, render a small low-opacity utility button at top-center.
+- **Pause utility**: when a `pause` binding exists, render a small low-opacity utility button in
+  the top utility strip.
 
 See: `docs/TOUCHPAD_LIBRARY_VISION.md`, `docs/ANALYSIS_AXIS_DECOUPLING.md`
 

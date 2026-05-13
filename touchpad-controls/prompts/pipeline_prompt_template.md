@@ -110,7 +110,8 @@ Rules:
 - State-transition controls include Pause, Start, Resume, Continue, Retry/Restart, Play Again, Unpause, and Menu toggles.
 - Do this even when there is no explicit `pause` variable: if a key is only used to transition between game states (menu, intro, paused, game over, victory, round end), classify it as `actions.pause`.
 - Choose an `action_id` that matches the transition meaning (for example `pause-menu`, `start-menu`, `resume-game`, `restart-round`, `play-again`).
-- If the game has more actions than slots, pick the most important ones and mention omitted actions in `notes`.
+- For meter-gated, cooldown-gated, charged, rare, super, or ultimate abilities, still include them as gameplay actions. Use a semantic `action_id` such as `super`, `ultimate`, or `charged-special`; set `behavior: "discrete"` and `interaction: "tap"` when activation is one-shot.
+- Include all important player gameplay actions even when there are many; the library owns overflow placement for rare discrete actions.
 - If any directional or rate controls exist, they must appear in `axes` (do not omit them and put them only in `notes`).
 - If multiple keys map to the same action, pick the primary mapping and mention alternates in `notes`.
 - Never put multiple key codes in one string. Invalid: `"KeyF, ShiftRight"`. Use exactly one `KeyboardEvent.code` string for each action, or a JSON array such as `["KeyF", "ShiftRight"]` only when the control should press both keys at the same time.
